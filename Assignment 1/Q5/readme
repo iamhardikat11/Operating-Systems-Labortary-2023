@@ -1,0 +1,6 @@
+to run use commands:
+
+
+1)chmod +x q5.sh
+
+2)./q5.sh ./nmt-master > output.txt       
