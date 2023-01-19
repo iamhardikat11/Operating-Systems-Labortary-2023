@@ -1,0 +1,11 @@
+CS 3
+ELEC 3
+CIVIL 1
+EE 1
+EW 1
+MECH 1
+RR 1
+
+Arya
+Eeshani
+7
