@@ -84,6 +84,3 @@ while getopts ":c:n:s:h" opt; do
       ;;
   esac
 done
-
-
-
