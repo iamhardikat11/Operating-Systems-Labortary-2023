@@ -48,13 +48,7 @@
 # # done
 #!/bin/bash
 
-# Assign script name
-script_name="Assgn1_8_<groupno>.sh"
-# Shift flags and remaining arguments to separate variables
-shift $((OPTIND-1))
-echo "$1,$2,$3,$4" >> main.csv
-sort -t, -k1,1n -o main.csv main.csv
-# Check if main.csv exists, create it if it doesn't
+script_name="Assgn1_8_11.sh"
 if [ ! -f "main.csv" ]; then
   echo "Date (dd-mm-yy),Category,Amount,Name" > main.csv
 fi
@@ -84,3 +78,6 @@ while getopts ":c:n:s:h" opt; do
       ;;
   esac
 done
+shift $((OPTIND-1))
+echo "$1,$2,$3,$4" >> main.csv
+sort -t, -k1,1n -o main.csv main.csv
