@@ -1,30 +1,35 @@
 #!/bin/bash
 limit=1000000
-declare -a prime
+declare -a spf
 Sieve_of_Eratosthene() {
     for((i=1; i<=limit; i++))
     do
-        prime[i]=1
+        spf[i]=$i
     done
-    prime[1]=0
-    for((p=2; p*p<=limit; p++))
+    for((i=4; i<=limit; i=i+2))
+    do
+        spf[i]=2
+    done
+    for((i=3; i*i<=limit; i++))
     do 
-        if [[ ${prime[p]} -eq 1 ]]; then
-            for((i=p*p; i<=limit; i+=p))
+        if [[ ${spf[i]} -eq $i ]]; then
+            for((j=i*i; j<=limit; j+=i))
             do
-                prime[i]=0
+                if [ ${sp[j]} -eq $j ]; then
+                    spf[j]=$i
+                fi
             done   
         fi 
     done
 }
 Sieve_of_Eratosthene
-while read -r n
+while read -r x
 do
-    for((i=1; i<=n; i++))
-    do
-        if [[ ${prime[i]} -eq 1 ]]; then
-            echo -n "$i "
-        fi 
+    while [[ $x -ne 1 ]]
+    do 
+        echo -n "${spf[x]} "
+        x=$((x/spf[x]))
     done
     echo
 done < $1
+
