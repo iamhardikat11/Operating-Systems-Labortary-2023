@@ -1,81 +1,41 @@
 #!/bin/bash
 
-# # Input JSONL file
-# jsonl_file=d_3.jsonl
+# Assign the arguments to variables
+json_dir=$1
+csv_dir=$2
+attributes=("$@")
+# Remove the first two arguments from the attributes array
+attributes=("${attributes[@]:2}")
 
-# # Output CSV file
-# csv_file=data.csv
-
-# # Initialize header row
-# header=""
-
-# # Extract keys from first line of JSONL file
-# keys=$(head -n 1 $jsonl_file | sed 's/[{}"]//g' | sed 's/:/,/g')
-# echo $keys
-# # Loop through keys and create header row
-# for key in $keys; do
-#     header="$header,$key"
-# done
-
-# # Remove leading comma
-# header=${header:1}
-# echo $header
-# # Write header row to CSV file
-# echo $header > $csv_file
-
-# # Replace curly braces and quotes with commas
-# # and append each line to the CSV file
-# sed 's/[{}"]//g' $jsonl_file | sed 's/:/,/g' >> $csv_file
-#!/bin/bash
-
-# Input JSON file
-jsonl_file=d_3.jsonl
-
-# Extract first line of JSON file
-first_line=$(head -n 1 $jsonl_file)
-
-# Initialize keys array
-keys=()
-
-# Loop through characters in first line
-i=0
-while [ $i -lt ${#first_line} ]; do
-  # Check for opening quotation mark
-  if [ "${first_line:$i:1}" == "\"" ]; then
-    # Initialize key variable
-    key=""
-    # Increment index
-    i=$((i+1))
-    # Loop through characters in key
-    while [ "${first_line:$i:1}" != "\"" ]; do
-      key="$key${first_line:$i:1}"
-      i=$((i+1))
+# Loop through each file in the json_dir directory
+for file in "$json_dir"/*
+do
+  # Get the base file name
+  base_file_name=$(basename "$file" .jsonl)
+  # Create the csv file path
+  csv_file_path="$csv_dir/$base_file_name.csv"
+  # Print the header row with the attribute names
+  echo "${attributes[*]}" > "$csv_file_path"
+  # Loop through each line in the json file
+  while read -r line
+  do
+    # Initialize the csv row
+    csv_row=""
+    # Loop through each attribute
+    for attribute in "${attributes[@]}"
+    do
+      # Extract the value of the attribute from the json object
+      value=$(echo "$line" | jq -r ".$attribute")
+      # Check if the value contains a comma
+      if [[ $value == *","* ]]
+      then
+        # If it does, wrap the value in double quotes
+        value="\"$value\""
+      fi
+      # Append the value to the csv row
+      csv_row="$csv_row,$value"
     done
-    # Add key to keys array
-    keys+=("$key,")
-  fi
-  if [ "${first_line:$i:1}" == ":" ]; then
-     while [ $i -lt ${#first_line} ] && [ "${first_line:$i:1}" != "," ]; do
-      i=$((i+1))
-     done
-  fi
-  i=$((i+1))
+    # Print the csv row to the csv file
+    echo "${csv_row:1}" >> "$csv_file_path"
+  done < "$file"
 done
-
-# Print keys array
-echo ${keys[@]} > data.csv
-keys=$(head -n 1 $jsonl_file | sed 's/[{}"]//g' | sed 's/:/,/g')
-echo $keys
-for key in $keys; do
-    echo $key
-done
-
-# # Remove leading comma
-# header=${header:1}
-# echo $header
-# # Write header row to CSV file
-# echo $header > data.csv
-
-# # Replace curly braces and quotes with commas
-# # and append each line to the CSV file
-# sed 's/[{}"]//g' $jsonl_file | sed 's/:/,/g' >> data.csv
