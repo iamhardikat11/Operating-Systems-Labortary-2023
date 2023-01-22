@@ -111,3 +111,6 @@ awk -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " "
 
 
 grep -riEo "\b^[aA]\w*\b" /path/to/directory > output.txt
+
+
+find /path/to/directory -type f -print0 | xargs -0 grep -o "^." | awk '{print tolower($0)}' | xargs -I {} sh -c 'grep -F {} /path/to/directory -r >> {}.txt'
