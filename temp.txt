@@ -107,3 +107,7 @@ sort_csv "1"
 
 
 awk -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " " -f 2-
+
+
+
+grep -riEo "\b^[aA]\w*\b" /path/to/directory > output.txt
