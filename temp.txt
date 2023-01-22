@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#create main.csv if it doesn't exist
+touch main.csv
+
+#default behavior: insert new record into csv
+echo "$1,$2,$3,$4" >> main.csv
+
+#handle command line flags
+while getopts "c:n:s:h" opt; do
+  case $opt in
+    c)
+      #print total amount spent in category
+      grep -E -o ",$OPTARG,[0-9]+" main.csv | awk -F, '{sum+=$3} END {print sum}'
+      ;;
+    n)
+      #print total amount spent by name
+      grep -E ",$OPTARG" main.csv | awk -F, '{sum+=$3} END {print sum}'
+      ;;
+    s)
+      #sort csv by column
+      sort -t, -k$OPTARG main.csv
+      ;;
+    h)
+      #print help
