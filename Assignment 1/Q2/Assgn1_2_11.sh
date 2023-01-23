@@ -1,23 +1,19 @@
-#!/bin/bash
-# declare -a not_allowed
-# for inv in `cat fruits.txt`; do
-#         not_allowed[inv]=1
-#     done
-cnt=0
 for item in `cat $1`; do
-    l=${#item}
-    if [[ $l -lt 5 ]] || [[ $l -gt 20 ]]; then
-        cnt=$((cnt + 1))
-        continue
-    fi
-    if [[ $item =~ ^[A-Za-z][A-Za-z0-9]*[0-9][A-Za-z0-9]*$ ]]; then
-        for inv in `cat fruits.txt`; do
-            if [[ $(echo -n inv | grep -iqF item) -eq 0 ]]; then
-                break 1
+    flag=0
+    if [[ ${#item} -ge 5 ]] && [[ ${#item} -le 20 ]] && [[ $item =~ ^[a-zA-Z][a-zA-Z0-9]*[0-9][a-zA-Z0-9]*$ ]] 
+    then
+        for f in `cat fruits.txt`; do
+            if [[ $(echo -n "$item" | grep -iFc "$f") -ne 0 ]]; then
+                flag=1
+                break
             fi
         done
-        echo "$cnt : $l : $item"
-        cnt=$((cnt + 1))
+
+        if [[ $flag -eq 0 ]]
+        then
+            echo "YES"
+            continue
+        fi
     fi
+    echo "NO"
 done
-echo "$cnt"
