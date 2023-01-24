@@ -23,21 +23,6 @@ for file in $(find $folder -name "*.py"); do
         if [ $flag -eq 0 ]; then
           flag=1
           output="$output $word"
-<<<<<<< HEAD
-          while IFS= read -r line; do
-            n=$((n+1))
-          if [[ $line == *"$word"* ]]; then
-              echo "line $n:"
-              break
-          fi
-          done < "$file"
-          else
-            flag=0
-            output="$output $word"
-            echo "$output"
-            output=""
-          fi
-=======
           temp=0
             while IFS= read -r line; do
             temp=$((temp+1))
@@ -57,7 +42,6 @@ for file in $(find $folder -name "*.py"); do
           echo "$output"
           output=""
         fi
->>>>>>> 4892ba614ed0a0ad2191c01b4c06188da879de0d
       elif [ $flag -eq 1 ]; then
         output="$output $word"
       else
@@ -70,10 +54,5 @@ for file in $(find $folder -name "*.py"); do
     if [ -n "$output" ]; then
       echo "$output "
     fi
-<<<<<<< HEAD
-    grep -E -n "^[[:space:]]*#" $file
-done
-=======
 grep -E -n "(^|[^\"])[^[:space:]]*#[^\n\"]*" $file | awk '{print "Line "$1; gsub(/^[0-9]+:([^#]*#)/,"#",$0); print $0}'
 done
->>>>>>> 4892ba614ed0a0ad2191c01b4c06188da879de0d

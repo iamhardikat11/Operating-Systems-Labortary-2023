@@ -22,7 +22,10 @@ import time
 import numpy as np
 import six
 import tensorflow as tf
-
+"""
+  Aise hi sexy laga Hardik ko
+  Rushil ki m k b
+"""
 from tensorflow.python.ops import lookup_ops
 from .utils import iterator_utils
 from .utils import misc_utils as utils

@@ -1,1135 +1,2000 @@
 -----------------
-nmt-master/nmt/inference_test.py
+./nmt-master/nmt/__init__.py
+-----------------
+Multiline comments in the file
+-----------------
+-----------------
+./nmt-master/nmt/model_helper.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
+ """Utility functions for building models."""
+line 25:
+ """ Aise hi sexy laga Hardik ko Rushil ki m k b """
+line 47:
+ """Create an initializer. init_weight is only for uniform."""
+line 63:
+ """Return a device string for multi-GPU setup."""
+line 85:
+ """Create train graph, model, and iterator."""
+line 147:
+ """Create train graph, model, src/tgt file holders, and iterator."""
+line 200:
+ """Create inference model."""
+line 241:
+ """Decide on which device to place an embed matrix given its vocab size."""
+line 251:
+ """Load pretrain embeding from embed_file, and return an embedding matrix. Args: embed_file: Path to a Glove formated embedding txt file. num_trainable_tokens: Make the first n tokens in the vocab file as trainable variables. Default is 3, which is "<unk>", "<s>" and "</s>". """
+line 283:
+ """Create a new or load an existing embedding matrix."""
+line 307:
+ """Create embedding matrix for both encoder and decoder. Args: share_vocab: A boolean. Whether to share embedding matrix for both encoder and decoder. src_vocab_size: An integer. The source vocab size. tgt_vocab_size: An integer. The target vocab size. src_embed_size: An integer. The embedding dimension for the encoder's embedding. tgt_embed_size: An integer. The embedding dimension for the decoder's embedding. dtype: dtype of the embedding matrix. Default to float32. num_enc_partitions: number of partitions used for the encoder's embedding vars. num_dec_partitions: number of partitions used for the decoder's embedding vars. scope: VariableScope for the created subgraph. Default to "embedding". Returns: embedding_encoder: Encoder's embedding matrix. embedding_decoder: Decoder's embedding matrix. Raises: ValueError: if use share_vocab but source and target have different vocab size. """
+line 396:
+ """Create an instance of a single RNN cell."""
+line 447:
+ """Create a list of RNN cells."""
+line 474:
+ """Create multi-layer RNN cell. Args: unit_type: string representing the unit type, i.e. "lstm". num_units: the depth of each unit. num_layers: number of cells. num_residual_layers: Number of residual layers from top to bottom. For example, if `num_layers=4` and `num_residual_layers=2`, the last 2 RNN cells in the returned list will be wrapped with `ResidualWrapper`. forget_bias: the initial forget bias of the RNNCell(s). dropout: floating point value between 0.0 and 1.0: the probability of dropout. this is ignored if `mode != TRAIN`. mode: either tf.contrib.learn.TRAIN/EVAL/INFER num_gpus: The number of gpus to use when performing round-robin placement of layers. base_gpu: The gpu device id to use for the first RNN cell in the returned list. The i-th RNN cell will use `(base_gpu + i) % num_gpus` as its device id. single_cell_fn: allow for adding customized cell. When not specified, we default to model_helper._single_cell Returns: An `RNNCell` instance. """
+line 515:
+ """Clipping gradients of a model."""
+line 526:
+ """Print a list of variables in a checkpoint together with their shapes."""
+line 535:
+ """Load model from a checkpoint."""
+line 553:
+ """Average the last N checkpoints in the model_dir."""
+line 625:
+ """Create translation model and initialize or load parameters in session."""
+line 641:
+ """Compute perplexity of the output of the model. Args: model: model for compute perplexity. sess: tensorflow session to use. name: name of the batch. Returns: The perplexity of the eval outputs. """
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 42:#
+# If a vocab size is greater than this value, put the embedding on cpu instead
+Line 118:
+# Note: One can set model_device_fn to
+Line 119:
+# `tf.train.replica_device_setter(ps_tasks)` for distributed training.
+Line 261:
+# Using pretrained embedding: %s." % embed_file)
+Line 336:
+# Note: num_partitions > 1 is required for distributed training due to
+Line 337:
+# embedding_lookup tries to colocate single partition-ed embedding variable
+Line 338:
+# with lookup ops. This may cause embedding variables being placed on worker
+Line 339:
+# jobs.
+Line 345:
+# Note: num_partitions > 1 is required for distributed training due to
+Line 346:
+# embedding_lookup tries to colocate single partition-ed embedding variable
+Line 347:
+# with lookup ops. This may cause embedding variables being placed on worker
+Line 348:
+# jobs.
+Line 363:
+# Share embedding
+Line 369:
+# Use the same embedding for source and target")
+Line 397:
+# dropout (= 1 - keep_prob) is set to 0 during eval and infer
+Line 400:
+# Cell Type
+Line 422:
+# Dropout (= 1 - keep_prob)
+Line 429:
+# Residual
+Line 435:
+# Device Wrapper
+Line 451:
+# Multi-GPU
+Line 508:
+# Single layer.
+Line 510:
+# Multi layers
+Line 527:
+# Variables in ckpt %s" % ckpt_path)
+Line 556:
+# No checkpoint file found in directory: %s" % model_dir)
+Line 559:
+# Checkpoints are ordered from oldest to newest.
+Line 565:
+# Skipping averaging checkpoints because not enough checkpoints is "
+Line 573:
+# Creating new directory %s for saving averaged checkpoints." %
+Line 577:
+# Reading and averaging variables in checkpoints:")
+Line 595:
+# Build a graph with same variables in the checkpoints, and save the averaged
+Line 596:
+# variables into the avg_model_dir.
+Line 615:
+# Use the built saver to save the averaged checkpoint. Only keep 1
+Line 616:
+# checkpoint and the best checkpoint will be moved to avg_best_metric_dir.
+-----------------
+./nmt-master/nmt/inference_test.py
 -----------------
 Multiline comments in the file
 -----------------
 line 16:
  """ Tests for model inference. """
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-43:    # Prepare
-52:    # Create check point
-120:    # There are 5 examples, make batch_size=3 makes job0 has 3 examples, job1
-121:    # has 2 examples, and job2 has 0 example. This helps testing some edge
-122:    # cases.
-134:    # Note: Need to start job 0 at the end; otherwise, it will block the testing
-135:    # thread.
-166:    # TODO(rzhao): Make infer indices support batch_size > 1.
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 43:
+# Prepare
+Line 52:
+# Create check point
+Line 120:
+# There are 5 examples, make batch_size=3 makes job0 has 3 examples, job1
+Line 121:
+# has 2 examples, and job2 has 0 example. This helps testing some edge
+Line 122:
+# cases.
+Line 134:
+# Note: Need to start job 0 at the end; otherwise, it will block the testing
+Line 135:
+# thread.
+Line 166:
+# TODO(rzhao): Make infer indices support batch_size > 1.
 -----------------
-nmt-master/nmt/model_test.py
------------------
-Multiline comments in the file
------------------
-line 31:
- """Tests for model.py."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-360:  ## Testing 3 encoders:
-361:  # uni: no attention, no residual, 1 layers
-362:  # bi: no attention, with residual, 4 layers
-374:    # pylint: disable=line-too-long
-384:    # pylint: enable=line-too-long
-431:    # pylint: disable=line-too-long
-453:    # pylint: enable=line-too-long
-489:  ## Test attention mechanisms: luong, scaled_luong, bahdanau, normed_bahdanau
-501:    # pylint: disable=line-too-long
-517:    # pylint: enable=line-too-long
-529:          # pylint: disable=line-too-long
-536:          # pylint: enable=line-too-long
-569:    # pylint: disable=line-too-long
-586:    # pylint: enable=line-too-long
-598:          # pylint: disable=line-too-long
-605:          # pylint: enable=line-too-long
-643:    # pylint: disable=line-too-long
-661:    # pylint: enable=line-too-long
-673:          # pylint: disable=line-too-long
-680:          # pylint: enable=line-too-long
-713:    # pylint: disable=line-too-long
-733:    # pylint: enable=line-too-long
-746:          # pylint: disable=line-too-long
-753:          # pylint: enable=line-too-long
-780:  ## Test encoder vs. attention (all use residual):
-781:  # uni encoder, standard attention
-792:    # pylint: disable=line-too-long
-817:    # pylint: enable=line-too-long
-860:  # Test gnmt model.
-871:    # pylint: disable=line-too-long
-897:    # pylint: enable=line-too-long
-940:  # Test beam search.
------------------
-nmt-master/nmt/gnmt_model.py
------------------
-Multiline comments in the file
------------------
-line 47:
- """GNMT attention sequence-to-sequence model with dynamic RNN support."""
-line 79:
- """Sequence-to-sequence dynamic model with GNMT attention architecture. """
-line 137:
- """Build a GNMT encoder."""
-line 195:
- """Build encoder layers all at once."""
-line 331:
- """Run each of the encoder layer separately, not used in general seq2seq."""
-line 389:
- """Build a RNN cell with GNMT attention architecture."""
-line 651:
- """A MultiCell with GNMT attention style."""
-line 916:
- """Creates a GNMTAttentionMultiCell. Args: attention_cell: An instance of AttentionWrapper. cells: A list of RNNCell wrapped with AttentionInputWrapper. use_new_attention: Whether to use the attention generated from current step bottom layer's output. Default is False. """
-line 1052:
- """Run the cell with bottom layer's attention copied to all upper layers."""
-line 1363:
- """Residual function that handles different inputs and outputs inner dims. Args: inputs: cell inputs, this is actual inputs concatenated with the attention vector. outputs: cell outputs Returns: outputs + actual inputs """
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-65:    # Build GNMT encoder.
-83:      # Execute _build_bidirectional_rnn from Model class
-93:      # Build unidirectional layers
-101:      # Pass all encoder states to the decoder
-102:      #   except the first bi-directional layer
-129:    # Use the top layer for now
-173:    # Standard attention
-178:    # GNMT attention
-216:    # Only wrap the bottom layer with the attention mechanism.
-219:    # Only generate alignment in greedy INFER mode.
------------------
-nmt-master/nmt/train.py
------------------
-Multiline comments in the file
------------------
-line 1378:
- """For training NMT models."""
-line 1423:
- """Sample decode a random sentence from src_data."""
-line 1487:
- """Compute internal evaluation (perplexity) for both dev / test. Computes development and testing perplexities for given model. Args: eval_model: Evaluation model for which to compute perplexities. eval_sess: Evaluation TensorFlow session. model_dir: Directory from which to load evaluation model from. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. use_test_set: Computes testing perplexity if true; does not otherwise. Note that the development perplexity is always computed regardless of value of this parameter. dev_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the development evaluation. test_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the testing evaluation. Returns: Pair containing development perplexity and testing perplexity, in this order. """
-line 1551:
- """Compute external evaluation for both dev / test. Computes development and testing external evaluation (e.g. bleu, rouge) for given model. Args: infer_model: Inference model for which to compute perplexities. infer_sess: Inference TensorFlow session. model_dir: Directory from which to load inference model from. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. use_test_set: Computes testing external evaluation if true; does not otherwise. Note that the development external evaluation is always computed regardless of value of this parameter. dev_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the development external evaluation. test_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the testing external evaluation. Returns: Triple containing development scores, testing scores and the TensorFlow Variable for the global step number, in this order. """
-line 1754:
- """Creates an averaged checkpoint and run external eval with it."""
-line 1818:
- """Compute internal evaluation (perplexity) for both dev / test. Computes development and testing perplexities for given model. Args: model_dir: Directory from which to load models from. infer_model: Inference model for which to compute perplexities. infer_sess: Inference TensorFlow session. eval_model: Evaluation model for which to compute perplexities. eval_sess: Evaluation TensorFlow session. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. avg_ckpts: Whether to compute average external evaluation scores. dev_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the internal development evaluation. test_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the internal testing evaluation. dev_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the external development evaluation. test_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the external testing evaluation. Returns: Triple containing results summary, global step Tensorflow Variable and metrics in this order. """
-line 2138:
- """Wrapper for running sample_decode, internal_eval and external_eval. Args: model_dir: Directory from which to load models from. infer_model: Inference model for which to compute perplexities. infer_sess: Inference TensorFlow session. eval_model: Evaluation model for which to compute perplexities. eval_sess: Evaluation TensorFlow session. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. sample_src_data: sample of source data for sample decoding. sample_tgt_data: sample of target data for sample decoding. avg_ckpts: Whether to compute average external evaluation scores. Returns: Triple containing results summary, global step Tensorflow Variable and metrics in this order. """
-line 2483:
- """Initialize statistics that we want to accumulate."""
-line 2837:
- """Update stats: write summary and accumulate statistics."""
-line 3208:
- """Print all info at the current global step."""
-line 3589:
- """Add stuffs in info to summaries."""
-line 3943:
- """Update info and check for overflow."""
-line 4356:
- """Misc tasks to do before training."""
-line 4792:
- """Get the right model class depending on configuration."""
-line 5243:
- """Train a translation model."""
-line 5883:
- """Format results."""
-line 6537:
- """Summary of the current best results."""
-line 7200:
- """Computing perplexity."""
-line 7873:
- """Pick a sentence and decode."""
-line 8579:
- """External evaluation such as BLEU and ROUGE scores."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-206:    # Convert VariableName:0 to VariableName.
-357:  # Update statistics
-390:  # Per-step info
-396:  # Per-predict info
-400:  # Check for overflow
-425:  # Initialize all of the iterators
-463:  # Create model
-469:  # Preload data for sample decoding.
-478:  # Log and output files
-483:  # TensorFlow model
-499:  # Summary writer
-503:  # First evaluation
-514:  # This is the training loop.
-518:    ### Run a step ###
-524:      # Finished going through the training dataset.  Go to next epoch.
-543:    # Process step_result, accumulate stats, and write summary
-548:    # Once in a while, we print statistics.
-558:      # Reset statistics
-566:      # Save checkpoint
-572:      # Evaluate on dev/test
-582:      # Save checkpoint
-598:  # Done training
-686:    # get the top translation.
-698:  # Summary
-731:  # Save on best metrics
-741:      # metric: larger is better
------------------
-nmt-master/nmt/inference.py
------------------
-Multiline comments in the file
------------------
-line 8595:
- """To perform inference on test set given a trained model."""
-line 8635:
- """Decoding only a specific set of sentences."""
-line 8707:
- """Load inference data."""
-line 8791:
- """Get the right model class depending on configuration."""
-line 8890:
- """Start session and load model."""
-line 9005:
- """Perform translation."""
-line 9155:
- """Inference with a single worker."""
-line 9305:
- """Inference using multiple workers."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-50:      # get text translation
-153:  # Read data
-163:    # Decode
-204:  # Read data
-207:  # Split data to multiple workers
-220:    # Decode
-235:    # Change file name to indicate the file writing is completed.
-238:    # Job 0 is responsible for the clean up.
-241:    # Now write all translations
------------------
-nmt-master/nmt/nmt.py
------------------
-Multiline comments in the file
------------------
-line 9321:
- """TensorFlow NMT model implementation."""
-line 9367:
- """Build ArgumentParser."""
-line 9424:
- help="""\ uni | bi | gnmt. For bi, we build num_encoder_layers/2 bi-directional layers. For gnmt, we build 1 bi-directional layer, and (num_encoder_layers - 1) uni-directional layers.\ """)
-line 9481:
- help="""\ luong | scaled_luong | bahdanau | normed_bahdanau or set to "" for no attention\ """)
-line 9538:
- help="""\ standard | gnmt | gnmt_v2. standard: use top layer to compute attention. gnmt: GNMT style of computing attention, use previous bottom layer to compute attention. gnmt_v2: similar to gnmt, but use current bottom layer to compute attention.\ """)
-line 9595:
- help="""\ Only used in standard attention_architecture. Whether use attention as the cell output at each timestep. .\ """)
-line 9652:
- help="""\ Whether to pass encoder's hidden state to decoder when using an attention based model.\ """)
-line 9709:
- help="""\ How to warmup learning rates. Options include: t2t: Tensor2Tensor's way, start with lr 100 times smaller, then exponentiate until the specified lr.\ """)
-line 9766:
- help="""\ How we decay learning rate. Options include: luong234: after 2/3 num train steps, we start halving the learning rate for 4 times before finishing. luong5: after 1/2 num train steps, we start halving the learning rate for 5 times before finishing.\ luong10: after 1/2 num train steps, we start halving the learning rate for 10 times before finishing.\ """)
-line 9823:
- help="""\ Vocab prefix, expect files with src/tgt suffixes.\ """)
-line 9880:
- help="""\ Pretrained embedding prefix, expect files with src/tgt suffixes. The embedding files should be Glove formated txt files.\ """)
-line 9937:
- help="""\ Whether to use the source vocab and embeddings for both source and target.\ """)
-line 9994:
- help="""\ Whether check special sos, eos, unk tokens exist in the vocab files.\ """)
-line 10051:
- help="""\ Max length of tgt sequences during inference. Also use to restrict the maximum decoding length.\ """)
-line 10108:
- help="""\ Set to bpe or spm to activate subword desegmentation.\ """)
-line 10165:
- help="""\ Whether to split each word or bpe into character, and then generate the word-level representation from the character reprentation. """)
-line 10222:
- help="""\ How many training steps to do per external evaluation. Automatically set based on data if None.\ """)
-line 10478:
- help=("""\ Average the last N checkpoints for external evaluation. N can be controlled by setting --num_keep_ckpts.\ """))
-line 10734:
- help=("""\ Reference file to compute evaluation scores (if provided).\ """))
-line 10990:
- help=("""\ beam width when using beam search decoder. If 0 (default), use standard decoder with greedy helper.\ """))
-line 11246:
- help=("""\ Softmax sampling temperature for inference decoding, 0.0 means greedy decoding. This option is ignored when using beam search.\ """))
-line 11502:
- help=("""\ Number of translations generated for each sentence. This is only used for inference.\ """))
-line 11820:
- """Create training hparams."""
-line 12227:
- """Add an argument to hparams; if exists, change the value if update==True."""
-line 12634:
- """Add new arguments to hparams."""
-line 13196:
- """Make sure the loaded hparams is compatible with new changes."""
-line 13514:
- """Create hparams or load hparams from out_dir."""
-line 14135:
- """Run main."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-24:# import matplotlib.image as mpimg
-49:  # network
-72:  # attention mechanisms
-105:  # optimizer
-135:  # initializer
-142:  # data
-156:  # Vocab
-180:  # Sequence lengths
-193:  # Default settings works well (rarely need to change)
-215:  # SPM
-222:  # Experimental encoding feature.
-230:  # Misc
-264:  # Inference
-281:  # Advanced inference arguments
-306:  # Job info
-320:      # Data
-330:      # Networks
-341:      # Attention mechanisms
-347:      # Train
-361:      # Data constraints
-367:      # Inference
-372:      # Advanced inference arguments
-380:      # Vocab
-387:      # Misc
-417:  # Sanity checks
-435:  # Different number of encoder / decoder layers
-444:  # Set residual layers
-454:      # The first unidirectional layer (after the bi-directional layer) in
-455:      # the GNMT encoder can't have residual connection due to the input is
-456:      # the concatenation of fw_cell and bw_cell's outputs.
-459:      # Compatible for GNMT models
-467:  # Language modeling
-477:  ## Vocab
-478:  # Get vocab file names first
-485:  # Source vocab
-495:  # Target vocab
-513:  # Num embedding partitions
-518:  # Pretrained Embeddings
-545:  # Evaluation
-566:  # Set num encoder/decoder layers (for old checkpoints)
-573:  # For compatible reason, if there are new fields in default_hparams,
-574:  #   we add them to the current hparams
-581:  # Update all hparams' keys if override_loaded_hparams=True
-585:    # For inference
-609:  # Save HParams
-615:  # Print HParams
-622:  # Job
-627:  # GPU device
-631:  # Random
-638:  # Model output directory
-644:  # Load hparams.
-660:  ## Train / Decode
-662:    # Inference output directory
-668:    # Inference indices
-674:    # Inference
-681:    # Evaluation
-692:    # Train
------------------
-nmt-master/nmt/scripts/rouge.py
------------------
-Multiline comments in the file
------------------
-line 14136:
- """ROUGE metric implementation. Copy from tf_seq2seq/seq2seq/metrics/rouge.py. This is a modified and slightly extended verison of https://github.com/miso-belica/sumy/blob/dev/sumy/evaluation/rouge.py. """
-line 14156:
- """Calcualtes n-grams. Args: n: which n-grams to calculate text: An array of tokens Returns: A set of n-grams """
-line 14194:
- """Splits multiple sentences into words and flattens the result"""
-line 14237:
- """Calculates word n-grams for multiple sentences. """
-line 14238:
- """ Returns the length of the Longest Common Subsequence between sequences x and y. Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence Args: x: sequence of words y: sequence of words Returns integer: Length of LCS between x and y """
-line 14239:
- """ Computes the length of the longest common subsequence (lcs) between two strings. The implementation below uses a DP programming algorithm and runs in O(nm) time where n = len(x) and m = len(y). Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence Args: x: collection of words y: collection of words Returns: Table of dictionary of coord and len lcs """
-line 14240:
- """ Returns the Longest Subsequence between x and y. Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence Args: x: sequence of words y: sequence of words Returns: sequence: LCS of x and y """
-line 14353:
- """private recon calculation"""
-line 14354:
- """ Computes ROUGE-N of two text collections of sentences. Sourece: http://research.microsoft.com/en-us/um/people/cyl/download/ papers/rouge-working-note-v1.3.1.pdf Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentences: The sentences from the referene set n: Size of ngram. Defaults to 2. Returns: A tuple (f1, precision, recall) for ROUGE-N Raises: ValueError: raises exception if a param has len <= 0 """
-line 14355:
- """ Computes the LCS-based F-measure score Source: http://research.microsoft.com/en-us/um/people/cyl/download/papers/ rouge-working-note-v1.3.1.pdf Args: llcs: Length of LCS m: number of words in reference summary n: number of words in candidate summary Returns: Float. LCS-based F-measure score """
-line 14356:
- """ Computes ROUGE-L (sentence level) of two text collections of sentences. http://research.microsoft.com/en-us/um/people/cyl/download/papers/ rouge-working-note-v1.3.1.pdf Calculated according to: R_lcs = LCS(X,Y)/m P_lcs = LCS(X,Y)/n F_lcs = ((1 + beta^2)*R_lcs*P_lcs) / (R_lcs + (beta^2) * P_lcs) where: X = reference summary Y = Candidate summary m = length of reference summary n = length of candidate summary Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentences: The sentences from the referene set Returns: A float: F_lcs Raises: ValueError: raises exception if a param has len <= 0 """
-line 14357:
- """ Returns LCS_u(r_i, C) which is the LCS score of the union longest common subsequence between reference sentence ri and candidate summary C. For example if r_i= w1 w2 w3 w4 w5, and C contains two sentences: c1 = w1 w2 w6 w7 w8 and c2 = w1 w3 w8 w9 w5, then the longest common subsequence of r_i and c1 is "w1 w2" and the longest common subsequence of r_i and c2 is "w1 w3 w5". The union longest common subsequence of r_i, c1, and c2 is "w1 w2 w3 w5" and LCS_u(r_i, C) = 4/5. Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentence: One of the sentences in the reference summaries Returns: float: LCS_u(r_i, C) ValueError: Raises exception if a param has len <= 0 """
-line 14358:
- """ Computes ROUGE-L (summary level) of two text collections of sentences. http://research.microsoft.com/en-us/um/people/cyl/download/papers/ rouge-working-note-v1.3.1.pdf Calculated according to: R_lcs = SUM(1, u) LCS<union>(r_i,C) /m P_lcs = SUM(1, u) LCS<union>(r_i,C) /n F_lcs = ((1 + beta^2)*R_lcs*P_lcs) / (R_lcs + (beta^2) * P_lcs) where: SUM(i,u) = SUM from i through u u = number of sentences in reference summary C = Candidate summary made up of v sentences m = number of words in reference summary n = number of words in candidate summary Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentence: One of the sentences in the reference summaries Returns: A float: F_lcs Raises: ValueError: raises exception if a param has len <= 0 """
-line 14401:
- """Calculates average rouge scores for a list of hypotheses and references"""
-16:#pylint: disable=C0103
-152:  # Gets the overlapping ngrams between evaluated and reference
-156:  # Handle edge case. This isn't mathematically correct, but it's good enough
-169:  # return overlapping_count / reference_count
-301:  # total number of words in reference sentences
-304:  # total number of words in evaluated sentences
-318:  # Filter out hyps that are of 0 length
-319:  # hyps_and_refs = zip(hypotheses, references)
-320:  # hyps_and_refs = [_ for _ in hyps_and_refs if len(_[0]) > 0]
-321:  # hypotheses, references = zip(*hyps_and_refs)
-323:  # Calculate ROUGE-1 F1, precision, recall scores
-329:  # Calculate ROUGE-2 F1, precision, recall scores
-335:  # Calculate ROUGE-L F1, precision, recall scores
------------------
-nmt-master/nmt/scripts/__init__.py
+./nmt-master/nmt/scripts/__init__.py
 -----------------
 Multiline comments in the file
 -----------------
 -----------------
-nmt-master/nmt/scripts/bleu.py
+./nmt-master/nmt/scripts/bleu.py
 -----------------
 Multiline comments in the file
 -----------------
-line 14417:
+line 16:
  """Python implementation of BLEU and smooth-BLEU. This module provides a Python implementation of BLEU and smooth-BLEU. Smooth BLEU is computed following the method outlined in the paper: Chin-Yew Lin, Franz Josef Och. ORANGE: a method for evaluating automatic evaluation metrics for machine translation. COLING 2004. """
-line 14446:
+line 29:
  """Extracts all n-grams upto a given maximum order from an input segment. Args: segment: text segment from which n-grams will be extracted. max_order: maximum length in tokens of the n-grams returned by this methods. Returns: The Counter containing all n-grams upto max_order in segment with a count of how many times each n-gram occurred. """
-line 14496:
+line 50:
  """Computes BLEU score of translated segments against one or more references. Args: reference_corpus: list of lists of references for each translation. Each reference should be tokenized into a list of tokens. translation_corpus: list of translations to score. Each translation should be tokenized into a list of tokens. max_order: Maximum n-gram order to use when computing BLEU score. smooth: Whether or not to apply Lin et al. 2004 smoothing. Returns: 3-Tuple with the BLEU score, n-gram precisions, geometric mean of n-gram precisions and brevity penalty. """
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
 -----------------
-nmt-master/nmt/model.py
------------------
-Multiline comments in the file
------------------
-line 14512:
- """Basic sequence-to-sequence model with dynamic RNN support."""
-line 14553:
- """To allow for flexibily in returing different outputs."""
-line 14594:
- """To allow for flexibily in returing different outputs."""
-line 14635:
- """To allow for flexibily in returing different outputs."""
-line 14694:
- """Sequence-to-sequence base class. """
-line 14765:
- """Create the model. Args: hparams: Hyperparameter configurations. mode: TRAIN | EVAL | INFER iterator: Dataset Iterator that feeds data. source_vocab_table: Lookup table mapping source words to ids. target_vocab_table: Lookup table mapping target words to ids. reverse_target_vocab_table: Lookup table mapping ids to target words. Only required in INFER mode. Defaults to None. scope: scope of the model. extra_args: model_helper.ExtraArgs, for passing customizable functions. """
-line 14876:
- """Set various params for self and initialize."""
-line 14987:
- """Set up training and inference."""
-line 15223:
- """Get learning rate warmup."""
-line 15484:
- """Return decay info based on decay_scheme."""
-line 15720:
- """Get learning rate decay."""
-line 16022:
- """Init embeddings."""
-line 16258:
- """Get train summary."""
-line 16586:
- """Execute train graph."""
-line 16914:
- """Execute eval graph."""
-line 17263:
- """Subclass must implement this method. Creates a sequence-to-sequence model with dynamic RNN decoder API. Args: hparams: Hyperparameter configurations. scope: VariableScope for the created subgraph; default "dynamic_seq2seq". Returns: A tuple of the form (logits, loss_tuple, final_context_state, sample_id), where: logits: float32 Tensor batch_size x num_decoder_symbols . loss: loss = the total loss / batch_size. final_context_state: the final state of decoder RNN. sample_id: sampling indices. Raises: ValueError: if encoder_type differs from mono and bi, or attention_option is not (luong | scaled_luong | bahdanau | normed_bahdanau). """
-line 17612:
- """Subclass must implement this. Build and run an RNN encoder. Args: hparams: Hyperparameters configurations. Returns: A tuple of encoder_outputs and encoder_state. """
-line 18033:
- """Build a multi-layer RNN cell that can be used by encoder."""
-line 18469:
- """Maximum decoding steps at inference time."""
-line 18890:
- """Build and run a RNN decoder with a final projection layer. Args: encoder_outputs: The outputs of encoder for every time step. encoder_state: The final state of the encoder. hparams: The Hyperparameters configurations. Returns: A tuple of final logits and final decoder state: logits: size time, batch_size, vocab_size when time_major=True. """
-line 19239:
- """Subclass must implement this. Args: hparams: Hyperparameters configurations. encoder_outputs: The outputs of encoder for every time step. encoder_state: The final state of the encoder. source_sequence_length: sequence length of encoder_outputs. Returns: A tuple of a multi-layer RNN cell used by decoder and the intial state of the decoder RNN. """
-line 19859:
- """Compute softmax loss or sampled softmax loss."""
-line 20479:
- """Compute optimization loss."""
-line 21162:
- """Decode a batch. Args: sess: tensorflow session to use. Returns: A tuple consiting of outputs, infer_summary. outputs: of size batch_size, time """
-line 21868:
- """Stack encoder states and return tensor batch, length, layer, size ."""
-line 21927:
- """Sequence-to-sequence dynamic model. This class implements a multi-layer recurrent neural network as encoder, and a multi-layer recurrent neural network decoder. """
-line 22348:
- """Build an encoder from a sequence. Args: hparams: hyperparameters. sequence: tensor with input sequence data. sequence_length: tensor with length of the input sequence. Returns: encoder_outputs: RNN encoder outputs. encoder_state: RNN encoder state. Raises: ValueError: if encoder_type is neither "uni" nor "bi". """
-line 22769:
- """Build encoder from source."""
-line 22840:
- """Create and call biddirectional RNN cells. Args: num_residual_layers: Number of residual layers from top to bottom. For example, if `num_bi_layers=4` and `num_residual_layers=2`, the last 2 RNN layers in each RNN cell will be wrapped with `ResidualWrapper`. base_gpu: The gpu device id to use for the first forward RNN layer. The i-th forward RNN layer will use `(base_gpu + i) % num_gpus` as its device id. The `base_gpu` for backward RNN cell is `(base_gpu + num_bi_layers)`. Returns: The concatenated bidirectional output and the bidirectional RNN cell"s state. """
-line 23261:
- """Build an RNN cell that can be used by decoder."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-85:    # Set params
-90:    # Not used in general seq2seq models; when True, ignore decoder & training
-94:    # Train graph
-99:    # Saver
-130:    # extra_args: to make it flexible for adding external customizable code
-135:    # Set num units
-138:    # Set num layers
-144:    # Set num residual layers
-152:    # Batch size
-155:    # Global step
-158:    # Initializer
-164:    # Embeddings
-186:      ## Count the number of predicted words for compute ppl.
-192:    # Gradients and SGD update operation for training the model.
-193:    # Arrange for the embedding vars to appear at the beginning.
-196:      # warm-up
-198:      # decay
-201:      # Optimizer
-209:      # Gradients
-223:      # Summary
-228:    # Print trainable variables
-242:    # Apply inverse decay if global steps less than warmup steps.
-243:    # Inspired by https://arxiv.org/pdf/1706.03762.pdf (Section 5.3)
-244:    # When step < warmup_steps,
-245:    #   learing_rate *= warmup_factor ** (warmup_steps - step)
-247:      # 0.01^(1/warmup_steps): we start with a lr, 100 times smaller
-371:    # Projection
-379:      # Encoder
-387:      # Skip decoder if extracting only encoder layers
-391:      ## Decoder
-395:      ## Loss
-441:      # TODO(thangluong): add decoding_length_factor flag
-466:    # maximum_iteration: The maximum decoding steps.
-470:    ## Decoder.
-476:      # Optional ops depends on which mode we are in and which loss function we
-477:      # are using.
-481:      ## Train or eval
-483:        # decoder_emp_inp: [max_time, batch_size, num_units]
-490:        # Helper
-495:        # Decoder
-501:        # Dynamic decoding
-511:          # Note: this is required when using sampled_softmax_loss.
-514:        # Note: there's a subtle difference here between train and inference.
-515:        # We could have set output_layer when create my_decoder
-516:        #   and shared more code between train and inference.
-517:        # We chose to apply the output_layer to all timesteps for speed:
-518:        #   10% improvements for small models & 20% for larger ones.
-519:        # If memory is a concern, we should apply output_layer per timestep.
-523:        # Colocate output layer with the last RNN cell if there is no extra GPU
-524:        # available. Otherwise, put last layer on a separate GPU.
-531:      ## Inference
-558:          # Helper
-581:        # Dynamic decoding
-696:    # make sure outputs is of shape [batch_size, time] or [beam_width,
-697:    # batch_size, time] when using beam search.
-701:      # beam search output in [batch_size, time, beam_width] shape.
-714:    # transform from [length, batch, ...] -> [batch, length, ...]
-754:      # Encoder_outputs: [max_time, batch_size, num_units]
-786:          # alternatively concat forward and backward states
-795:    # Use the top layer for now
-826:    # Construct forward and backward cells
-850:    # We only make use of encoder_outputs in attention-based models
-873:    # For beam search, we need to replicate encoder infos beam_width times
------------------
-nmt-master/nmt/attention_model.py
+./nmt-master/nmt/scripts/rouge.py
 -----------------
 Multiline comments in the file
 -----------------
-line 23276:
- """Attention-based sequence-to-sequence model with dynamic RNN support."""
-line 23305:
- """Sequence-to-sequence dynamic model with attention. This class implements a multi-layer recurrent neural network as encoder, and an attention-based decoder. This is the same as the model described in (Luong et al., EMNLP'2015) paper: https://arxiv.org/pdf/1508.04025v5.pdf. This class also allows to use GRU cells in addition to LSTM cells with support for dropout. """
-line 23384:
- """Build a RNN cell with attention mechanism that can be used by decoder."""
-line 23541:
- """Create attention mechanism based on the attention_option."""
-line 23727:
- """create attention image and attention summary."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-49:    # Set attention_mechanism_fn
-80:    # No Attention
-95:    # Ensure memory is batch-major
-110:    # Attention
-125:    # Only generate alignment in greedy INFER mode.
-136:    # TODO(thangluong): do we need num_layers, num_gpus?
-160:  # Mechanism
-188:  # Reshape to (batch, src_seq_len, tgt_seq_len,1)
-191:  # Scale to range [0, 255]
+line 1:
+ """ROUGE metric implementation. Copy from tf_seq2seq/seq2seq/metrics/rouge.py. This is a modified and slightly extended verison of https://github.com/miso-belica/sumy/blob/dev/sumy/evaluation/rouge.py. """
+line 20:
+ """Calcualtes n-grams. Args: n: which n-grams to calculate text: An array of tokens Returns: A set of n-grams """
+line 38:
+ """Splits multiple sentences into words and flattens the result"""
+line 43:
+ """Calculates word n-grams for multiple sentences. """
+line 44:
+ """ Returns the length of the Longest Common Subsequence between sequences x and y. Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence Args: x: sequence of words y: sequence of words Returns integer: Length of LCS between x and y """
+line 53:
+ """ Computes the length of the longest common subsequence (lcs) between two strings. The implementation below uses a DP programming algorithm and runs in O(nm) time where n = len(x) and m = len(y). Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence Args: x: collection of words y: collection of words Returns: Table of dictionary of coord and len lcs """
+line 64:
+ """ Returns the Longest Subsequence between x and y. Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence Args: x: sequence of words y: sequence of words Returns: sequence: LCS of x and y """
+line 113:
+ """private recon calculation"""
+line 128:
+ """ Computes ROUGE-N of two text collections of sentences. Sourece: http://research.microsoft.com/en-us/um/people/cyl/download/ papers/rouge-working-note-v1.3.1.pdf Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentences: The sentences from the referene set n: Size of ngram. Defaults to 2. Returns: A tuple (f1, precision, recall) for ROUGE-N Raises: ValueError: raises exception if a param has len <= 0 """
+line 143:
+ """ Computes the LCS-based F-measure score Source: http://research.microsoft.com/en-us/um/people/cyl/download/papers/ rouge-working-note-v1.3.1.pdf Args: llcs: Length of LCS m: number of words in reference summary n: number of words in candidate summary Returns: Float. LCS-based F-measure score """
+line 174:
+ """ Computes ROUGE-L (sentence level) of two text collections of sentences. http://research.microsoft.com/en-us/um/people/cyl/download/papers/ rouge-working-note-v1.3.1.pdf Calculated according to: R_lcs = LCS(X,Y)/m P_lcs = LCS(X,Y)/n F_lcs = ((1 + beta^2)*R_lcs*P_lcs) / (R_lcs + (beta^2) * P_lcs) where: X = reference summary Y = Candidate summary m = length of reference summary n = length of candidate summary Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentences: The sentences from the referene set Returns: A float: F_lcs Raises: ValueError: raises exception if a param has len <= 0 """
+line 186:
+ """ Returns LCS_u(r_i, C) which is the LCS score of the union longest common subsequence between reference sentence ri and candidate summary C. For example if r_i= w1 w2 w3 w4 w5, and C contains two sentences: c1 = w1 w2 w6 w7 w8 and c2 = w1 w3 w8 w9 w5, then the longest common subsequence of r_i and c1 is "w1 w2" and the longest common subsequence of r_i and c2 is "w1 w3 w5". The union longest common subsequence of r_i, c1, and c2 is "w1 w2 w3 w5" and LCS_u(r_i, C) = 4/5. Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentence: One of the sentences in the reference summaries Returns: float: LCS_u(r_i, C) ValueError: Raises exception if a param has len <= 0 """
+line 197:
+ """ Computes ROUGE-L (summary level) of two text collections of sentences. http://research.microsoft.com/en-us/um/people/cyl/download/papers/ rouge-working-note-v1.3.1.pdf Calculated according to: R_lcs = SUM(1, u) LCS<union>(r_i,C) /m P_lcs = SUM(1, u) LCS<union>(r_i,C) /n F_lcs = ((1 + beta^2)*R_lcs*P_lcs) / (R_lcs + (beta^2) * P_lcs) where: SUM(i,u) = SUM from i through u u = number of sentences in reference summary C = Candidate summary made up of v sentences m = number of words in reference summary n = number of words in candidate summary Args: evaluated_sentences: The sentences that have been picked by the summarizer reference_sentence: One of the sentences in the reference summaries Returns: A float: F_lcs Raises: ValueError: raises exception if a param has len <= 0 """
+line 315:
+ """Calculates average rouge scores for a list of hypotheses and references"""
+Line 16:#pylint:
+#pylint: disable=C0103
+Line 152:
+# Gets the overlapping ngrams between evaluated and reference
+Line 156:
+# Handle edge case. This isn't mathematically correct, but it's good enough
+Line 169:
+# return overlapping_count / reference_count
+Line 301:
+# total number of words in reference sentences
+Line 304:
+# total number of words in evaluated sentences
+Line 318:
+# Filter out hyps that are of 0 length
+Line 319:
+# hyps_and_refs = zip(hypotheses, references)
+Line 320:
+# hyps_and_refs = [_ for _ in hyps_and_refs if len(_[0]) > 0]
+Line 321:
+# hypotheses, references = zip(*hyps_and_refs)
+Line 323:
+# Calculate ROUGE-1 F1, precision, recall scores
+Line 329:
+# Calculate ROUGE-2 F1, precision, recall scores
+Line 335:
+# Calculate ROUGE-L F1, precision, recall scores
 -----------------
-nmt-master/nmt/__init__.py
+./nmt-master/nmt/utils/__init__.py
 -----------------
 Multiline comments in the file
 -----------------
 -----------------
-nmt-master/nmt/model_helper.py
+./nmt-master/nmt/utils/misc_utils_test.py
 -----------------
 Multiline comments in the file
 -----------------
-line 23743:
- """Utility functions for building models."""
-line 23787:
- """Create an initializer. init_weight is only for uniform."""
-line 23847:
- """Return a device string for multi-GPU setup."""
-line 23891:
- """Create train graph, model, and iterator."""
-line 23935:
- """Create train graph, model, src/tgt file holders, and iterator."""
-line 23979:
- """Create inference model."""
-line 24217:
- """Decide on which device to place an embed matrix given its vocab size."""
-line 24465:
- """Load pretrain embeding from embed_file, and return an embedding matrix. Args: embed_file: Path to a Glove formated embedding txt file. num_trainable_tokens: Make the first n tokens in the vocab file as trainable variables. Default is 3, which is "<unk>", "<s>" and "</s>". """
-line 24509:
- """Create a new or load an existing embedding matrix."""
-line 24553:
- """Create embedding matrix for both encoder and decoder. Args: share_vocab: A boolean. Whether to share embedding matrix for both encoder and decoder. src_vocab_size: An integer. The source vocab size. tgt_vocab_size: An integer. The target vocab size. src_embed_size: An integer. The embedding dimension for the encoder's embedding. tgt_embed_size: An integer. The embedding dimension for the decoder's embedding. dtype: dtype of the embedding matrix. Default to float32. num_enc_partitions: number of partitions used for the encoder's embedding vars. num_dec_partitions: number of partitions used for the decoder's embedding vars. scope: VariableScope for the created subgraph. Default to "embedding". Returns: embedding_encoder: Encoder's embedding matrix. embedding_decoder: Decoder's embedding matrix. Raises: ValueError: if use share_vocab but source and target have different vocab size. """
-line 24597:
- """Create an instance of a single RNN cell."""
-line 24641:
- """Create a list of RNN cells."""
-line 24685:
- """Create multi-layer RNN cell. Args: unit_type: string representing the unit type, i.e. "lstm". num_units: the depth of each unit. num_layers: number of cells. num_residual_layers: Number of residual layers from top to bottom. For example, if `num_layers=4` and `num_residual_layers=2`, the last 2 RNN cells in the returned list will be wrapped with `ResidualWrapper`. forget_bias: the initial forget bias of the RNNCell(s). dropout: floating point value between 0.0 and 1.0: the probability of dropout. this is ignored if `mode != TRAIN`. mode: either tf.contrib.learn.TRAIN/EVAL/INFER num_gpus: The number of gpus to use when performing round-robin placement of layers. base_gpu: The gpu device id to use for the first RNN cell in the returned list. The i-th RNN cell will use `(base_gpu + i) % num_gpus` as its device id. single_cell_fn: allow for adding customized cell. When not specified, we default to model_helper._single_cell Returns: An `RNNCell` instance. """
-line 25197:
- """Clipping gradients of a model."""
-line 25720:
- """Print a list of variables in a checkpoint together with their shapes."""
-line 25968:
- """Load model from a checkpoint."""
-line 26518:
- """Average the last N checkpoints in the model_dir."""
-line 26562:
- """Create translation model and initialize or load parameters in session."""
-line 27200:
- """Compute perplexity of the output of the model. Args: model: model for compute perplexity. sess: tensorflow session to use. name: name of the batch. Returns: The perplexity of the eval outputs. """
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-39:# If a vocab size is greater than this value, put the embedding on cpu instead
-115:    # Note: One can set model_device_fn to
-116:    # `tf.train.replica_device_setter(ps_tasks)` for distributed training.
-333:    # Note: num_partitions > 1 is required for distributed training due to
-334:    # embedding_lookup tries to colocate single partition-ed embedding variable
-335:    # with lookup ops. This may cause embedding variables being placed on worker
-336:    # jobs.
-342:    # Note: num_partitions > 1 is required for distributed training due to
-343:    # embedding_lookup tries to colocate single partition-ed embedding variable
-344:    # with lookup ops. This may cause embedding variables being placed on worker
-345:    # jobs.
-360:    # Share embedding
-394:  # dropout (= 1 - keep_prob) is set to 0 during eval and infer
-397:  # Cell Type
-419:  # Dropout (= 1 - keep_prob)
-426:  # Residual
-432:  # Device Wrapper
-448:  # Multi-GPU
-556:  # Checkpoints are ordered from oldest to newest.
-592:  # Build a graph with same variables in the checkpoints, and save the averaged
-593:  # variables into the avg_model_dir.
-612:      # Use the built saver to save the averaged checkpoint. Only keep 1
-613:      # checkpoint and the best checkpoint will be moved to avg_best_metric_dir.
+line 16:
+ """Tests for vocab_utils."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
 -----------------
-nmt-master/nmt/nmt_test.py
+./nmt-master/nmt/utils/iterator_utils.py
 -----------------
 Multiline comments in the file
 -----------------
-line 27215:
- """Tests for nmt.py, train.py and inference.py."""
-line 27247:
- """Update flags for basic training."""
-line 27262:
- """Test the training loop is functional with basic hparams."""
-line 27277:
- """Test the training loop is functional with basic hparams."""
-line 27292:
- """Test inference is function with basic hparams."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-87:    # Train one step so we have a checkpoint.
-93:    # Update FLAGS for inference.
------------------
-nmt-master/nmt/utils/iterator_utils.py
------------------
-Multiline comments in the file
------------------
-line 27307:
+line 15:
  """For loading data into NMT models."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-28:# NOTE(ebrevdo): When we subclass this, instances' __dict__ becomes empty.
-53:    # Convert the word strings to character ids
-57:    # Convert the word strings to ids
-61:  # Add in the word counts.
-73:        # The entry is the source line rows;
-74:        # this has unknown-length vectors.  The last entry is
-75:        # the source row size; this is a scalar.
-79:        # Pad the source sequences with eos tokens.
-80:        # (Though notice we don't generally need to do this since
-81:        # later on we will be masking out calculations past the true sequence.
-141:  # Filter zero length input sequences.
-154:  # Convert the word strings to ids.  Word strings that are not in the
-155:  # vocab get the lookup table's default_value integer.
-168:  # Create a tgt_input prefixed with <sos> and a tgt_output suffixed with <eos>.
-174:  # Add in sequence lengths.
-190:  # Bucket by source sequence length (buckets for lengths 0-9, 10-19, ...)
-194:        # The first three entries are the source and target line rows;
-195:        # these have unknown-length vectors.  The last two entries are
-196:        # the source and target row sizes; these are scalars.
-203:        # Pad the source and target sequences with eos tokens.
-204:        # (Though notice we don't generally need to do this since
-205:        # later on we will be masking out calculations past the true sequence.
-216:      # Calculate bucket_width by maximum source sequence length.
-217:      # Pairs with length [0, bucket_width) go to bucket 0, length
-218:      # [bucket_width, 2 * bucket_width) go to bucket 1, etc.  Pairs with length
-219:      # over ((num_bucket-1) * bucket_width) words all go into the last bucket.
-225:      # Bucket sentence pairs by the length of their source sentence and target
-226:      # sentence.
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 28:#
+# NOTE(ebrevdo): When we subclass this, instances' __dict__ becomes empty.
+Line 53:
+# Convert the word strings to character ids
+Line 57:
+# Convert the word strings to ids
+Line 61:
+# Add in the word counts.
+Line 73:
+# The entry is the source line rows;
+Line 74:
+# this has unknown-length vectors.  The last entry is
+Line 75:
+# the source row size; this is a scalar.
+Line 77:
+# src
+Line 78:
+# src_len
+Line 79:
+# Pad the source sequences with eos tokens.
+Line 80:
+# (Though notice we don't generally need to do this since
+Line 81:
+# later on we will be masking out calculations past the true sequence.
+Line 83:
+# src
+Line 84:
+# src_len -- unused
+Line 141:
+# Filter zero length input sequences.
+Line 154:
+# Convert the word strings to ids.  Word strings that are not in the
+Line 155:
+# vocab get the lookup table's default_value integer.
+Line 168:
+# Create a tgt_input prefixed with <sos> and a tgt_output suffixed with <eos>.
+Line 174:
+# Add in sequence lengths.
+Line 190:
+# Bucket by source sequence length (buckets for lengths 0-9, 10-19, ...)
+Line 194:
+# The first three entries are the source and target line rows;
+Line 195:
+# these have unknown-length vectors.  The last two entries are
+Line 196:
+# the source and target row sizes; these are scalars.
+Line 198:
+# src
+Line 199:
+# tgt_input
+Line 200:
+# tgt_output
+Line 201:
+# src_len
+Line 202:
+# tgt_len
+Line 203:
+# Pad the source and target sequences with eos tokens.
+Line 204:
+# (Though notice we don't generally need to do this since
+Line 205:
+# later on we will be masking out calculations past the true sequence.
+Line 207:
+# src
+Line 208:
+# tgt_input
+Line 209:
+# tgt_output
+Line 210:
+# src_len -- unused
+Line 211:
+# tgt_len -- unused
+Line 216:
+# Calculate bucket_width by maximum source sequence length.
+Line 217:
+# Pairs with length [0, bucket_width) go to bucket 0, length
+Line 218:
+# [bucket_width, 2 * bucket_width) go to bucket 1, etc.  Pairs with length
+Line 219:
+# over ((num_bucket-1) * bucket_width) words all go into the last bucket.
+Line 225:
+# Bucket sentence pairs by the length of their source sentence and target
+Line 226:
+# sentence.
 -----------------
-nmt-master/nmt/utils/vocab_utils.py
+./nmt-master/nmt/utils/vocab_utils_test.py
 -----------------
 Multiline comments in the file
 -----------------
-line 27323:
+line 16:
+ """Tests for vocab_utils."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 32:
+# Create a vocab file
+Line 41:
+# Call vocab_utils
+Line 47:
+# Assert: we expect the code to add  <unk>, <s>, </s> and
+Line 48:
+# create a new vocab file
+-----------------
+./nmt-master/nmt/utils/vocab_utils.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
  """Utility to handle vocabularies."""
-line 27371:
+line 48:
  """Given string and length, convert to byte seq of at most max_length. This process mimics docqa/elmo's preprocessing: https://github.com/allenai/document-qa/blob/master/docqa/elmo/data.py Note that we make use of BOS_CHAR_ID and EOS_CHAR_ID in iterator_utils.py & our usage differs from docqa/elmo. Args: text: tf.string tensor of shape max_length: max number of chars for each word. Returns: A tf.int32 tensor of the byte encoded text. """
-line 27419:
+line 76:
  """Given a sequence of strings, map to sequence of bytes. Args: tokens: A tf.string tensor Returns: A tensor of shape words.shape + bytes_per_word containing byte versions of each word. """
-line 27532:
+line 113:
  """Check if vocab_file doesn't exist, create from corpus_file."""
-line 27676:
+line 144:
  """Creates vocab tables for src_vocab_file and tgt_vocab_file."""
-line 27832:
+line 156:
  """Load embed_file into a python dictionary. Note: the embed_file should be a Glove/word2vec formatted txt file. Assuming Here is an exampe assuming embed_size=5: the -0.071549 0.093459 0.023738 -0.090339 0.056123 to 0.57346 0.5417 -0.23477 -0.3624 0.4037 and 0.20327 0.47348 0.050877 0.002103 0.060547 For word2vec format, the first line will be: <num_words> <emb_size>. Args: embed_file: file path to the embedding file. Returns: a dictionary that maps word to vector, and the size of embedding dimensions. """
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-30:# word level special token
-36:# char ids 0-255 come from utf-8 encoding bytes
-37:# assign 256-300 to special chars
-118:      # Verify if the vocab starts with unk, sos, eos
-119:      # If not, prepend those tokens & generate a new vocab file
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 30:#
+# word level special token
+Line 36:#
+# char ids 0-255 come from utf-8 encoding bytes
+Line 37:#
+# assign 256-300 to special chars
+Line 38:BOS_CHAR_ID
+# <begin sentence>
+Line 39:EOS_CHAR_ID
+# <end sentence>
+Line 40:BOW_CHAR_ID
+# <begin word>
+Line 41:EOW_CHAR_ID
+# <end word>
+Line 42:PAD_CHAR_ID
+# <padding>
+Line 44:DEFAULT_CHAR_MAXLEN
+# max number of chars for each word.
+Line 115:
+# Vocab file %s exists" % vocab_file)
+Line 118:
+# Verify if the vocab starts with unk, sos, eos
+Line 119:
+# If not, prepend those tokens & generate a new vocab file
+Line 181:
+# header line
 -----------------
-nmt-master/nmt/utils/iterator_utils_test.py
------------------
-Multiline comments in the file
------------------
-line 27848:
- """Tests for iterator_utils.py"""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-236:      # Re-init iterator with skip_count=0.
------------------
-nmt-master/nmt/utils/evaluation_utils.py
------------------
-Multiline comments in the file
------------------
-line 27864:
- """Utility for evaluating various tasks, e.g., translation & summarization."""
-line 27896:
- """Pick a metric and evaluate depending on task."""
-line 27948:
- """Clean and handle BPE or SPM outputs."""
-line 28016:
- """Compute BLEU scores and handling BPE."""
-line 28084:
- """Compute ROUGE scores and handling BPE."""
-line 28152:
- """Compute accuracy, each line contains a label."""
-line 28220:
- """Compute accuracy on per word basis."""
-line 28288:
- """Compute BLEU scores using Moses multi-bleu.perl script."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-33:  # BLEU scores for translation task
-37:  # ROUGE scores for summarization tasks
-55:  # BPE
-59:  # SPM
-66:# Follow //transconsole/localization/machine_translation/metrics/bleu_calc.py
-93:  # bleu_score, precisions, bp, ratio, translation_length, reference_length
-156:  # TODO(thangluong): perform rewrite using python
-157:  # BPE
-161:      # TODO(thangluong): not use shell=True, can be a security hazard
-176:  # subprocess
-177:  # TODO(thangluong): not use shell=True, can be a security hazard
-180:  # extract BLEU score
------------------
-nmt-master/nmt/utils/standard_hparams_utils.py
+./nmt-master/nmt/utils/misc_utils.py
 -----------------
 Multiline comments in the file
 -----------------
-line 28304:
- """standard hparams utils."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-27:      # Data
-37:      # Networks
-50:      # Attention mechanisms
-56:      # Train
-70:      # Data constraints
-78:      # Data format
-85:      # Misc
-95:      # only enable beam search during inference when beam_width > 0.
-103:      # For inference
-110:      # Language model
------------------
-nmt-master/nmt/utils/misc_utils.py
------------------
-Multiline comments in the file
------------------
-line 28320:
+line 16:
  """Generally useful utility functions."""
-line 28363:
+line 43:
  """Exponentiation with catching of overflow error."""
-line 28415:
+line 52:
  """Take a start time, print elapsed duration, and return a new time."""
-line 28474:
+line 59:
  """Similar to print but with support to flush and output to a file."""
-line 28554:
+line 80:
  """Print hparams, can skip keys based on pattern."""
-line 28644:
+line 90:
  """Load hparams from an existing model directory."""
-line 28751:
+line 107:
  """Override hparams values with existing standard hparams config."""
-line 28867:
+line 116:
  """Save hparams."""
-line 28947:
+line 124:
  """Print the shape and value of a tensor at test time. Return a new tensor."""
-line 29078:
+line 131:
  """Add a new summary to the current summary_writer. Useful to log things that are not part of the training graph, e.g., tag=BLEU. """
-line 29235:
+line 157:
  """Convert a sequence words into sentence."""
-line 29392:
+line 165:
  """Convert a sequence of bpe words into sentence."""
-line 29574:
+line 182:
  """Decode a text in SPM (https://github.com/google/sentencepiece) format."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-34:  # LINT.IfChange
-36:  # LINT.ThenChange(<pwd>/nmt/copy.bara.sky)
-68:  # stdout
-140:  # GPU options:
-141:  # https://www.tensorflow.org/versions/r0.10/how_tos/using_gpu/index.html
-147:  # CPU threads options
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 34:
+# LINT.IfChange
+Line 36:
+# LINT.ThenChange(<pwd>/nmt/copy.bara.sky)
+Line 68:
+# stdout
+Line 93:
+# Loading hparams from %s" % hparams_file)
+Line 109:
+# Loading standard hparams from %s" % hparams_path)
+Line 140:
+# GPU options:
+Line 141:
+# https://www.tensorflow.org/versions/r0.10/how_tos/using_gpu/index.html
+Line 147:
+# CPU threads options
+Line 158:
+# for numpy array
+Line 174:
+# end of a word
 -----------------
-nmt-master/nmt/utils/common_test_utils.py
+./nmt-master/nmt/utils/iterator_utils_test.py
 -----------------
 Multiline comments in the file
 -----------------
-line 29590:
+line 16:
+ """Tests for iterator_utils.py"""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 77:
+# c a eos -- eos is padding
+Line 78:
+# "f" == unknown, "e" == unknown, a
+Line 82:
+# sos b c
+Line 83:
+# sos c c
+Line 86:
+# b c eos
+Line 87:
+# c c eos
+Line 95:
+# c c a
+Line 99:
+# sos a b
+Line 102:
+# a b eos
+Line 157:
+# c a eos -- eos is padding
+Line 158:
+# "f" == unknown, "e" == unknown, a
+Line 162:
+# sos b c
+Line 163:
+# sos c c
+Line 166:
+# b c eos
+Line 167:
+# c c eos
+Line 222:
+# "f" == unknown, "e" == unknown, a
+Line 226:
+# sos c c
+Line 229:
+# c c eos
+Line 236:
+# Re-init iterator with skip_count=0.
+Line 243:
+# "f" == unknown, "e" == unknown, a
+Line 244:
+# c a eos -- eos is padding
+Line 248:
+# sos c c
+Line 249:
+# sos b c
+Line 252:
+# c c eos
+Line 253:
+# b c eos
+Line 261:
+# c c a
+Line 265:
+# sos a b
+Line 268:
+# a b eos
+Line 304:
+# c c a
+Line 305:
+# c a eos
+Line 311:
+# "d" == unknown, eos eos
+Line 312:
+# "f" == unknown, "e" == unknown, a
+-----------------
+./nmt-master/nmt/utils/common_test_utils.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
  """Common utility functions for tests."""
-line 29630:
+line 40:
  """Create training and inference test hparams."""
-line 29670:
+line 99:
  """Create test iterator."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-43:    # TODO(rzhao): Put num_residual_layers computation logic into
-44:    # `model_utils.py`, so we can also test it here.
-49:  # Networks
-59:  # Attention mechanisms
-63:  # Train
-68:  # Infer
-73:  # Misc
-78:  # Vocab
-88:  # For inference.py test
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 43:
+# TODO(rzhao): Put num_residual_layers computation logic into
+Line 44:
+# `model_utils.py`, so we can also test it here.
+Line 49:
+# Networks
+Line 59:
+# Attention mechanisms
+Line 63:
+# Train
+Line 68:
+# Infer
+Line 73:
+# Misc
+Line 78:
+# Vocab
+Line 88:
+# For inference.py test
 -----------------
-nmt-master/nmt/utils/nmt_utils.py
+./nmt-master/nmt/utils/evaluation_utils.py
 -----------------
 Multiline comments in the file
 -----------------
-line 29686:
+line 16:
+ """Utility for evaluating various tasks, e.g., translation & summarization."""
+line 32:
+ """Pick a metric and evaluate depending on task."""
+line 52:
+ """Clean and handle BPE or SPM outputs."""
+line 68:
+ """Compute BLEU scores and handling BPE."""
+line 100:
+ """Compute ROUGE scores and handling BPE."""
+line 118:
+ """Compute accuracy, each line contains a label."""
+line 134:
+ """Compute accuracy on per word basis."""
+line 154:
+ """Compute BLEU scores using Moses multi-bleu.perl script."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 33:
+# BLEU scores for translation task
+Line 37:
+# ROUGE scores for summarization tasks
+Line 55:
+# BPE
+Line 59:
+# SPM
+Line 66:#
+# Follow //transconsole/localization/machine_translation/metrics/bleu_calc.py
+Line 93:
+# bleu_score, precisions, bp, ratio, translation_length, reference_length
+Line 156:
+# TODO(thangluong): perform rewrite using python
+Line 157:
+# BPE
+Line 161:
+# TODO(thangluong): not use shell=True, can be a security hazard
+Line 176:
+# subprocess
+Line 177:
+# TODO(thangluong): not use shell=True, can be a security hazard
+Line 180:
+# extract BLEU score
+-----------------
+./nmt-master/nmt/utils/nmt_utils.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
  """Utility functions specifically for NMT."""
-line 29728:
+line 42:
  """Decode a test set and compute a score according to the evaluation task."""
-line 29825:
+line 97:
  """Given batch decoding outputs, select a sentence and turn to text."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-43:  # Decode
-81:  # Evaluation
-99:  # Select a sentence
-102:  # If there is an eos symbol in outputs, cut them at that point.
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 43:
+# Decode
+Line 51:
+# Write empty string to ensure file is created.
+Line 81:
+# Evaluation
+Line 99:
+# Select a sentence
+Line 102:
+# If there is an eos symbol in outputs, cut them at that point.
+Line 106:
+# BPE
+Line 108:
+# SPM
 -----------------
-nmt-master/nmt/utils/evaluation_utils_test.py
+./nmt-master/nmt/utils/standard_hparams_utils.py
 -----------------
 Multiline comments in the file
 -----------------
-line 29841:
+line 16:
+ """standard hparams utils."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 27:
+# Data
+Line 37:
+# Networks
+Line 50:
+# Attention mechanisms
+Line 56:
+# Train
+Line 70:
+# Data constraints
+Line 78:
+# Data format
+Line 85:
+# Misc
+Line 88:
+# record where we were within an epoch.
+Line 95:
+# only enable beam search during inference when beam_width > 0.
+Line 103:
+# For inference
+Line 110:
+# Language model
+-----------------
+./nmt-master/nmt/utils/evaluation_utils_test.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
  """Tests for evaluation_utils.py."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
 -----------------
-nmt-master/nmt/utils/misc_utils_test.py
------------------
-Multiline comments in the file
------------------
-line 29857:
- """Tests for vocab_utils."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
------------------
-nmt-master/nmt/utils/__init__.py
+./nmt-master/nmt/inference.py
 -----------------
 Multiline comments in the file
 -----------------
+line 16:
+ """To perform inference on test set given a trained model."""
+line 40:
+ """Decoding only a specific set of sentences."""
+line 72:
+ """Load inference data."""
+line 84:
+ """Get the right model class depending on configuration."""
+line 99:
+ """Start session and load model."""
+line 115:
+ """Perform translation."""
+line 150:
+ """Inference with a single worker."""
+line 197:
+ """Inference using multiple workers."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 46:
+# Write empty string to ensure file is created.
+Line 50:
+# get text translation
+Line 58:
+# Attention models
+Line 153:
+# Read data
+Line 163:
+# Decode
+Line 164:
+# Start decoding")
+Line 204:
+# Read data
+Line 207:
+# Split data to multiple workers
+Line 220:
+# Decode
+Line 221:
+# Start decoding")
+Line 235:
+# Change file name to indicate the file writing is completed.
+Line 238:
+# Job 0 is responsible for the clean up.
+Line 241:
+# Now write all translations
 -----------------
-nmt-master/nmt/utils/vocab_utils_test.py
+./nmt-master/nmt/gnmt_model.py
 -----------------
 Multiline comments in the file
 -----------------
-line 29873:
- """Tests for vocab_utils."""
-1:# Copyright 2017 Google Inc. All Rights Reserved.
-2:#
-3:# Licensed under the Apache License, Version 2.0 (the "License");
-4:# you may not use this file except in compliance with the License.
-5:# You may obtain a copy of the License at
-6:#
-7:#     http://www.apache.org/licenses/LICENSE-2.0
-8:#
-9:# Unless required by applicable law or agreed to in writing, software
-10:# distributed under the License is distributed on an "AS IS" BASIS,
-11:# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-12:# See the License for the specific language governing permissions and
-13:# limitations under the License.
-14:# ==============================================================================
-32:    # Create a vocab file
-41:    # Call vocab_utils
-47:    # Assert: we expect the code to add  <unk>, <s>, </s> and
-48:    # create a new vocab file
+line 16:
+ """GNMT attention sequence-to-sequence model with dynamic RNN support."""
+line 32:
+ """Sequence-to-sequence dynamic model with GNMT attention architecture. """
+line 58:
+ """Build a GNMT encoder."""
+line 110:
+ """Build encoder layers all at once."""
+line 136:
+ """Run each of the encoder layer separately, not used in general seq2seq."""
+line 172:
+ """Build a RNN cell with GNMT attention architecture."""
+line 262:
+ """A MultiCell with GNMT attention style."""
+line 265:
+ """Creates a GNMTAttentionMultiCell. Args: attention_cell: An instance of AttentionWrapper. cells: A list of RNNCell wrapped with AttentionInputWrapper. use_new_attention: Whether to use the attention generated from current step bottom layer's output. Default is False. """
+line 278:
+ """Run the cell with bottom layer's attention copied to all upper layers."""
+line 311:
+ """Residual function that handles different inputs and outputs inner dims. Args: inputs: cell inputs, this is actual inputs concatenated with the attention vector. outputs: cell outputs Returns: outputs + actual inputs """
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 65:
+# Build GNMT encoder.
+Line 68:
+# Build a GNMT encoder")
+Line 83:
+# Execute _build_bidirectional_rnn from Model class
+Line 90:
+# no residual connection
+Line 93:
+# Build unidirectional layers
+Line 101:
+# Pass all encoder states to the decoder
+Line 102:
+#   except the first bi-directional layer
+Line 129:
+# Use the top layer for now
+Line 173:
+# Standard attention
+Line 178:
+# GNMT attention
+Line 203:
+# pylint: disable=protected-access
+Line 216:
+# Only wrap the bottom layer with the attention mechanism.
+Line 219:
+# Only generate alignment in greedy INFER mode.
+Line 225:
+# don't use attention layer.
+-----------------
+./nmt-master/nmt/attention_model.py
+-----------------
+Multiline comments in the file
+-----------------
+line 15:
+ """Attention-based sequence-to-sequence model with dynamic RNN support."""
+line 29:
+ """Sequence-to-sequence dynamic model with attention. This class implements a multi-layer recurrent neural network as encoder, and an attention-based decoder. This is the same as the model described in (Luong et al., EMNLP'2015) paper: https://arxiv.org/pdf/1508.04025v5.pdf. This class also allows to use GRU cells in addition to LSTM cells with support for dropout. """
+line 79:
+ """Build a RNN cell with attention mechanism that can be used by decoder."""
+line 157:
+ """Create attention mechanism based on the attention_option."""
+line 186:
+ """create attention image and attention summary."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 49:
+# Set attention_mechanism_fn
+Line 80:
+# No Attention
+Line 95:
+# Ensure memory is batch-major
+Line 110:
+# Attention
+Line 125:
+# Only generate alignment in greedy INFER mode.
+Line 136:
+# TODO(thangluong): do we need num_layers, num_gpus?
+Line 158:
+# unused
+Line 160:
+# Mechanism
+Line 188:
+# Reshape to (batch, src_seq_len, tgt_seq_len,1)
+Line 191:
+# Scale to range [0, 255]
+-----------------
+./nmt-master/nmt/model.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
+ """Basic sequence-to-sequence model with dynamic RNN support."""
+line 41:
+ """To allow for flexibily in returing different outputs."""
+line 47:
+ """To allow for flexibily in returing different outputs."""
+line 54:
+ """To allow for flexibily in returing different outputs."""
+line 59:
+ """Sequence-to-sequence base class. """
+line 71:
+ """Create the model. Args: hparams: Hyperparameter configurations. mode: TRAIN | EVAL | INFER iterator: Dataset Iterator that feeds data. source_vocab_table: Lookup table mapping source words to ids. target_vocab_table: Lookup table mapping target words to ids. reverse_target_vocab_table: Lookup table mapping ids to target words. Only required in INFER mode. Defaults to None. scope: scope of the model. extra_args: model_helper.ExtraArgs, for passing customizable functions. """
+line 111:
+ """Set various params for self and initialize."""
+line 172:
+ """Set up training and inference."""
+line 236:
+ """Get learning rate warmup."""
+line 261:
+ """Return decay info based on decay_scheme."""
+line 284:
+ """Get learning rate decay."""
+line 302:
+ """Init embeddings."""
+line 320:
+ """Get train summary."""
+line 328:
+ """Execute train graph."""
+line 341:
+ """Execute eval graph."""
+line 349:
+ """Subclass must implement this method. Creates a sequence-to-sequence model with dynamic RNN decoder API. Args: hparams: Hyperparameter configurations. scope: VariableScope for the created subgraph; default "dynamic_seq2seq". Returns: A tuple of the form (logits, loss_tuple, final_context_state, sample_id), where: logits: float32 Tensor batch_size x num_decoder_symbols . loss: loss = the total loss / batch_size. final_context_state: the final state of decoder RNN. sample_id: sampling indices. Raises: ValueError: if encoder_type differs from mono and bi, or attention_option is not (luong | scaled_luong | bahdanau | normed_bahdanau). """
+line 407:
+ """Subclass must implement this. Build and run an RNN encoder. Args: hparams: Hyperparameters configurations. Returns: A tuple of encoder_outputs and encoder_state. """
+line 421:
+ """Build a multi-layer RNN cell that can be used by encoder."""
+line 436:
+ """Maximum decoding steps at inference time."""
+line 449:
+ """Build and run a RNN decoder with a final projection layer. Args: encoder_outputs: The outputs of encoder for every time step. encoder_state: The final state of the encoder. hparams: The Hyperparameters configurations. Returns: A tuple of final logits and final decoder state: logits: size time, batch_size, vocab_size when time_major=True. """
+line 604:
+ """Subclass must implement this. Args: hparams: Hyperparameters configurations. encoder_outputs: The outputs of encoder for every time step. encoder_state: The final state of the encoder. source_sequence_length: sequence length of encoder_outputs. Returns: A tuple of a multi-layer RNN cell used by decoder and the intial state of the decoder RNN. """
+line 620:
+ """Compute softmax loss or sampled softmax loss."""
+line 652:
+ """Compute optimization loss."""
+line 683:
+ """Decode a batch. Args: sess: tensorflow session to use. Returns: A tuple consiting of outputs, infer_summary. outputs: of size batch_size, time """
+line 706:
+ """Stack encoder states and return tensor batch, length, layer, size ."""
+line 722:
+ """Sequence-to-sequence dynamic model. This class implements a multi-layer recurrent neural network as encoder, and a multi-layer recurrent neural network decoder. """
+line 728:
+ """Build an encoder from a sequence. Args: hparams: hyperparameters. sequence: tensor with input sequence data. sequence_length: tensor with length of the input sequence. Returns: encoder_outputs: RNN encoder outputs. encoder_state: RNN encoder state. Raises: ValueError: if encoder_type is neither "uni" nor "bi". """
+line 801:
+ """Build encoder from source."""
+line 811:
+ """Create and call biddirectional RNN cells. Args: num_residual_layers: Number of residual layers from top to bottom. For example, if `num_bi_layers=4` and `num_residual_layers=2`, the last 2 RNN layers in each RNN cell will be wrapped with `ResidualWrapper`. base_gpu: The gpu device id to use for the first forward RNN layer. The i-th forward RNN layer will use `(base_gpu + i) % num_gpus` as its device id. The `base_gpu` for backward RNN cell is `(base_gpu + num_bi_layers)`. Returns: The concatenated bidirectional output and the bidirectional RNN cell"s state. """
+line 849:
+ """Build an RNN cell that can be used by decoder."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 85:
+# Set params
+Line 90:
+# Not used in general seq2seq models; when True, ignore decoder & training
+Line 94:
+# Train graph
+Line 99:
+# Saver
+Line 130:
+# extra_args: to make it flexible for adding external customizable code
+Line 135:
+# Set num units
+Line 138:
+# Set num layers
+Line 144:
+# Set num residual layers
+Line 145:
+# compatible common_test_utils
+Line 152:
+# Batch size
+Line 155:
+# Global step
+Line 158:
+# Initializer
+Line 164:
+# Embeddings
+Line 186:
+## Count the number of predicted words for compute ppl.
+Line 192:
+# Gradients and SGD update operation for training the model.
+Line 193:
+# Arrange for the embedding vars to appear at the beginning.
+Line 196:
+# warm-up
+Line 198:
+# decay
+Line 201:
+# Optimizer
+Line 209:
+# Gradients
+Line 223:
+# Summary
+Line 228:
+# Print trainable variables
+Line 229:
+# Trainable variables")
+Line 242:
+# Apply inverse decay if global steps less than warmup steps.
+Line 243:
+# Inspired by https://arxiv.org/pdf/1706.03762.pdf (Section 5.3)
+Line 244:
+# When step < warmup_steps,
+Line 245:
+#   learing_rate *= warmup_factor ** (warmup_steps - step)
+Line 247:
+# 0.01^(1/warmup_steps): we start with a lr, 100 times smaller
+Line 275:
+# no decay
+Line 369:
+# Creating %s graph ..." % self.mode)
+Line 371:
+# Projection
+Line 379:
+# Encoder
+Line 380:
+# no encoder for language modeling
+Line 387:
+# Skip decoder if extracting only encoder layers
+Line 391:
+## Decoder
+Line 395:
+## Loss
+Line 441:
+# TODO(thangluong): add decoding_length_factor flag
+Line 466:
+# maximum_iteration: The maximum decoding steps.
+Line 470:
+## Decoder.
+Line 476:
+# Optional ops depends on which mode we are in and which loss function we
+Line 477:
+# are using.
+Line 481:
+## Train or eval
+Line 483:
+# decoder_emp_inp: [max_time, batch_size, num_units]
+Line 490:
+# Helper
+Line 495:
+# Decoder
+Line 501:
+# Dynamic decoding
+Line 511:
+# Note: this is required when using sampled_softmax_loss.
+Line 514:
+# Note: there's a subtle difference here between train and inference.
+Line 515:
+# We could have set output_layer when create my_decoder
+Line 516:
+#   and shared more code between train and inference.
+Line 517:
+# We chose to apply the output_layer to all timesteps for speed:
+Line 518:
+#   10% improvements for small models & 20% for larger ones.
+Line 519:
+# If memory is a concern, we should apply output_layer per timestep.
+Line 523:
+# Colocate output layer with the last RNN cell if there is no extra GPU
+Line 524:
+# available. Otherwise, put last layer on a separate GPU.
+Line 529:
+# unused when using sampled softmax loss.
+Line 531:
+## Inference
+Line 558:
+# Helper
+Line 578:
+# applied per timestep
+Line 581:
+# Dynamic decoding
+Line 696:
+# make sure outputs is of shape [batch_size, time] or [beam_width,
+Line 697:
+# batch_size, time] when using beam search.
+Line 701:
+# beam search output in [batch_size, time, beam_width] shape.
+Line 714:
+# transform from [length, batch, ...] -> [batch, length, ...]
+Line 754:
+# Encoder_outputs: [max_time, batch_size, num_units]
+Line 786:
+# alternatively concat forward and backward states
+Line 789:
+# forward
+Line 790:
+# backward
+Line 795:
+# Use the top layer for now
+Line 802:
+# Build a basic encoder")
+Line 826:
+# Construct forward and backward cells
+Line 850:
+# We only make use of encoder_outputs in attention-based models
+Line 873:
+# For beam search, we need to replicate encoder infos beam_width times
+-----------------
+./nmt-master/nmt/train.py
+-----------------
+Multiline comments in the file
+-----------------
+line 15:
+ """For training NMT models."""
+line 45:
+ """Sample decode a random sentence from src_data."""
+line 64:
+ """Compute internal evaluation (perplexity) for both dev / test. Computes development and testing perplexities for given model. Args: eval_model: Evaluation model for which to compute perplexities. eval_sess: Evaluation TensorFlow session. model_dir: Directory from which to load evaluation model from. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. use_test_set: Computes testing perplexity if true; does not otherwise. Note that the development perplexity is always computed regardless of value of this parameter. dev_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the development evaluation. test_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the testing evaluation. Returns: Pair containing development perplexity and testing perplexity, in this order. """
+line 127:
+ """Compute external evaluation for both dev / test. Computes development and testing external evaluation (e.g. bleu, rouge) for given model. Args: infer_model: Inference model for which to compute perplexities. infer_sess: Inference TensorFlow session. model_dir: Directory from which to load inference model from. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. use_test_set: Computes testing external evaluation if true; does not otherwise. Note that the development external evaluation is always computed regardless of value of this parameter. dev_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the development external evaluation. test_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the testing external evaluation. Returns: Triple containing development scores, testing scores and the TensorFlow Variable for the global step number, in this order. """
+line 203:
+ """Creates an averaged checkpoint and run external eval with it."""
+line 235:
+ """Compute internal evaluation (perplexity) for both dev / test. Computes development and testing perplexities for given model. Args: model_dir: Directory from which to load models from. infer_model: Inference model for which to compute perplexities. infer_sess: Inference TensorFlow session. eval_model: Evaluation model for which to compute perplexities. eval_sess: Evaluation TensorFlow session. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. avg_ckpts: Whether to compute average external evaluation scores. dev_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the internal development evaluation. test_eval_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the internal testing evaluation. dev_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the external development evaluation. test_infer_iterator_feed_dict: Feed dictionary for a TensorFlow session. Can be used to pass in additional inputs necessary for running the external testing evaluation. Returns: Triple containing results summary, global step Tensorflow Variable and metrics in this order. """
+line 320:
+ """Wrapper for running sample_decode, internal_eval and external_eval. Args: model_dir: Directory from which to load models from. infer_model: Inference model for which to compute perplexities. infer_sess: Inference TensorFlow session. eval_model: Evaluation model for which to compute perplexities. eval_sess: Evaluation TensorFlow session. hparams: Model hyper-parameters. summary_writer: Summary writer for logging metrics to TensorBoard. sample_src_data: sample of source data for sample decoding. sample_tgt_data: sample of target data for sample decoding. avg_ckpts: Whether to compute average external evaluation scores. Returns: Triple containing results summary, global step Tensorflow Variable and metrics in this order. """
+line 345:
+ """Initialize statistics that we want to accumulate."""
+line 354:
+ """Update stats: write summary and accumulate statistics."""
+line 371:
+ """Print all info at the current global step."""
+line 381:
+ """Add stuffs in info to summaries."""
+line 389:
+ """Update info and check for overflow."""
+line 413:
+ """Misc tasks to do before training."""
+line 436:
+ """Get the right model class depending on configuration."""
+line 451:
+ """Train a translation model."""
+line 640:
+ """Format results."""
+line 654:
+ """Summary of the current best results."""
+line 663:
+ """Computing perplexity."""
+line 673:
+ """Pick a sentence and decode."""
+line 706:
+ """External evaluation such as BLEU and ROUGE scores."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 206:
+# Convert VariableName:0 to VariableName.
+Line 347:
+# word count on the target side
+Line 348:
+# word counts for both source and target
+Line 349:
+# number of training examples processed
+Line 357:
+# Update statistics
+Line 390:
+# Per-step info
+Line 396:
+# Per-predict info
+Line 400:
+# Check for overflow
+Line 422:
+# Start step %d, lr %g, %s" %
+Line 425:
+# Initialize all of the iterators
+Line 427:
+# Init train iterator, skipping %d elements" % skip_count)
+Line 463:
+# Create model
+Line 469:
+# Preload data for sample decoding.
+Line 478:
+# Log and output files
+Line 481:
+# log_file=%s" % log_file, log_f)
+Line 483:
+# TensorFlow model
+Line 499:
+# Summary writer
+Line 503:
+# First evaluation
+Line 514:
+# This is the training loop.
+Line 518:
+### Run a step ###
+Line 524:
+# Finished going through the training dataset.  Go to next epoch.
+Line 527:
+# Finished an epoch, step %d. Perform external evaluation" %
+Line 543:
+# Process step_result, accumulate stats, and write summary
+Line 548:
+# Once in a while, we print statistics.
+Line 558:
+# Reset statistics
+Line 563:
+# Save eval, global step %d" % global_step)
+Line 566:
+# Save checkpoint
+Line 572:
+# Evaluate on dev/test
+Line 582:
+# Save checkpoint
+Line 598:
+# Done training
+Line 608:
+# Final, ", global_step, info, result_summary, log_f)
+Line 609:
+# Done training!", start_train_time)
+Line 613:
+# Start evaluating saved best models.")
+Line 621:
+# Best %s, " % metric, best_global_step, info,
+Line 632:
+# Averaged Best %s, " % metric, best_global_step, info,
+Line 675:
+# %d" % decode_id)
+Line 686:
+# get the top translation.
+Line 698:
+# Summary
+Line 714:
+# External evaluation, global step %d" % global_step)
+Line 731:
+# Save on best metrics
+Line 741:
+# metric: larger is better
+-----------------
+./nmt-master/nmt/nmt.py
+-----------------
+Multiline comments in the file
+-----------------
+line 16:
+ """TensorFlow NMT model implementation."""
+line 46:
+ """Build ArgumentParser."""
+line 57:
+ help="""\ uni | bi | gnmt. For bi, we build num_encoder_layers/2 bi-directional layers. For gnmt, we build 1 bi-directional layer, and (num_encoder_layers - 1) uni-directional layers.\ """)
+line 73:
+ help="""\ luong | scaled_luong | bahdanau | normed_bahdanau or set to "" for no attention\ """)
+line 81:
+ help="""\ standard | gnmt | gnmt_v2. standard: use top layer to compute attention. gnmt: GNMT style of computing attention, use previous bottom layer to compute attention. gnmt_v2: similar to gnmt, but use current bottom layer to compute attention.\ """)
+line 92:
+ help="""\ Only used in standard attention_architecture. Whether use attention as the cell output at each timestep. .\ """)
+line 100:
+ help="""\ Whether to pass encoder's hidden state to decoder when using an attention based model.\ """)
+line 111:
+ help="""\ How to warmup learning rates. Options include: t2t: Tensor2Tensor's way, start with lr 100 times smaller, then exponentiate until the specified lr.\ """)
+line 117:
+ help="""\ How we decay learning rate. Options include: luong234: after 2/3 num train steps, we start halving the learning rate for 4 times before finishing. luong5: after 1/2 num train steps, we start halving the learning rate for 5 times before finishing.\ luong10: after 1/2 num train steps, we start halving the learning rate for 10 times before finishing.\ """)
+line 157:
+ help="""\ Vocab prefix, expect files with src/tgt suffixes.\ """)
+line 160:
+ help="""\ Pretrained embedding prefix, expect files with src/tgt suffixes. The embedding files should be Glove formated txt files.\ """)
+line 170:
+ help="""\ Whether to use the source vocab and embeddings for both source and target.\ """)
+line 175:
+ help="""\ Whether check special sos, eos, unk tokens exist in the vocab files.\ """)
+line 188:
+ help="""\ Max length of tgt sequences during inference. Also use to restrict the maximum decoding length.\ """)
+line 218:
+ help="""\ Set to bpe or spm to activate subword desegmentation.\ """)
+line 224:
+ help="""\ Whether to split each word or bpe into character, and then generate the word-level representation from the character reprentation. """)
+line 239:
+ help="""\ How many training steps to do per external evaluation. Automatically set based on data if None.\ """)
+line 256:
+ help=("""\ Average the last N checkpoints for external evaluation. N can be controlled by setting --num_keep_ckpts.\ """))
+line 277:
+ help=("""\ Reference file to compute evaluation scores (if provided).\ """))
+line 286:
+ help=("""\ beam width when using beam search decoder. If 0 (default), use standard decoder with greedy helper.\ """))
+line 296:
+ help=("""\ Softmax sampling temperature for inference decoding, 0.0 means greedy decoding. This option is ignored when using beam search.\ """))
+line 301:
+ help=("""\ Number of translations generated for each sentence. This is only used for inference.\ """))
+line 318:
+ """Create training hparams."""
+line 407:
+ """Add an argument to hparams; if exists, change the value if update==True."""
+line 416:
+ """Add new arguments to hparams."""
+line 562:
+ """Make sure the loaded hparams is compatible with new changes."""
+line 599:
+ """Create hparams or load hparams from out_dir."""
+line 621:
+ """Run main."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 24:#
+# import matplotlib.image as mpimg
+Line 49:
+# network
+Line 72:
+# attention mechanisms
+Line 105:
+# optimizer
+Line 135:
+# initializer
+Line 142:
+# data
+Line 156:
+# Vocab
+Line 180:
+# Sequence lengths
+Line 193:
+# Default settings works well (rarely need to change)
+Line 215:
+# SPM
+Line 222:
+# Experimental encoding feature.
+Line 230:
+# Misc
+Line 264:
+# Inference
+Line 281:
+# Advanced inference arguments
+Line 306:
+# Job info
+Line 320:
+# Data
+Line 330:
+# Networks
+Line 341:
+# Attention mechanisms
+Line 347:
+# Train
+Line 361:
+# Data constraints
+Line 367:
+# Inference
+Line 372:
+# Advanced inference arguments
+Line 380:
+# Vocab
+Line 387:
+# Misc
+Line 390:
+# record where we were within an epoch.
+Line 417:
+# Sanity checks
+Line 435:
+# Different number of encoder / decoder layers
+Line 444:
+# Set residual layers
+Line 454:
+# The first unidirectional layer (after the bi-directional layer) in
+Line 455:
+# the GNMT encoder can't have residual connection due to the input is
+Line 456:
+# the concatenation of fw_cell and bw_cell's outputs.
+Line 459:
+# Compatible for GNMT models
+Line 467:
+# Language modeling
+Line 477:
+## Vocab
+Line 478:
+# Get vocab file names first
+Line 485:
+# Source vocab
+Line 495:
+# Target vocab
+Line 513:
+# Num embedding partitions
+Line 518:
+# Pretrained Embeddings
+Line 545:
+# Evaluation
+Line 566:
+# Set num encoder/decoder layers (for old checkpoints)
+Line 573:
+# For compatible reason, if there are new fields in default_hparams,
+Line 574:
+#   we add them to the current hparams
+Line 581:
+# Update all hparams' keys if override_loaded_hparams=True
+Line 585:
+# For inference
+Line 590:
+# Updating hparams.%s: %s -> %s" %
+Line 609:
+# Save HParams
+Line 615:
+# Print HParams
+Line 622:
+# Job
+Line 625:
+# Job id %d" % jobid)
+Line 627:
+# GPU device
+Line 629:
+# Devices visible to TensorFlow: %s" % repr(tf.Session().list_devices()))
+Line 631:
+# Random
+Line 634:
+# Set random seed to %d" % random_seed)
+Line 638:
+# Model output directory
+Line 641:
+# Creating output directory %s ..." % out_dir)
+Line 644:
+# Load hparams.
+Line 646:
+# Try to load hparams from the same directory as ckpt
+Line 654:
+# Try to load from out_dir
+Line 660:
+## Train / Decode
+Line 662:
+# Inference output directory
+Line 668:
+# Inference indices
+Line 674:
+# Inference
+Line 681:
+# Evaluation
+Line 692:
+# Train
+-----------------
+./nmt-master/nmt/nmt_test.py
+-----------------
+Multiline comments in the file
+-----------------
+line 15:
+ """Tests for nmt.py, train.py and inference.py."""
+line 32:
+ """Update flags for basic training."""
+line 51:
+ """Test the training loop is functional with basic hparams."""
+line 65:
+ """Test the training loop is functional with basic hparams."""
+line 80:
+ """Test inference is function with basic hparams."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 87:
+# Train one step so we have a checkpoint.
+Line 93:
+# Update FLAGS for inference.
+-----------------
+./nmt-master/nmt/model_test.py
+-----------------
+Multiline comments in the file
+-----------------
+line 15:
+ """Tests for model.py."""
+Line 1:#
+# Copyright 2017 Google Inc. All Rights Reserved.
+Line 2:#
+#
+Line 3:#
+# Licensed under the Apache License, Version 2.0 (the "License");
+Line 4:#
+# you may not use this file except in compliance with the License.
+Line 5:#
+# You may obtain a copy of the License at
+Line 6:#
+#
+Line 7:#
+#     http://www.apache.org/licenses/LICENSE-2.0
+Line 8:#
+#
+Line 9:#
+# Unless required by applicable law or agreed to in writing, software
+Line 10:#
+# distributed under the License is distributed on an "AS IS" BASIS,
+Line 11:#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Line 12:#
+# See the License for the specific language governing permissions and
+Line 13:#
+# limitations under the License.
+Line 14:#
+# ==============================================================================
+Line 360:
+## Testing 3 encoders:
+Line 361:
+# uni: no attention, no residual, 1 layers
+Line 362:
+# bi: no attention, with residual, 4 layers
+Line 374:
+# pylint: disable=line-too-long
+Line 384:
+# pylint: enable=line-too-long
+Line 431:
+# pylint: disable=line-too-long
+Line 453:
+# pylint: enable=line-too-long
+Line 489:
+## Test attention mechanisms: luong, scaled_luong, bahdanau, normed_bahdanau
+Line 501:
+# pylint: disable=line-too-long
+Line 517:
+# pylint: enable=line-too-long
+Line 529:
+# pylint: disable=line-too-long
+Line 536:
+# pylint: enable=line-too-long
+Line 569:
+# pylint: disable=line-too-long
+Line 586:
+# pylint: enable=line-too-long
+Line 598:
+# pylint: disable=line-too-long
+Line 605:
+# pylint: enable=line-too-long
+Line 643:
+# pylint: disable=line-too-long
+Line 661:
+# pylint: enable=line-too-long
+Line 673:
+# pylint: disable=line-too-long
+Line 680:
+# pylint: enable=line-too-long
+Line 713:
+# pylint: disable=line-too-long
+Line 733:
+# pylint: enable=line-too-long
+Line 746:
+# pylint: disable=line-too-long
+Line 753:
+# pylint: enable=line-too-long
+Line 780:
+## Test encoder vs. attention (all use residual):
+Line 781:
+# uni encoder, standard attention
+Line 792:
+# pylint: disable=line-too-long
+Line 817:
+# pylint: enable=line-too-long
+Line 860:
+# Test gnmt model.
+Line 871:
+# pylint: disable=line-too-long
+Line 897:
+# pylint: enable=line-too-long
+Line 940:
+# Test beam search.
