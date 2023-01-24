@@ -1,22 +1,22 @@
 #!/bin/bash
-declare -a spf
+declare -a minPrimeFactor
 
 Sieve_of_Eratosthenes() {
     for((i=2; i<=1000000; i++))
     do
-        spf[i]=$i
+        minPrimeFactor[i]=$i
     done
     for((i=4; i<=1000000; i=i+2))
     do
-        spf[i]=2
+        minPrimeFactor[i]=2
     done
     for((i=3; i*i<=1000000; i=i+2))
     do 
-        if [[ ${spf[i]} -eq $i ]]; then
+        if [[ ${minPrimeFactor[i]} -eq $i ]]; then
             for((j=i*i; j<=1000000; j+=i))
             do
-            if [ ${spf[j]} -eq $j ]; then
-                spf[j]=$i
+            if [ ${minPrimeFactor[j]} -eq $j ]; then
+                minPrimeFactor[j]=$i
             fi
             done   
         fi 
@@ -26,12 +26,17 @@ Sieve_of_Eratosthenes() {
 Sieve_of_Eratosthenes
 while read -r x
 do
+    declare -a factors
     while [[ $x -ne 1 ]]
     do 
-        echo -n "${spf[x]} "
-        x=$((x/spf[x]))
+        factors[minPrimeFactor[x]]=1
+        x=$((x/minPrimeFactor[x]))
     done
-    echo
-done < $1
+    for i in "${!factors[@]}"; do
+        echo -n "$i " >> output.txt
+    done
+    echo >> output.txt
+    factors=()
+done < input.txt
 
 
