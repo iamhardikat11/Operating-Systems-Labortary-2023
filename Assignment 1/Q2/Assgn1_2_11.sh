@@ -1,3 +1,4 @@
+#!/bin/bash
 for item in `cat $1`; do
     flag=0
     if [[ $item =~ ^.{5,20}$ ]] && [[ $item =~ ^[a-zA-Z][a-zA-Z0-9]*[0-9][a-zA-Z0-9]*$ ]] 
@@ -8,12 +9,11 @@ for item in `cat $1`; do
                 break
             fi
         done
-
         if [[ $flag -eq 0 ]]
         then
-            echo "YES: $item"
+            echo "YES"
             continue
         fi
     fi
-    echo "NO : $item"
+    echo "NO"
 done

@@ -8,17 +8,39 @@ int main()
     {
         for(int i=0;i<26;i++)
         {
-            cout << (char)(('a'+rand()%26)-(rand()%2)*32);
+            if(i==0)
+            {
+                char ch = (char)(('a'+rand()%26)-(rand()%2)*32);
+                if(ch!='p' && ch!='P')
+                {
+                    cout << ch;
+                }
+            }
+            else{
+                char ch = (char)(('a'+rand()%26)-(rand()%2)*32);
+                if(ch!='p' && ch!='P')
+                {
+                    cout << ch;
+                }
+            }
         }
         cout << " ";
         for(int i=0;i<52;i++)
         {
-            cout << (char)(('a'+rand()%26)-(rand()%2)*32);
+            char ch = (char)(('a'+rand()%26)-(rand()%2)*32);
+            if(ch!='p' && ch!='P')
+            {
+                    cout << ch;
+            }
         }
         cout << " ";
         for(int i=0;i<72;i++)
         {
-            cout << (char)(('a'+rand()%26)-(rand()%2)*32);
+            char ch = (char)(('a'+rand()%26)-(rand()%2)*32);
+            if(ch!='p' && ch!='P')
+            {
+                    cout << ch;
+            }
         }
         cout << endl;
     }
