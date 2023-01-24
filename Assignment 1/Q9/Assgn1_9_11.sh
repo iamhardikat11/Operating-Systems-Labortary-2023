@@ -1,3 +1,3 @@
 #!/bin/bash
-awk '{count[$2]++} END {for ( i in count ) { print i " " count[i]} print "" }' $1 | sort -k2nr -k1
-awk '{count[$1]++} END {for ( i in count ) {if(count[i] >= 2) {print i} if(count[i] == 1) {cnt++} } {print cnt} }' $1
+awk '{c[$2]++} END {for (i in c) {print i " " c[i]} print ""}' $1 | sort -k2nr -k1
+awk '{c[$1]++} END {for (i in c) {if(c[i]>=2) {print i} if(c[i]==1) {n++}} print n}' $1
