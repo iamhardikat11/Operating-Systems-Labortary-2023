@@ -58,5 +58,5 @@ for file in $(find $folder -name "*.py"); do
     if [ -n "$output" ]; then
       echo "$output "
     fi
-    grep -E -n "^[[:space:]]*#" $file
+grep -E -n "(^|[^\"])[^[:space:]]*#[^\n\"]*" $file | awk '{print "Line "$1; gsub(/^[0-9]+:([^#]*#)/,"#",$0); print $0}'
 done
