@@ -1,6 +1,6 @@
 for item in `cat $1`; do
     flag=0
-    if [[ ${#item} -ge 5 ]] && [[ ${#item} -le 20 ]] && [[ $item =~ ^[a-zA-Z][a-zA-Z0-9]*[0-9][a-zA-Z0-9]*$ ]] 
+    if [[ $item =~ ^.{5,20}$ ]] && [[ $item =~ ^[a-zA-Z][a-zA-Z0-9]*[0-9][a-zA-Z0-9]*$ ]] 
     then
         for f in `cat fruits.txt`; do
             if [[ $(echo -n "$item" | grep -iFc "$f") -ne 0 ]]; then
@@ -8,11 +8,12 @@ for item in `cat $1`; do
                 break
             fi
         done
+
         if [[ $flag -eq 0 ]]
         then
-            echo "YES"
+            echo "YES: $item"
             continue
         fi
     fi
-    echo "NO"
+    echo "NO : $item"
 done
