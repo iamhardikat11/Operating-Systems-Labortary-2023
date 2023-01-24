@@ -1,20 +1,20 @@
 #!/bin/bash
+
 folder=$1
+
 if [ -z "$folder" ]; then
     echo "Usage: $0 <folder>"
     exit 1
 fi
+
 if [ ! -d "$folder" ]; then
     echo "Error: $folder is not a directory"
     exit 1
 fi
+
 for file in $(find $folder -name "*.py"); do
-    echo "-----------------"
     echo $file
-    echo "-----------------"
-    echo "Multiline comments in the file"
-    echo "-----------------"
-    flag=0
+   flag=0
     n=0
     output=""
     while read -r word; do
@@ -54,5 +54,5 @@ for file in $(find $folder -name "*.py"); do
     if [ -n "$output" ]; then
       echo "$output "
     fi
-grep -E -n "(^|[^\"])[^[:space:]]*#[^\n\"]*" $file | awk '{print "Line "$1; gsub(/^[0-9]+:([^#]*#)/,"#",$0); print $0}'
+awk '{if(/^[^'\''"]*#/) {gsub(/^[^#]+#/, "#", $0);print "Line " NR ": " $0;} else if(/#[^'\''"]*$/) {gsub(/^.*#/, "#", $0);print "Line " NR ": " $0;} else if(/^.*#[^'\''"]*$/) {gsub(/^.*#/, "#", $0);print "Line " NR ": "  $0;}}' $file
 done
