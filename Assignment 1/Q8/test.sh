@@ -8,6 +8,7 @@ fi
 
 # Helper function to insert a new record into main.csv
 insert_record() {
+  echo "Hi"
   echo "$1,$2,$3,$4" >> main.csv
   echo "Inserted $1,$2,$3,$4 in main.csv"
   echo
@@ -35,7 +36,7 @@ sort_csv() {
   str3="Amount"
   str4="Name"
 #   if [[ "$1" == "$str1" ]]; then
-    awk -i inplace -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " " -f 2-
+#    awk -i inplace -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " " -f 2-
 #     k=1
 #   fi  
 #   if [[ "$1" == "$str2" ]]; then
@@ -47,15 +48,15 @@ sort_csv() {
 #   if [[ "$1" == "$str4" ]]; then
 #     k=4
 #   fi 
-    case $1 in
-    Date)
-    ;;
-    Category)
-    ;;
-    Amount)
-    ;;
+    # case $1 in
+    # Date)
+    # ;;
+    # Category)
+    # ;;
+    # Amount)
+    # ;;
     
-#   sort -t, -k$1 main.csv -o main.csv
+  sort -t, -k$1 main.csv -o main.csv
   echo $k
   echo "main.csv sorted by $1 column"
 }
@@ -98,6 +99,7 @@ while getopts ":c:n:s:h" opt; do
 done
 
 insert_record "$1" "$2" "$3" "$4"
+#sort_csv
 if [ -n "$CATEGORY" ]; then
   calculate_category_total "$CATEGORY"
 fi
