@@ -1,19 +1,10 @@
 #!/bin/bash
-for item in `cat $1`; do
-    flag=0
-    if [[ $item =~ ^.{5,20}$ ]] && [[ $item =~ ^[a-zA-Z][a-zA-Z0-9]*[0-9][a-zA-Z0-9]*$ ]] 
+while read username;
+do
+    if [[ $username =~ ^.{5,20}$ ]] && [[ $username =~ ^[a-zA-Z][a-zA-Z0-9]*[0-9][a-zA-Z0-9]*$ ]] <<< "$username" && ! grep -iqFf "fruits.txt" <<< "$username"
     then
-        for f in `cat fruits.txt`; do
-            if [[ $(echo -n "$item" | grep -iFc "$f") -ne 0 ]]; then
-                flag=1
-                break
-            fi
-        done
-        if [[ $flag -eq 0 ]]
-        then
-            echo "YES"
-            continue
-        fi
+        echo "YES"
+    else
+        echo "NO"
     fi
-    echo "NO"
-done
+done < $1

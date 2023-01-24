@@ -1,4 +1,3 @@
-#!/bin/bash
 lcm=1
 for num in $(rev $1); do 
     a=$lcm
