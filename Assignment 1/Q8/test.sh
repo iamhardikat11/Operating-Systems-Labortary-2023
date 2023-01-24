@@ -29,36 +29,39 @@ calculate_name_total() {
 
 # Helper function to sort the csv by column
 sort_csv() {
+
   k=1
   str1="Date"
   str2="Category"
   str3="Amount"
   str4="Name"
-#   if [[ "$1" == "$str1" ]]; then
-    awk -i inplace -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " " -f 2-
+ 
+  if [[ "$1" == "$str1" ]]; then
+    sort -t- -k 3.1,3.2 -k 2n -k 1n -o main.csv
 #     k=1
-#   fi  
-#   if [[ "$1" == "$str2" ]]; then
-#     k=2
-#   fi 
-#   if [[ "$1" == "$str3" ]]; then
-#     k=3
-#   fi 
-#   if [[ "$1" == "$str4" ]]; then
-#     k=4
-#   fi 
-    case $1 in
-    Date)
-    ;;
-    Category)
-    ;;
-    Amount)
-    ;;
-    
-#   sort -t, -k$1 main.csv -o main.csv
-  echo $k
-  echo "main.csv sorted by $1 column"
+  fi  
+  if [[ "$1" == "$str2" ]]; then
+    k=2
+  fi 
+  if [[ "$1" == "$str3" ]]; then
+  echo here
+    k=3
+  fi 
+  if [[ "$1" == "$str4" ]]; then
+    k=4
+  fi 
+  # case $1 in
+  # Date)
+  # ;;
+  # Category)
+  # ;;
+  # Amount)
+  # ;; 
+  sort -t, -k3 main.csv  -o main.csv
+  # echo $k
+  # echo "main.csv sorted by $1 column"
 }
+
 show_help() {
   echo "Utility Name: Expense Tracker"
   echo "Usage: sh Assgn1_8_11.sh [-c category] [-n name] [-s column] record [record...]"
@@ -97,7 +100,8 @@ while getopts ":c:n:s:h" opt; do
   esac
 done
 
-insert_record "$1" "$2" "$3" "$4"
+# insert_record "$1" "$2" "$3" "$4"
+# echo $SORT
 if [ -n "$CATEGORY" ]; then
   calculate_category_total "$CATEGORY"
 fi
