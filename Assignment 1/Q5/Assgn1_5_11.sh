@@ -19,18 +19,26 @@ for file in $(find $folder -name "*.py"); do
     echo "Multiline comments in the file"
     echo "-----------------"
     flag=0
+    n=0
     output=""
     while read -r word; do
+      
       if [[ $word == *'"""'* ]]; then
         if [ $flag -eq 0 ]; then
           flag=1
           output="$output $word"
+          temp=0
             while IFS= read -r line; do
+            temp=$((temp+1))
+        if [ $temp -gt $n ]; then
+
+  
         n=$((n+1))
         if [[ $line == *"$word"* ]]; then
               echo "line $n:"
               break
           fi
+        fi  
         done < "$file"
         else
           flag=0
