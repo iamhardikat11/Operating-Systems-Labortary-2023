@@ -30,12 +30,12 @@ calculate_name_total() {
 # Helper function to sort the csv by column
 sort_csv() {
   k=1
-#   str1="Date"
-#   str2="Category"
-#   str3="Amount"
-#   str4="Name"
+  str1="Date"
+  str2="Category"
+  str3="Amount"
+  str4="Name"
 #   if [[ "$1" == "$str1" ]]; then
-# #    awk -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " " -f 2-
+    awk -i inplace -F, '{split($1,a,"-"); print a[3]a[2]a[1], $0}' main.csv | sort | cut -d " " -f 2-
 #     k=1
 #   fi  
 #   if [[ "$1" == "$str2" ]]; then
@@ -107,4 +107,4 @@ fi
 if [ -n "$SORT" ]; then
   sort_csv "$SORT"
 fi
-
+# Debug Sort the CSV 

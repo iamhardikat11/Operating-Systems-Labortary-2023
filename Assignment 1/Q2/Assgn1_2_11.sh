@@ -8,7 +8,6 @@ for item in `cat $1`; do
                 break
             fi
         done
-
         if [[ $flag -eq 0 ]]
         then
             echo "YES"

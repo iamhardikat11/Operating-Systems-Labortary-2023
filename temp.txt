@@ -114,3 +114,8 @@ grep -riEo "\b^[aA]\w*\b" /path/to/directory > output.txt
 
 
 find /path/to/directory -type f -print0 | xargs -0 grep -o "^." | awk '{print tolower($0)}' | xargs -I {} sh -c 'grep -F {} /path/to/directory -r >> {}.txt'
+
+
+#!/bin/bash
+mkdir -p "$2"
+grep -ih "^[a-z]" $1/*.txt | sort | awk -v dir=$2 '{print > dir"/"tolower(substr($0,1,1))".txt"}'

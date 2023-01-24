@@ -1,12 +1,10 @@
 #!/bin/bash
-
 # Assign the arguments to variables
 json_dir=$1
 csv_dir=$2
 attributes=("$@")
 # Remove the first two arguments from the attributes array
 attributes=("${attributes[@]:2}")
-
 # Loop through each file in the json_dir directory
 for file in "$json_dir"/*
 do
