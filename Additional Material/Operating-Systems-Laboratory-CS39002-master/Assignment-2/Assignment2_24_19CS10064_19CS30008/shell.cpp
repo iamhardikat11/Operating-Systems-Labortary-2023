@@ -144,7 +144,6 @@ int main() {
             cout << e.what() << endl;
         }
     }
-
     // Save history when shell exits
     updateHistory();
 }
