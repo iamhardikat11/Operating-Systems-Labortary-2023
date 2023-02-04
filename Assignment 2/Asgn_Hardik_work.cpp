@@ -83,6 +83,7 @@ signed main()
         }
         if(history.size() == MAXIMUM_CACHE_HIST) history.pop_front();
         history.push_back(command);
+        
         if(history.size() > MAXIMUM_CACHE_HIST) history.pop_front();
         if(command == "exit") 
             break;
