@@ -49,7 +49,7 @@ void readCommand(char *s)
 
 signed main()
 {
-
+    //load
     while (1)
     {
         char *str = (char *)malloc(1000 * sizeof(char));

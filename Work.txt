@@ -1,7 +1,7 @@
     Items Marks
 Part 1
 Process creation and running an external command                    8   (Subhu)
-Redirection of stdin                                                8   (Archit)
+Redirection of stdin                                                8   (Subhu)
 Redirection of stdout                                               3   (Archit)
 Redirection of stdin and stdout together                            3   (Archit)
 Running an external command in background with I/O redirection      8   (Yatharth)
