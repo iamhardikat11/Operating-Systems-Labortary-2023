@@ -18,4 +18,4 @@ Features to help editing commands                                   15  (Togethe
 
 Total 100
 
-We have to do in C 
+We have to do in C++
