@@ -35,7 +35,7 @@ int main()
     int i, ch;
     int flag = 0;
     if(!flag1)
-      cout << "Enter your command: ";
+      cout << "Enter your Command: ";
     while ((ch = getch()) != '\n')
     {
       if (ch == 27)
@@ -57,6 +57,7 @@ int main()
               hist_cur--;
               if(hist_cur == -1) hist_cur++;
               flag2 = 1;
+              input += history[hist_cur];
               break;
             }
           }
@@ -69,6 +70,7 @@ int main()
               flag1 = 1;
               cout << "\r" <<  "\033[K" << "Enter your Command: " << history[hist_cur];
               hist_cur++;
+              input += history[hist_cur];
               break;
             }
           }
@@ -77,7 +79,7 @@ int main()
       else if (ch == 127 || ch == 8)
       {
         // Backspace
-        if (input.size() > 0)
+        // if (input.size() > 0)
         {
           input.pop_back();
           printf("\b \b");
