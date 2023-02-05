@@ -57,7 +57,7 @@ int main()
               hist_cur--;
               if(hist_cur == -1) hist_cur++;
               flag2 = 1;
-              input += history[hist_cur];
+              // input += history[hist_cur];
               break;
             }
           }
@@ -70,7 +70,7 @@ int main()
               flag1 = 1;
               cout << "\r" <<  "\033[K" << "Enter your Command: " << history[hist_cur];
               hist_cur++;
-              input += history[hist_cur];
+              // input += history[hist_cur];
               break;
             }
           }
@@ -78,8 +78,8 @@ int main()
       }
       else if (ch == 127 || ch == 8)
       {
-        // Backspace
-        // if (input.size() > 0)
+        //Backspace
+        if (input.size() > 0)
         {
           input.pop_back();
           printf("\b \b");
@@ -98,6 +98,7 @@ int main()
       print_(history);
       flag1 = 0;
       flag2 = 0;
+      input = history.back();
     }
   }
   return 0;
