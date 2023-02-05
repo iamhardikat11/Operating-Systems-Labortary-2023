@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 #include <bits/stdc++.h>
 #include <termios.h>
 #include <unistd.h>
 // #include <conio.h> // for _getch() function
 using namespace std;
 
+=======
+// #include <bits/stdc++.h>
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+>>>>>>> 9bdeee6dd0d50f14f3addb0da501391967de2bf4
 int getch() {
   struct termios old_t, new_t;
   int ch;
@@ -15,6 +22,7 @@ int getch() {
   tcsetattr(STDIN_FILENO, TCSANOW, &old_t);
   return ch;
 }
+<<<<<<< HEAD
 int main() {
   std::string input;
   while (true) {
@@ -30,3 +38,14 @@ int main() {
   }
   return 0;
 }
+=======
+int main()
+{
+    while(true)
+    {
+        int ch = getch();
+        printf("You Entered: %d\n", ch);        
+    }
+    return 0;
+}
+>>>>>>> 9bdeee6dd0d50f14f3addb0da501391967de2bf4
