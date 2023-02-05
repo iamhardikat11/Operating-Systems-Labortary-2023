@@ -5,7 +5,7 @@
 using namespace std;
 #define MAX_LENGTH 100
 
-int getch() {
+int _getch() {
   struct termios old_t, new_t;
   int ch;
   tcgetattr(STDIN_FILENO, &old_t);
@@ -36,15 +36,15 @@ int main()
     int flag = 0;
     if(!flag1)
       cout << "Enter your Command: ";
-    while ((ch = getch()) != '\n')
+    while ((ch = _getch()) != '\n')
     {
       if (ch == 27)
       {
         // Arrow key
-        ch = getch();
+        ch = _getch();
         if (ch == 91)
         {
-          ch = getch();
+          ch = _getch();
           if (ch == 65)
           {
             // Up arrow
@@ -54,10 +54,10 @@ int main()
               flag1 = 1;
               cout << "\r" << "\033[K" << "Enter your Command: ";
               cout << history[hist_cur];
+              input = history[hist_cur];
               hist_cur--;
               if(hist_cur == -1) hist_cur++;
               flag2 = 1;
-              // input += history[hist_cur];
               break;
             }
           }
@@ -69,8 +69,8 @@ int main()
               flag = 1;
               flag1 = 1;
               cout << "\r" <<  "\033[K" << "Enter your Command: " << history[hist_cur];
+              input = history[hist_cur];
               hist_cur++;
-              // input += history[hist_cur];
               break;
             }
           }
@@ -81,6 +81,7 @@ int main()
         //Backspace
         if (input.size() > 0)
         {
+          printf("rt");
           input.pop_back();
           printf("\b \b");
         }
@@ -90,7 +91,7 @@ int main()
           putchar(ch);
       }
     }
-    if(!flag) {
+    if(!flag || ch==10) {
       cout << endl;
       history.push_back(input);
       hist_cur = history.size()-1;
