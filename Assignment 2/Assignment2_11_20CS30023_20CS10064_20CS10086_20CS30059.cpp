@@ -4,6 +4,7 @@
 #include <string.h>
 // #include <termio.h>
 #include <unistd.h>
+#include <ncurses.h>
 
 #define COLOR_RED "\033[1;31m"
 #define COLOR_GREEN "\033[1;32m"
@@ -50,6 +51,9 @@ void readCommand(char *s)
 signed main()
 {
     //load
+    initscr();
+    noecho();
+    cbreak();
     while (1)
     {
         char *str = (char *)malloc(1000 * sizeof(char));
@@ -70,5 +74,6 @@ signed main()
         free(str);
         free(command);
     }
+    endwin();
     return 0;
 }
