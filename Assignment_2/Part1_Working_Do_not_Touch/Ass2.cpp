@@ -13,6 +13,9 @@
 #include <vector>
 #include <fnmatch.h>
 #include <algorithm>
+#include <glob.h>
+#include <cstring>
+#include <sstream>
 using namespace std;
 
 #define CMD_LEN 1024
@@ -193,6 +196,19 @@ std::vector<std::string> expand_wildcards(std::vector<std::string> args)
       expanded_args.push_back(dir + "/" + file);
   }
   return expanded_args;
+}
+
+void expandWildcards(const std::string &arg, std::vector<std::string> &args)
+{
+  glob_t globBuffer;
+  memset(&globBuffer, 0, sizeof(globBuffer));
+  int globResult = glob(arg.c_str(), GLOB_TILDE, NULL, &globBuffer);
+  if (globResult == 0)
+  {
+    for (size_t i = 0; i < globBuffer.gl_pathc; ++i)
+      args.push_back(globBuffer.gl_pathv[i]);
+  }
+  globfree(&globBuffer);
 }
 
 // This function search file in the directory .
@@ -458,7 +474,8 @@ public:
   }
   void pop()
   {
-    if(index == 0) return;
+    if (index == 0)
+      return;
     // decrement the size of the array
     this->index--;
     // allocate a new array with one less element
@@ -814,7 +831,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
   set_input_mode();
   char **history = shellHistory.commands;
   // cout << strlen(history) << endl;
-  int hist_cur = max(0,shellHistory.index - 1);
+  int hist_cur = max(0, shellHistory.index - 1);
   int cnt = 0;
   int flag1 = 0;
   while (1)
@@ -1071,8 +1088,28 @@ int main()
           break;
         }
       }
+
       if (flag_wildcard)
       {
+        string arg;
+        vector<string> args;
+        stringstream ss(cmd);
+        string c = "";
+        for (int i = 0; cmd[i] != ' '; i++)
+          c.push_back(cmd[i]);
+        while (ss >> arg)
+          expandWildcards(arg, args);
+        cout << "Expanded arguments:" << endl;
+        vector<string> args_standard;
+        for (const auto &arg : args) {
+          string s = c + " " + arg;
+          char *w = (char *)malloc(s.size()*sizeof(char));
+          int i = 0;
+          for(char ch: s)
+            w[i++] = ch;
+          executeCommand(w, isBackgrnd);
+        }
+        continue;
       }
       // execute every other command
       executeCommand(cmd, isBackgrnd);

@@ -2,3 +2,15 @@ exit
 pwd
 exit
 exit
+gedit d*/f*
+gedit d*/f*
+clear
+git add -A
+git commit -m "Added Wildcard check on Ubuntu"
+git status
+git push
+git status
+git pull
+git push --help
+git push --help
+exit
