@@ -1,8 +1,7 @@
 /*
-The ASCII value sequence for the left arrow key in Mac OS is: 27, 91, 68.
-The ASCII value sequence for the right arrow key in Mac OS is: 27, 91, 67.
+Steps to Run the Code:-
+    g++ -o fc final_control.cpp -lncurses
 */
-
 #include <bits/stdc++.h>
 #include <ncurses.h>
 #include <unistd.h>
