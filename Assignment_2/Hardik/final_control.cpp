@@ -98,6 +98,10 @@ int main()
     initscr();
     noecho();
     cbreak();
+    // scrollok(stdscr, true);
+    scrollok(stdscr, TRUE);  //These lines are the ones I think are causing issues
+    idlok(stdscr, TRUE);     //<<<
+    keypad(stdscr, TRUE);    //<<<
     load_history();
     // Uncomment this line to see the previous history saved
     print_history(); 
@@ -186,8 +190,18 @@ int main()
         mvprintw(line, 0, "Your entered : %s\n", input.c_str());
         line++;
         addToHistory(input);
+        string ans = "\033[F";
+        mvprintw(line, 0, ans.c_str());
+        // std::cout << "\033[F";
         if(input == "exit") {
             break;
+        }
+        else if(input == "pwd") {
+            char *pwd = (char *)malloc(DIR_LENGTH*sizeof(char));
+            getcwd(pwd, DIR_LENGTH);
+            // line++;
+            mvprintw(line, 0, pwd);
+            line++;
         }
         input.clear();
         cursorPos = 0;
