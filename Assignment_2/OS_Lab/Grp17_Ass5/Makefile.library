@@ -1,5 +1,0 @@
-libmemlab.a: memlab.o
-	ar -rcs libmemlab.a memlab.o
-
-memlab.o: memlab.h memlab.cpp
-	g++ -c memlab.cpp

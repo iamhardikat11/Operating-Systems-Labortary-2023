@@ -8,10 +8,11 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
-
 #include <iostream>
 #include <map>
 #include <vector>
+#include <fnmatch.h>
+#include <algorithm>
 using namespace std;
 
 #define CMD_LEN 1024
@@ -24,6 +25,8 @@ using namespace std;
 #define HISTFILESIZE 10000
 #define HISTSIZE 1000
 
+char *prompt = (char *)"\n$: ";
+char *prompt1 = (char *)"$: ";
 /**
  * Terminos has been used to take input character
  * by character with getchar in such a way that if tab
@@ -96,9 +99,7 @@ void computeLPSArray(char *str1, int M, int *lps)
     else
     {
       if (len != 0)
-      {
         len = lps[len - 1];
-      }
       else
       {
         lps[i] = 0;
@@ -146,6 +147,52 @@ int KMPSearch(char *str1, char *str2)
     }
   }
   return maxx;
+}
+
+std::vector<std::string> list_files(const std::string &dir, const std::string &pattern)
+{
+  std::vector<std::string> files;
+  DIR *dp;
+  struct dirent *entry;
+  if ((dp = opendir(dir.c_str())) == NULL)
+  {
+    std::cerr << "Cannot open directory: " << dir << std::endl;
+    return files;
+  }
+  while ((entry = readdir(dp)) != NULL)
+  {
+    std::string file_name = entry->d_name;
+    if (fnmatch(pattern.c_str(), file_name.c_str(), FNM_PATHNAME | FNM_PERIOD) == 0)
+      files.push_back(file_name);
+  }
+  closedir(dp);
+  return files;
+}
+
+std::vector<std::string> expand_wildcards(std::vector<std::string> args)
+{
+  std::vector<std::string> expanded_args;
+  for (const auto &arg : args)
+  {
+    if (arg.find("*") == std::string::npos && arg.find("?") == std::string::npos)
+    {
+      expanded_args.push_back(arg);
+      continue;
+    }
+    std::string dir = ".";
+    std::string pattern = arg;
+    size_t pos = arg.find_last_of("/");
+    if (pos != std::string::npos)
+    {
+      dir = arg.substr(0, pos);
+      pattern = arg.substr(pos + 1);
+    }
+    std::vector<std::string> files = list_files(dir, pattern);
+    std::sort(files.begin(), files.end());
+    for (const auto &file : files)
+      expanded_args.push_back(dir + "/" + file);
+  }
+  return expanded_args;
 }
 
 // This function search file in the directory .
@@ -389,9 +436,7 @@ public:
   {
     int ind = max(0, index - HISTSIZE);
     for (int i = index - ind - 1, j = 1; i >= 0; i--, j++)
-    {
       fprintf(stdout, "%d) %s\n", j, commands[i + ind]);
-    }
   }
 
   /**
@@ -404,15 +449,22 @@ public:
     if (this->index == this->maxSize)
     {
       this->maxSize = this->maxSize + HISTFILESIZE;
-      this->commands =
-          (char **)realloc(this->commands, sizeof(char *) * (this->maxSize));
+      this->commands = (char **)realloc(this->commands, sizeof(char *) * (this->maxSize));
     }
     this->commands[this->index] = (char *)malloc(sizeof(char) * CMD_LEN);
     strcpy(this->commands[this->index], command);
     this->commands[this->index][(int)strlen(command)] = '\0';
     this->index++;
   }
-
+  void pop()
+  {
+    if(index == 0) return;
+    // decrement the size of the array
+    this->index--;
+    // allocate a new array with one less element
+    this->commands = (char **)realloc(this->commands, this->index * sizeof(char *));
+    // return the new array
+  }
   /**
    * @brief
    * THis function write the recent 10000 commands
@@ -732,7 +784,6 @@ void executeCommand(char *cmd, int isBackGrnd)
         if (WIFEXITED(status[i]) || WIFSIGNALED(status[i]) ||
             WIFCONTINUED(status[i]))
         {
-
           done = 1;
           break;
         }
@@ -746,154 +797,6 @@ void executeCommand(char *cmd, int isBackGrnd)
 }
 
 /**
- * @brief Function to clear all temporary files after MultiWatch is stopped.
- *
- */
-// void stopMultiWatch() {
-//   for (int i = 0; i < watchCmdCnt; i++) {
-//     char *fileName = (char *)malloc(BUF_LEN * sizeof(char));
-
-//     asprintf(&fileName, ".temp.PID%d.txt", i + 1);
-
-//     remove(fileName);
-//   }
-// }
-
-// /**
-//  * @brief Function to run MultiWatch functionality.
-//  *
-//  * @param cmd The entire command line input
-//  */
-// void runMultiWatch(char *cmd) {
-//   stopWatch = 0;
-//   int len = strlen(cmd);
-
-//   char *cmds = (char *)malloc((CMD_LEN) * sizeof(char));
-
-//   strncpy(cmds, cmd + 12, len - 13);
-
-//   cmds[len - 13] = '\0';
-
-//   watchCmdCnt = 1;
-
-//   for (int i = 0; i < strlen(cmds); i++) {
-//     if (cmds[i] == ',') {
-//       watchCmdCnt++;
-//     }
-//   }
-
-//   char **indCmds = (char **)malloc(watchCmdCnt * sizeof(char *));
-
-//   for (int i = 0; i < watchCmdCnt; i++) {
-//     indCmds[i] = (char *)malloc(IND_CMD_LEN * sizeof(char));
-//   }
-//   indCmds[0] = strtok(cmds, ",");
-//   strncpy(indCmds[0], indCmds[0] + 1, strlen(indCmds[0]) - 2);
-//   indCmds[0][strlen(indCmds[0]) - 2] = '\0';
-//   for (int i = 1; i < watchCmdCnt; i++) {
-//     indCmds[i] = strtok(NULL, ",");
-//     strncpy(indCmds[i], indCmds[i] + 1, strlen(indCmds[i]) - 2);
-//     indCmds[i][strlen(indCmds[i]) - 2] = '\0';
-//   }
-//   int fds[watchCmdCnt], readFds[watchCmdCnt];
-//   inotifyFd = inotify_init();
-//   map<int, int> wd2File;
-
-//   for (int i = 0; i < watchCmdCnt; i++) {
-//     char *fileName = (char *)malloc(BUF_LEN * sizeof(char));
-
-//     asprintf(&fileName, ".temp.PID%d.txt", i + 1);
-//     fds[i] = open(fileName, O_CREAT | O_WRONLY, 0666);
-//     readFds[i] = open(fileName, O_CREAT | O_RDONLY, 0666);
-
-//     int wd = inotify_add_watch(inotifyFd, fileName, IN_MODIFY);
-
-//     wd2File[wd] = i;
-//   }
-
-//   pid_t *watch_pids = (pid_t *)malloc(watchCmdCnt * sizeof(pid_t));
-
-//   int pid1 = fork();
-
-//   // execute commands again and again in children processes
-//   if (pid1 == 0) {
-//     do {
-//       for (int i = 0; i < watchCmdCnt; i++) {
-//         watch_pids[i] = fork();
-
-//         if (watch_pids[i] < 0) {
-//           fprintf(stderr, "Could not create process. Exitting\n");
-//           exit(0);
-//         } else if (watch_pids[i] == 0) {  // child process
-//           // close all other files
-//           for (int j = 0; j < watchCmdCnt; j++) {
-//             if (j != i) {
-//               close(fds[j]);
-//             }
-//             close(readFds[i]);
-//           }
-
-//           int ipFile = STD_INPUT;
-
-//           char **cmds = splitCommand(indCmds[i], ipFile, fds[i]);
-
-//           if (execvp(cmds[0], cmds) < 0) {
-//             fprintf(stderr, "ERROR. Could not execute program %s.\n", cmds[0]);
-//             exit(0);
-//           }
-//         }
-//       }
-//       sleep(1);
-//       if (stopWatch) exit(0);
-//     } while (true);
-//   }
-
-//   // watch for output using inotifyFd
-//   while (true) {
-
-//     char buf[EVENT_BUF_LEN]
-//         __attribute__((aligned(__alignof__(struct inotify_event))));
-//     int len = read(inotifyFd, buf, sizeof(buf));
-
-//     if (len <= 0 || stopWatch) break;
-
-//     int i = 0;
-
-//     while (i < len) {
-
-//       struct inotify_event *event = (struct inotify_event *)&buf[i];
-
-//       if (event->mask & IN_MODIFY) {
-//         int wd = event->wd;
-
-//         int fileIndex = wd2File[wd];
-
-//         fprintf(stdout, "\"%s\" , current_time: %lu.\n", indCmds[fileIndex],
-//                 (unsigned long)time(NULL));
-//         fprintf(stdout, "<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-\n");
-//         char read_buf[BUF_LEN + 1];
-//         for (int i = 0; i <= BUF_LEN; i++) {
-//           read_buf[i] = '\0';
-//         }
-
-//         while (read(readFds[fileIndex], read_buf, BUF_LEN) > 0) {
-//           fprintf(stdout, "%s", read_buf);
-//           for (int i = 0; i <= BUF_LEN; i++) {
-//             read_buf[i] = '\0';
-//           }
-//         }
-
-//         fprintf(stdout, "->->->->->->->->->->->->->->->->->->->->\n\n");
-//       }
-//       i += sizeof(struct inotify_event) + event->len;
-//     }
-//   }
-
-//   // clear data after multiWatch
-//   stopMultiWatch();
-// }
-
-/**
  * @brief Function to read input command from command line
  *
  * @param isBackGrnd Flag passed by referrence to check if command has & present in
@@ -902,18 +805,23 @@ void executeCommand(char *cmd, int isBackGrnd)
  * @param shellHistory Object of the shellHistory class that maintains the history of commands run till now.
  * @return char* The entire command line input
  */
-char *readLine(int &isBackGrnd, int &needExecution,
-               shell_history &shellHistory)
+char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
 {
   char *cmd = (char *)malloc(CMD_LEN * sizeof(char));
-
   char ch = 'a';
   int pos = 0;
   int inputModeSet = 0;
   set_input_mode();
+  char **history = shellHistory.commands;
+  // cout << strlen(history) << endl;
+  int hist_cur = shellHistory.index - 1;
+  int cnt = 0;
+  int flag1 = 0;
   while (1)
   {
     ch = getchar();
+    vector<int> store;
+    store.clear();
     if ((int)ch == 127)
     {
       if (pos == 0)
@@ -950,6 +858,68 @@ char *readLine(int &isBackGrnd, int &needExecution,
       return cmd;
       // history work
     }
+    else if ((int)ch == 27)
+    {
+      char ch1 = getchar();
+      if ((int)ch1 == 91)
+      {
+        char ch2 = getchar();
+        if ((int)ch2 == 65)
+        {
+          for (int i = 0; i < strlen(cmd) + strlen(prompt); i++)
+            fputs("\b \b", stdout);
+          fputs(prompt1, stdout);
+          // fprintf(stdout, "@1");
+          if (hist_cur >= 0)
+          {
+            cmd = history[hist_cur];
+            hist_cur--;
+            pos = strlen(cmd);
+            if (hist_cur == -1)
+              hist_cur = 0;
+            if(flag1 == 0) {
+             shellHistory.push(cmd);
+             flag1 = 1;
+            }
+            cnt++;
+          }
+          fprintf(stdout, cmd);
+        }
+        else if ((int)ch2 == 66)
+        {
+          for (int i = 0; i < strlen(cmd) + strlen(prompt); i++)
+            fputs("\b \b", stdout);
+          fputs(prompt1, stdout);
+          if (hist_cur < shellHistory.index)
+          {
+            cmd = history[hist_cur];
+            pos = strlen(cmd);
+            hist_cur++;
+            if (hist_cur == shellHistory.index)
+              hist_cur = shellHistory.index - 1;
+            if(flag1 == 0) {
+             shellHistory.push(cmd);
+             flag1 = 1;
+            }
+            cnt++;
+          }
+          fprintf(stdout, cmd);
+        }
+        // else
+        // {
+        //   cmd[pos++] = ch;
+        //   cmd[pos++] = ch1;
+        //   cmd[pos++] = ch2;
+        // }
+      }
+      // else
+      // {
+      //   cmd[pos++] = ch;
+      //   cmd[pos++] = ch1;
+      //   // putchar(ch);
+      //   // putchar(ch1);
+      // }
+    }
     else if ((ch == EOF || ch == '\n' || pos >= CMD_LEN - 1))
       break;
     else
@@ -965,11 +935,11 @@ char *readLine(int &isBackGrnd, int &needExecution,
     return cmd;
   }
   if (cmd[pos - 1] == '&')
-  {
     isBackGrnd = 1;
-  }
   cmd[pos] = '\0';
   reset_input_mode();
+  if(flag1 = 1)
+  shellHistory.pop();
   return cmd;
 }
 
@@ -1018,7 +988,7 @@ int main()
 
   while (true)
   {
-    fprintf(stdout, "\n$: ");
+    fprintf(stdout, prompt);
 
     // initialise variables
     int isBackgrnd = 0;
@@ -1054,7 +1024,7 @@ int main()
       shellHistory.print();
       continue;
     }
-    
+
     // initialise character array to extract part of input
     char *dest = (char *)malloc((11) * sizeof(char));
     for (int i = 0; i < 11; i++)
@@ -1070,7 +1040,6 @@ int main()
     // }
     // else
     {
-      cout << "Hi" << endl;
       if (strlen(cmd) > 2)
         strncpy(dest, cmd, 2);
 
@@ -1079,7 +1048,15 @@ int main()
         executeCd(cmd);
         continue;
       }
-
+      if (!strcmp(cmd, "pwd"))
+      {
+        printf("@");
+        char *pwd = (char *)malloc(1000 * sizeof(char));
+        getcwd(pwd, 1000);
+        pwd[strlen(pwd)] = '\0';
+        fprintf(stdout, pwd);
+        continue;
+      }
       if (strlen(cmd) >= 4)
         strncpy(dest, cmd, 4);
 
@@ -1088,10 +1065,21 @@ int main()
         executeHelp(cmd);
         continue;
       }
-      printf("%s\n", cmd);
+      cout << cmd << endl;
+      bool flag_wildcard = false;
+      for (int i = 0; i < strlen(cmd); i++)
+      {
+        if (cmd[i] == '?' || cmd[i] == '*')
+        {
+          flag_wildcard = true;
+          break;
+        }
+      }
+      if (flag_wildcard)
+      {
+      }
       // execute every other command
       executeCommand(cmd, isBackgrnd);
-      printf("1\n");
     }
     // flush the standard input and output.
     fflush(stdout);
