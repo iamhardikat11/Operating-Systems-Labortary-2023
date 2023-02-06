@@ -52,8 +52,7 @@ int main()
             {
               flag = 1;
               flag1 = 1;
-              cout << "\r" << "\033[K" << "Enter your Command: ";
-              cout << history[hist_cur];
+              cout << "\r" << "\033[K" << "Enter your Command: " << history[hist_cur];
               input = history[hist_cur];
               hist_cur--;
               if(hist_cur == -1) hist_cur++;
