@@ -814,7 +814,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
   set_input_mode();
   char **history = shellHistory.commands;
   // cout << strlen(history) << endl;
-  int hist_cur = shellHistory.index - 1;
+  int hist_cur = max(0,shellHistory.index - 1);
   int cnt = 0;
   int flag1 = 0;
   while (1)
@@ -869,23 +869,22 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
           for (int i = 0; i < strlen(cmd) + strlen(prompt); i++)
             fputs("\b \b", stdout);
           fputs(prompt1, stdout);
-          // fprintf(stdout, "@1");
-          if (hist_cur >= 0)
+          if (hist_cur >= 0 && shellHistory.index)
           {
             cmd = history[hist_cur];
             hist_cur--;
             pos = strlen(cmd);
             if (hist_cur == -1)
               hist_cur = 0;
-            if(flag1 == 0) {
-             shellHistory.push(cmd);
-             flag1 = 1;
-            }
+            // if(flag1 == 0) {
+            //  shellHistory.push(cmd);
+            //  flag1 = 1;
+            // }
             cnt++;
           }
           fprintf(stdout, cmd);
         }
-        else if ((int)ch2 == 66)
+        else if ((int)ch2 == 66 && shellHistory.index)
         {
           for (int i = 0; i < strlen(cmd) + strlen(prompt); i++)
             fputs("\b \b", stdout);
@@ -893,14 +892,14 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
           if (hist_cur < shellHistory.index)
           {
             cmd = history[hist_cur];
-            pos = strlen(cmd);
             hist_cur++;
+            pos = strlen(cmd);
             if (hist_cur == shellHistory.index)
               hist_cur = shellHistory.index - 1;
-            if(flag1 == 0) {
-             shellHistory.push(cmd);
-             flag1 = 1;
-            }
+            // if(flag1 == 0) {
+            //  shellHistory.push(cmd);
+            //  flag1 = 1;
+            // }
             cnt++;
           }
           fprintf(stdout, cmd);
@@ -938,8 +937,8 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     isBackGrnd = 1;
   cmd[pos] = '\0';
   reset_input_mode();
-  if(flag1 = 1)
-  shellHistory.pop();
+  // if(flag1 = 1)
+  // shellHistory.pop();
   return cmd;
 }
 
@@ -959,9 +958,7 @@ void executeCd(char *cmd)
   else
   {
     if (chdir(cmds[1]) != 0)
-    {
       fprintf(stderr, "ERROR. Directory not found.\n");
-    }
   }
 }
 
@@ -1050,7 +1047,6 @@ int main()
       }
       if (!strcmp(cmd, "pwd"))
       {
-        printf("@");
         char *pwd = (char *)malloc(1000 * sizeof(char));
         getcwd(pwd, 1000);
         pwd[strlen(pwd)] = '\0';
