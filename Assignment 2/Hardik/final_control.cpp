@@ -8,20 +8,55 @@ The ASCII value sequence for the right arrow key in Mac OS is: 27, 91, 67.
 #include <string>
 using namespace std;
 
+// deque<string> history;
+// const string HIST_FILE = ".history";
+
+
 int ascii(char ch)
 {
     return (int)ch;
 }
+// void load_history()
+// {
+//     history.clear();
+//     ifstream file(HIST_FILE);
+//     if (!file.is_open()) 
+//         return;
+//     else {
+//         string line = "";
+//         while (getline(file, line)) {
+//             history.push_back(line);
+//         }
+//     }
+//     if(file.is_open())
+//         file.close();
+// }
+// void print_history()
+// {
+//     int i = 1;
+//     for(auto it: history) 
+//     {
+//         printw("%d %s\n", i++, it.c_str());
+//         // cout << i++ << " " << it << "\n";
+//     }
+//     printw("\n");
+// }
 int main()
 {
+    
     initscr();
     noecho();
     cbreak();
+    // load_history();
+    // Uncomment this line to see the previous history saved
+    // print_history(); 
     string input;
     int cursorPos = 0;
+    int line  = 0;
     while (1)
     {
-        printw("Enter your Command: ");
+        clrtoeol();
+        mvprintw(line, 0, "Enter your Command: ");
         refresh();
         int c;
         while ((c = getch()) != 10)
@@ -65,14 +100,16 @@ int main()
                 input.insert(cursorPos, 1, char(c));
                 cursorPos++;
             }
-            clear();
-            refresh();
-            printw("Enter your Command: ");
-            printw(input.c_str());
-            move(0, 20 + cursorPos);
+            mvprintw(line,20, input.c_str());
+            clrtoeol();
+            move(line, 20 + cursorPos);
             refresh();
         }
-        printw("\nYour entered command: %s\n", input.c_str());
+        line++;
+        mvprintw(line, 0, "Your entered : %s\n", input.c_str());
+        line++;
+        // history.push_back(input);
+        // print_history();
         input.clear();
         cursorPos = 0;
     }
