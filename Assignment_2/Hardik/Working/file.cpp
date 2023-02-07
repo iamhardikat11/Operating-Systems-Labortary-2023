@@ -36,8 +36,9 @@ std::vector<int> get_pids_with_file_lock(const std::string &file_path)
   std::vector<int> pids;
   std::string lock_file = file_path + ".lock";
   std::ifstream locks(lock_file);
-  if (!locks.is_open())
-    return pids;
+  // if (!locks.is_open())
+  //   return pids;
+  cout << "123486";
   std::unordered_set<int> pid_set;
   std::string line;
   while (std::getline(locks, line))

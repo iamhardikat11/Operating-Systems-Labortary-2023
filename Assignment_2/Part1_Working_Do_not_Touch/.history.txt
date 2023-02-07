@@ -14,3 +14,70 @@ git pull
 git push --help
 git push --help
 exit
+gedit d*/f*
+gedit ./dir1/file.txt
+gedit d*/f*
+clear
+exit
+exit
+clear
+gedit d*/f*;
+gedit d8?f*
+exit
+exit
+gedit d8?f*
+exit
+exit
+exit
+exit
+exit
+exit
+exit
+ls
+exit
+h
+exit
+exit
+
+clear
+exit
+har
+exit
+exit
+exit
+hard
+exit
+exit
+hardik
+clear
+exit
+EXIT
+exit
+haclear
+exit
+haeii
+exit
+hardik
+clear
+exit
+exit
+gedit d*/f*
+exit
+exitr
+exit
+exitr
+exit
+exitr
+exit
+exitr
+exit 123
+exit
+exit 123
+exit
+exit        123    
+exit
+exit        123    
+exit
+exit 
+exit 123 409
+exit 1 2 3

@@ -1,2 +1,5 @@
 Second Input in the Up Down functionality
 Implement Pop Operation in shellHistory to record the user's just typed command
+Wildcard mein parallelly open hona chahiye
+Ctrl+Z ha chutiya 
+Due to non-avail... of process Ctrl + Z mein try and catch and perror msg
