@@ -81,3 +81,79 @@ exit
 exit 
 exit 123 409
 exit 1 2 3
+har
+clear
+exit 123
+exit
+exit
+delep
+delep ./
+exit
+delep ./tm
+delep ./tmp/text-file
+exit
+delep ./tmp/txt
+exit
+delep ./tmp/txt
+exit
+delep ./tmp/txt
+exit
+delep ./tmp/txt
+exit
+delep ./tmp/txt
+exit
+delep ./tmp/txt
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
