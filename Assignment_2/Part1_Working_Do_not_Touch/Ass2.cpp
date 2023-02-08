@@ -582,15 +582,18 @@ void ctrlZHandler(int dum)
   // try and catch
   fprintf(stdout, " Ctrl Z Detected.\n");
   int x = 0;
-  for (int i = 0; i < pipeCount + 1 && i < sizeof(pids)/sizeof(pid_t); i++) {
-    try {
-      if(kill(pids[i], SIGCONT))
+  for (int i = 0; i < pipeCount + 1 && i < sizeof(pids) / sizeof(pid_t); i++)
+  {
+    try
+    {
+      if (kill(pids[i], SIGCONT))
         ;
       else
         throw x;
     }
-    catch(int x) {
-      fprintf(stdout,"No More Processes to Kill\n");
+    catch (int x)
+    {
+      fprintf(stdout, "No More Processes to Kill\n");
     }
   }
   runInBackgrnd = 1;
@@ -881,13 +884,60 @@ vector<vector<string>> readPIDs(string s)
   for (int i = 0; i < data.size(); i++)
   {
     cout << data.size() << " " << data[i].size();
-    for (int j = 0; j < data[i].size() - 1 ; j++)
+    for (int j = 0; j < data[i].size() - 1; j++)
       cout << data[i][j] << " ";
     cout << endl;
   }
   cout << data.size() << data[0].size() << data[1].size() << endl;
   return data;
 }
+struct Data
+{
+  string COMMAND;
+  string PID;
+  string USER;
+  string FD;
+  string TYPE;
+  string DEVICE;
+  string SIZE_OFF;
+  string NODE;
+  string NAME;
+};
+
+vector<string> parseFile(const string &fileName)
+{
+  ifstream file(fileName);
+  vector<string> pids;
+  string line;
+  int lineNum = 0;
+  while (getline(file, line))
+  {
+    lineNum++;
+    if (lineNum == 1)
+      continue; // skip the first line (header)
+
+    istringstream ss(line);
+    string token;
+    int tokenNum = 0;
+    while (getline(ss, token, ' '))
+    {
+      tokenNum++;
+      if (tokenNum == 2)
+        pids.push_back(token);
+    }
+  }
+  return pids;
+}
+void writeFile(const string &fileName, const vector<string> &pids)
+{
+  ofstream file(fileName);
+  for (const auto &pid : pids)
+  {
+    file << pid << endl;
+  }
+  file.close();
+}
+
 void delep(char *cmd)
 {
   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
@@ -898,14 +948,16 @@ void delep(char *cmd)
   // fprintf(stdout, ch1);
   char *ch2 = (char *)malloc(100 * sizeof(char));
   memset(ch2, '\0', (100));
-  strcpy(ch2, " > .tmpfile.csv");
+  strcpy(ch2, " > tmpfile.csv");
   strcat(ch, ch1);
   strcat(ch, cmd);
   strcat(ch, ch2);
   printf("[%s]\n", ch);
   executeCommand(ch, 0);
-  vector<vector<string>> info;
-  info = readPIDs(".tmpfile.csv");
+  vector<string> data = parseFile("tmpfile.csv");
+  writeFile("tmpfile.csv", data);
+  // vector<vector<string>> info;
+  // info = readPIDs(".tmpfile.csv");
   // cout << "PID of all Process's that have Opened the file:\n";
   // vector<pid_t> pid_lock, pid_open;
   // cout << info.size() << info[1].size() << info[0].size() << endl;
@@ -917,7 +969,7 @@ void delep(char *cmd)
   // // cout << endl;
   // // }
   // // cout << endl;
-  cout << info.size() << " " << info[0].size() << endl;
+  // cout << info.size() << " " << info[0].size() << endl;
   cout << endl;
   // executeCommand((char *)"rm .tmpfile.csv", 0);
   free(ch);
