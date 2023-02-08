@@ -16,9 +16,10 @@
 #include <glob.h>
 #include <cstring>
 #include <sstream>
-#include <readline/readline.h>
 #include <fstream>
 #include <string>
+#include <signal.h>
+
 using namespace std;
 
 #define CMD_LEN 1024
@@ -580,8 +581,18 @@ void ctrlZHandler(int dum)
 {
   // try and catch
   fprintf(stdout, " Ctrl Z Detected.\n");
-  for (int i = 0; i < pipeCount + 1; i++)
-    kill(pids[i], SIGCONT);
+  int x = 0;
+  for (int i = 0; i < pipeCount + 1 && i < sizeof(pids)/sizeof(pid_t); i++) {
+    try {
+      if(kill(pids[i], SIGCONT))
+        ;
+      else
+        throw x;
+    }
+    catch(int x) {
+      fprintf(stdout,"No More Processes to Kill\n");
+    }
+  }
   runInBackgrnd = 1;
 }
 
@@ -851,66 +862,66 @@ void executeCommand(char *cmd, int isBackGrnd)
     } while (true);
   }
 }
-// vector<vector<string>> readPIDs(string s)
-// {
-//   // Open the file
-//   vector<vector<string>> data;
-//   ifstream file(s);
-//   string line, cell;
-//   while (getline(file, line))
-//   {
-//     vector<string> cells;
-//     stringstream lineStream(line);
-//     while (getline(lineStream, cell, ','))
-//       cells.push_back(cell);
-//     data.push_back(cells);
-//   }
-//   file.close();
-//   // Print the vector data
-//   for (int i = 0; i < data.size(); i++)
-//   {
-//     cout << data.size() << " " << data[i].size();
-//     // for (int j = 0; j < data[i].size(); j++)
-//       // cout << data[i][1] << " ";
-//     cout << endl;
-//   }
-//   cout << data.size() << data[0].size() << data[1].size() << endl;
-//   return data;
-// }
-// void delep(char *cmd)
-// {
-//   char *ch = (char *)malloc((CMD_LEN + 100) * sizeof(char));
-//   memset(ch, '\0', (CMD_LEN + 100));
-//   char *ch1 = (char *)malloc(10 * sizeof(char));
-//   memset(ch1, '\0', (10));
-//   strcpy(ch1, "lsof +d");
-//   char *ch2 = (char *)malloc(100 * sizeof(char));
-//   memset(ch2, '\0', (100));
-//   strcpy(ch2, " > .tmpfile.csv");
-//   strcat(ch, ch1);
-//   strcat(ch, cmd);
-//   strcat(ch, ch2);
-//   // strcat(ch, cmd);
-//   printf("[%s]\n", ch);
-//   executeCommand(ch, 0);
-//   vector<vector<string>> info;
-//   info = readPIDs(".tmpfile.csv");
-//   cout << "PID of all Process's that have Opened the file:\n";
-//   vector<pid_t> pid_lock, pid_open;
-//   cout << info.size() << info[1].size() << info[0].size() << endl;
-//   for(int i = 1; i < info.size(); i++)
-//   {
-//     cout << info[i][1] << " ";
-//     pid_open.push_back(stoi(info[i][1]));
-//   }    
-//   // cout << endl;
-//   // }
-//   // cout << endl;
-//   // cout << info.size() << " " << info[0].size() << endl;
-//   // cout << endl;
-//   executeCommand((char *)"rm .tmpfile.csv", 0);
-//   free(ch);
-// }
+vector<vector<string>> readPIDs(string s)
+{
+  // Open the file
+  vector<vector<string>> data;
+  ifstream file(s);
+  string line, cell;
+  while (getline(file, line))
+  {
+    vector<string> cells;
+    stringstream lineStream(line);
+    while (getline(lineStream, cell, ','))
+      cells.push_back(cell);
+    data.push_back(cells);
+  }
+  file.close();
+  // Print the vector data
+  for (int i = 0; i < data.size(); i++)
+  {
+    cout << data.size() << " " << data[i].size();
+    for (int j = 0; j < data[i].size() - 1 ; j++)
+      cout << data[i][j] << " ";
+    cout << endl;
+  }
+  cout << data.size() << data[0].size() << data[1].size() << endl;
+  return data;
+}
+void delep(char *cmd)
+{
+  char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
+  memset(ch, '\0', (CMD_LEN + 1000));
+  char *ch1 = (char *)malloc(100 * sizeof(char));
+  memset(ch1, '\0', (100));
+  strcpy(ch1, "lsof ");
+  // fprintf(stdout, ch1);
+  char *ch2 = (char *)malloc(100 * sizeof(char));
+  memset(ch2, '\0', (100));
+  strcpy(ch2, " > .tmpfile.csv");
+  strcat(ch, ch1);
+  strcat(ch, cmd);
+  strcat(ch, ch2);
+  printf("[%s]\n", ch);
+  executeCommand(ch, 0);
+  vector<vector<string>> info;
+  info = readPIDs(".tmpfile.csv");
+  // cout << "PID of all Process's that have Opened the file:\n";
+  // vector<pid_t> pid_lock, pid_open;
+  // cout << info.size() << info[1].size() << info[0].size() << endl;
+  // for(int i = 1; i < info.size(); i++)
+  // {
+  //   cout << info[i][1] << " ";
+  //   pid_open.push_back(stoi(info[i][1]));
+  // }
+  // // cout << endl;
+  // // }
+  // // cout << endl;
+  cout << info.size() << " " << info[0].size() << endl;
+  cout << endl;
+  // executeCommand((char *)"rm .tmpfile.csv", 0);
+  free(ch);
+}
 
 /**
  * @brief Function to read input command from command line
@@ -932,11 +943,10 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
   int hist_cur = max(0, shellHistory.index - 1);
   int cnt = 0;
   int flag1 = 0;
+  string input = "";
   while (1)
   {
     ch = getchar();
-    vector<int> store;
-    store.clear();
     if ((int)ch == 1)
     {
       for (int i = 0; i < pos; i++)
@@ -1239,8 +1249,9 @@ int main()
       char *cmd1 = (char *)malloc(sizeof(char) * CMD_LEN);
       for (int i = 6; i < strlen(cmd); i++)
         cmd1[i - 6] = cmd[i];
+      // fprintf(stdout,cmd1);
       // std::cout << file_path << std::endl;
-      // delep(cmd1);
+      delep(cmd1);
       continue;
     }
     // initialise character array to extract part of input
@@ -1294,59 +1305,24 @@ int main()
       while (ss >> arg)
         expandWildcards(arg, args);
       cout << "Expanded arguments:" << endl;
-      string expanded_arg_concatenated = "";
-      if (strstr(cmd, "sort") != nullptr)
+      vector<string> args_standard;
+      for (const auto &arg : args)
+        args_standard.push_back(c + " " + arg);
+      int i = 0;
+      if (fork() == 0)
       {
-        expanded_arg_concatenated += "sort ";
         for (const auto &arg : args)
         {
-          expanded_arg_concatenated += arg + " ";
+          string s = c + " " + arg + " & ";
+          char *w = (char *)malloc(s.size() * sizeof(char));
+          int i = 0;
+          for (char ch : s)
+            w[i++] = ch;
+          executeCommand(w, isBackgrnd);
         }
-
-        cout << expanded_arg_concatenated << endl;
-       
-        vector<char *> expanded_args;
-        int length = expanded_arg_concatenated.size();
-        char *w = (char *)malloc((length + 1) * sizeof(char));
-        int i = 0;
-        for (char ch : expanded_arg_concatenated)
-          w[i++] = ch;
-        w[length] = '\0';
-        expanded_args.push_back(w);
-
-        for (const auto &exp_arg : expanded_args)
-        {
-          cout << exp_arg << endl;
-          executeCommand(exp_arg, isBackgrnd);
-        }
-        continue;
       }
-      if (strstr(cmd, "gedit") != nullptr)
-      {
-        expanded_arg_concatenated += "gedit ";
-        for (const auto &arg : args)
-        {
-          expanded_arg_concatenated += arg + " ";
-        }
-
-        cout << expanded_arg_concatenated << endl;
-      
-        vector<char *> expanded_args;
-        int length = expanded_arg_concatenated.size();
-        char *w = (char *)malloc((length + 1) * sizeof(char));
-        int i = 0;
-        for (char ch : expanded_arg_concatenated)
-          w[i++] = ch;
-        w[length] = '\0';
-        expanded_args.push_back(w);
-
-        for (const auto &exp_arg : expanded_args)
-        {
-          cout << exp_arg << endl;
-          executeCommand(exp_arg, isBackgrnd);
-        }
-        continue;
-      }
+      wait(NULL);
+      continue;
     }
     // test delep with wild_card;
 
