@@ -955,6 +955,10 @@ void delep(char *cmd)
   printf("[%s]\n", ch);
   executeCommand(ch, 0);
   vector<string> data = parseFile("tmpfile.csv");
+  for(auto it: data)
+  {
+    cout << it << " ";
+  }
   writeFile("tmpfile.csv", data);
   // vector<vector<string>> info;
   // info = readPIDs(".tmpfile.csv");

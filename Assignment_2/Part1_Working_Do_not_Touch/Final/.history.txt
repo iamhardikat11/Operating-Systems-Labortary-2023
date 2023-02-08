@@ -198,3 +198,6 @@ g++ -o
 delep ./tmp/test-file
 e
 exit
+sudo apt 
+exit
+exit
