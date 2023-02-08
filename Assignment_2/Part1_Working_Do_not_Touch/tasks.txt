@@ -4,3 +4,4 @@ Wildcard mein parallelly open hona chahiye
 Ctrl+Z ha chutiya 
 Due to non-avail... of process Ctrl + Z mein try and catch and perror msg
 Run delep with wildcard if possible
+Mention Problem with Ctrl + A and Ctrl + E with README.md

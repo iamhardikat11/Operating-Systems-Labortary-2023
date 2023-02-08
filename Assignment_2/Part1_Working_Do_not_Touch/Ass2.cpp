@@ -1240,7 +1240,7 @@ int main()
       for (int i = 6; i < strlen(cmd); i++)
         cmd1[i - 6] = cmd[i];
       // std::cout << file_path << std::endl;
-      delep(cmd1);
+      // delep(cmd1);
       continue;
     }
     // initialise character array to extract part of input

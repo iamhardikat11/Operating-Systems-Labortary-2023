@@ -157,3 +157,6 @@ delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Pa
 exit
 delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
 exit
+h
+hr
+exit
