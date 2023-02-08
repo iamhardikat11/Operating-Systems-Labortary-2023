@@ -160,3 +160,41 @@ exit
 h
 hr
 exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+delep /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment_2/Part1_Working_Do_not_Touch/tmp
+exit
+delep ./
+exit
+delep ./
+delep ./tmp/test-file
+delep ./tmp/test-file
+exit
+delep ./tmp/test-file
+exit
+delep ./tmp/test-file
+exit
+g++ -o As As
+g++ -o As As
+g++ -o As2 Ass2.cpp
+./As2
+delep ./tmp/test-file
+exit
+g++ -o
+delep ./tmp/test-file
+e
+exit
