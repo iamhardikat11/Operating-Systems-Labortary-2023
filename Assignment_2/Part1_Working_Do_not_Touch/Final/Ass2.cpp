@@ -176,30 +176,80 @@ std::vector<std::string> list_files(const std::string &dir, const std::string &p
   return files;
 }
 
-std::vector<std::string> expand_wildcards(std::vector<std::string> args)
+
+map<string, string> getProcessDetails(int pid)
 {
-  std::vector<std::string> expanded_args;
-  for (const auto &arg : args)
+  map<string, string> details;
+
+  // Open the status file for the process
+  string filename = "/proc/" + to_string(pid) + "/status";
+  ifstream statusFile(filename.c_str());
+  if (!statusFile.is_open())
   {
-    if (arg.find("*") == std::string::npos && arg.find("?") == std::string::npos)
-    {
-      expanded_args.push_back(arg);
-      continue;
-    }
-    std::string dir = ".";
-    std::string pattern = arg;
-    size_t pos = arg.find_last_of("/");
-    if (pos != std::string::npos)
-    {
-      dir = arg.substr(0, pos);
-      pattern = arg.substr(pos + 1);
-    }
-    std::vector<std::string> files = list_files(dir, pattern);
-    std::sort(files.begin(), files.end());
-    for (const auto &file : files)
-      expanded_args.push_back(dir + "/" + file);
+    cout << "Error opening file: " << filename << endl;
+    exit(1);
   }
-  return expanded_args;
+
+  // Read the details from the status file
+  string line;
+  while (getline(statusFile, line))
+  {
+    int pos = line.find(':');
+    if (pos != string::npos)
+    {
+      string key = line.substr(0, pos);
+      string value = line.substr(pos + 1);
+      details[key] = value;
+    }
+  }
+  return details;
+}
+
+// Function to traverse the process tree
+// string
+void traverseProcessTree(int pid, int indent, bool suggest, int depth)
+{
+  // Read the details of the process
+  map<string, string> details = getProcessDetails(pid);
+
+  // Print the process ID and name
+  cout << string(indent, ' ') << "Process ID: " << pid << endl;
+  cout << string(indent, ' ') << "Process Name: " << details["Name"] << endl;
+  // Check if the suggest flag is set
+  if (suggest)
+  {
+    // Get the time spent by the process
+    long time = atoi(details["Uptime"].c_str());
+
+    // Get the number of child processes
+    // DIR *dir = opendir(("/proc/" + to_string(pid) + "/task/" +  to_string(pid) + "/children").c_str());
+    string s = "/proc/" + to_string(pid) + "/task/" + to_string(pid) + "/children";
+    ifstream file(s);
+    if (!file)
+    {
+      cout << "File not found!" << endl;
+      return;
+    }
+    string word;
+    int children = 0;
+    while (file >> word)
+    {
+      children++;
+    }
+    file.close();
+    cout << time << " " << children << endl;
+    if (time > 10 || (children >= 5 && children < 10))
+    {
+      cout << string(indent, ' ') << "SUSPICIOUS PROCESS!" << endl;
+    }
+  }
+
+  // Recursively traverse the process tree
+  int parentPID = atoi(details["PPid"].c_str());
+  if (parentPID > 0)
+  {
+    traverseProcessTree(parentPID, indent, suggest, depth++);
+  }
 }
 
 void expandWildcards(const std::string &arg, std::vector<std::string> &args)
@@ -833,7 +883,6 @@ void executeCommand(char *cmd, int isBackGrnd)
         fprintf(stderr, "\nERROR. Could not execute program %s.\n", cmds[0]);
         exit(0);
       }
-
       return;
     }
   }
@@ -865,32 +914,6 @@ void executeCommand(char *cmd, int isBackGrnd)
     } while (true);
   }
 }
-vector<vector<string>> readPIDs(string s)
-{
-  // Open the file
-  vector<vector<string>> data;
-  ifstream file(s);
-  string line, cell;
-  while (getline(file, line))
-  {
-    vector<string> cells;
-    stringstream lineStream(line);
-    while (getline(lineStream, cell, ','))
-      cells.push_back(cell);
-    data.push_back(cells);
-  }
-  file.close();
-  // Print the vector data
-  for (int i = 0; i < data.size(); i++)
-  {
-    cout << data.size() << " " << data[i].size();
-    for (int j = 0; j < data[i].size() - 1; j++)
-      cout << data[i][j] << " ";
-    cout << endl;
-  }
-  cout << data.size() << data[0].size() << data[1].size() << endl;
-  return data;
-}
 struct Data
 {
   string COMMAND;
@@ -904,10 +927,10 @@ struct Data
   string NAME;
 };
 
-vector<string> parseFile(const string &fileName)
+void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid_lock)
 {
   ifstream file(fileName);
-  vector<string> pids;
+  // vector<string> pids;
   string line;
   int lineNum = 0;
   while (getline(file, line))
@@ -915,75 +938,196 @@ vector<string> parseFile(const string &fileName)
     lineNum++;
     if (lineNum == 1)
       continue; // skip the first line (header)
-
     istringstream ss(line);
     string token;
     int tokenNum = 0;
+    vector<string> total;
     while (getline(ss, token, ' '))
     {
       tokenNum++;
-      if (tokenNum == 2)
-        pids.push_back(token);
+      if (token.size() != 0)
+      {
+        total.push_back(token);
+        if (tokenNum == 2)
+          pids.push_back(token);
+      }
+    }
+    for (auto it : total)
+    {
+      cout << it << " ";
+    }
+    cout << endl;
+    if (total[3].find("W") != string::npos)
+    {
+      pid_lock.push_back(total[1]);
     }
   }
-  return pids;
-}
-void writeFile(const string &fileName, const vector<string> &pids)
-{
-  ofstream file(fileName);
-  for (const auto &pid : pids)
-  {
-    file << pid << endl;
-  }
-  file.close();
+  cout << pid_lock.size() << endl;
+  // return pids;
 }
 
+
+// void delep(char *cmd)
+// {
+//   vector<string> data_open, data_lock;
+//   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
+//   char *ch1 = (char *)malloc(100 * sizeof(char));
+//   pid_t pid = fork();
+//   if (pid == 0)
+//   {
+//     memset(ch, '\0', (CMD_LEN + 1000));
+//     memset(ch1, '\0', (100));
+//     strcpy(ch1, "lsof ");
+//     char *ch2 = (char *)malloc(100 * sizeof(char));
+//     memset(ch2, '\0', (100));
+//     strcpy(ch2, " > tmpfile.csv");
+//     strcat(ch, ch1);
+//     strcat(ch, cmd);
+//     strcat(ch, ch2);
+//     executeCommand(ch, 0);
+//     parseFile("tmpfile.csv", data_open, data_lock);
+//     // exit(0);
+//     memset(ch2, '\0', (100));
+//     strcpy(ch2,"exit");
+//     executeCommand(ch2,0);
+//     // executeCommand(ch2,1);
+//   }
+  // else
+  // {
+//     int status;
+//     waitpid(pid, &status, 0);
+//     fprintf(stdout, "PID's that have the file open\n\n");
+//     for (auto pid_open : data_open)
+//       cout << pid_open << "   ";
+//     cout << endl;
+//     fprintf(stdout, "PID's that have the file lock\n\n");
+//     for (auto pid_lock : data_lock)
+//       cout << pid_lock << "   ";
+//     cout << endl;
+//     fprintf(stdout, "\n[?] Enter YES or NO to Kill the Processes:- ");
+//     string t;
+//     cin >> t;
+//     if (t.compare("YES") == 0)
+//     {
+//       for (auto pid : data_open)
+//         kill(stoi(pid), SIGKILL);
+//       memset(ch, '\0', (CMD_LEN + 1000));
+//       memset(ch1, '\0', (100));
+//       strcpy(ch1, "rm ");
+//       strcat(ch, ch1);
+//       strcat(ch, cmd);
+//       executeCommand(ch, 0);
+//     }
+//     cout << endl;
+//     free(ch);
+//   // }
+// }
+char **get_arg0(char *cmd){
+    char cmd_copy[1000] = {0};
+    strcpy(cmd_copy, cmd);
+    char **arg;
+
+    char *p = strtok(cmd, " ");
+    int cnt = 0;
+    while (p){
+        p = strtok(NULL, " ");
+        cnt++;
+    }
+    arg = (char **)calloc((cnt + 1), sizeof(char *));
+    p = strtok(cmd_copy, " ");
+    int i = 0;
+    for (; p; i++)
+    {
+        arg[i] = (char *)calloc((strlen(p) + 1), sizeof(char));
+        strcpy(arg[i], p);
+        arg[i][strlen(p)] = '\0';
+        p = strtok(NULL, " ");
+    }
+    arg[i] = NULL;
+    return arg;
+}
+int runExtCmd0(char *usr_cmd, char *file)
+{
+    char **arg = get_arg0(usr_cmd);
+    int fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0){
+        perror("open");
+        return 1;
+    }
+    if (dup2(fd, STDOUT_FILENO) < 0){
+        perror("dup2");
+        return 1;
+    }
+    
+    if (execvp(arg[0], arg) < 0) {
+        fprintf(stderr, "\nERROR. Could not execute program.\n");
+        exit(0);
+    }
+    close(fd);
+    return 0;
+    // execvp(arg[0], arg);
+    // perror("execvp");
+    // return 0;
+}
 void delep(char *cmd)
 {
+  vector<string> data_open, data_lock;
   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
-  memset(ch, '\0', (CMD_LEN + 1000));
   char *ch1 = (char *)malloc(100 * sizeof(char));
-  memset(ch1, '\0', (100));
-  strcpy(ch1, "lsof ");
-  // fprintf(stdout, ch1);
-  char *ch2 = (char *)malloc(100 * sizeof(char));
-  memset(ch2, '\0', (100));
-  strcpy(ch2, " > tmpfile.csv");
-  strcat(ch, ch1);
-  strcat(ch, cmd);
-  strcat(ch, ch2);
-  printf("[%s]\n", ch);
-  executeCommand(ch, 0);
-  vector<string> data = parseFile("tmpfile.csv");
-  for(auto pid: data) 
-    kill(stoi(pid), SIGKILL);
-  writeFile("tmpfile.csv", data);
-  memset(ch, '\0', (CMD_LEN + 1000));
-  memset(ch1, '\0', (100));
-  strcpy(ch1, "rm ");
-  strcat(ch, ch1);
-  strcat(ch, cmd);
-  executeCommand(ch, 0);
-  executeCommand((char *)"rm tmpfile.csv", 0);
-  // executeCommand(ch, 0);
-  // vector<vector<string>> info;
-  // info = readPIDs(".tmpfile.csv");
-  // cout << "PID of all Process's that have Opened the file:\n";
-  // vector<pid_t> pid_lock, pid_open;
-  // cout << info.size() << info[1].size() << info[0].size() << endl;
-  // for(int i = 1; i < info.size(); i++)
-  // {
-  //   cout << info[i][1] << " ";
-  //   pid_open.push_back(stoi(info[i][1]));
-  // }
-  // // cout << endl;
-  // // }
-  // // cout << endl;
-  // cout << info.size() << " " << info[0].size() << endl;
-  cout << endl;  
-  free(ch);
+  // pid_t pid = fork();
+  // if (pid == 0)
+  {
+    memset(ch, '\0', (CMD_LEN + 1000));
+    memset(ch1, '\0', (100));
+    strcpy(ch1, "lsof ");
+    
+    char *ch2 = (char *)malloc(100 * sizeof(char));
+    memset(ch2, '\0', (100));
+    
+    strcpy(ch2, "tmpfile.csv");
+    cout << 1 << endl;
+    strcat(ch, ch1);
+    strcat(ch, cmd);
+    runExtCmd0(ch, ch2);
+    // executeCommand(ch, 0);
+    // lsof cmd > tmpfile.csv
+    parseFile("tmpfile.csv", data_open, data_lock);
+  }
+  // else
+  {
+    // wait(NULL);
+    // int status;
+    // waitpid(pid, &status, 0);
+    fprintf(stdout, "PID's that have the file open\n\n");
+    for (auto pid_open : data_open)
+      cout << pid_open << "   ";
+    cout << endl;
+    fprintf(stdout, "PID's that have the file lock\n\n");
+    for (auto pid_lock : data_lock)
+      cout << pid_lock << "   ";
+    cout << endl;
+    fprintf(stdout, "\n[?] Enter YES or NO to Kill the Processes:- ");
+    string t;
+    cin >> t;
+    if (t.compare("YES") == 0)
+    {
+      for (auto pid : data_open) {
+        if(kill(stoi(pid), SIGKILL) < 0)
+          perror("Error with KILL.");
+        if(unlink(cmd) < 0) 
+          perror("Error with Unlinking.");
+      }
+      memset(ch, '\0', (CMD_LEN + 1000));
+      memset(ch1, '\0', (100));
+      strcpy(ch1, "rm -f ");
+      strcat(ch, ch1);
+      strcat(ch, cmd);
+      // rm -f tmpfile.csv
+    }
+    cout << endl;
+    free(ch);
+  }
 }
-
 /**
  * @brief Function to read input command from command line
  *
@@ -1011,7 +1155,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     if ((int)ch == 1)
     {
       flag_hist = 0;
-
       for (int i = 0; i < pos; i++)
       {
         char *pr = (char *)"\033[1D";
@@ -1066,7 +1209,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
         //   fputs("\033[1C", stdout);
         continue;
       }
-      
     }
     // else {
     //   cmd[pos++] = ch;
@@ -1105,7 +1247,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
       if ((int)ch1 == 91)
       {
         char ch2 = getchar();
-        if ((int)ch2 == 65 )
+        if ((int)ch2 == 65)
         {
           for (int i = 0; i < strlen(cmd) + strlen(prompt); i++)
             fputs("\b \b", stdout);
@@ -1117,9 +1259,9 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
             if (hist_cur == -1)
               hist_cur = 0;
             cmd = history[hist_cur];
-            
+
             pos = strlen(cmd);
-            
+
             // if(flag1 == 0) {
             //  shellHistory.push(cmd);
             //  flag1 = 1;
@@ -1364,6 +1506,7 @@ int main()
         break;
       }
     }
+
     if (flag_wildcard)
     {
       string arg;
@@ -1375,27 +1518,76 @@ int main()
       while (ss >> arg)
         expandWildcards(arg, args);
       cout << "Expanded arguments:" << endl;
-      vector<string> args_standard;
-      for (const auto &arg : args)
-        args_standard.push_back(c + " " + arg);
-      int i = 0;
-      if (fork() == 0)
+      string expanded_arg_concatenated = "";
+      if (strstr(cmd, "sort") != nullptr)
       {
+        expanded_arg_concatenated += "sort ";
         for (const auto &arg : args)
         {
-          string s = c + " " + arg + " & ";
-          char *w = (char *)malloc(s.size() * sizeof(char));
-          int i = 0;
-          for (char ch : s)
-            w[i++] = ch;
-          executeCommand(w, isBackgrnd);
+          expanded_arg_concatenated += arg + " ";
         }
+
+        cout << expanded_arg_concatenated << endl;
+
+        vector<char *> expanded_args;
+        int length = expanded_arg_concatenated.size();
+        char *w = (char *)malloc((length + 1) * sizeof(char));
+        int i = 0;
+        for (char ch : expanded_arg_concatenated)
+          w[i++] = ch;
+        w[length] = '\0';
+        expanded_args.push_back(w);
+
+        for (const auto &exp_arg : expanded_args)
+        {
+          cout << exp_arg << endl;
+          executeCommand(exp_arg, isBackgrnd);
+        }
+        continue;
       }
-      wait(NULL);
-      continue;
+      if (strstr(cmd, "gedit") != nullptr)
+      {
+        expanded_arg_concatenated += "gedit ";
+        for (const auto &arg : args)
+        {
+          expanded_arg_concatenated += arg + " ";
+        }
+
+        cout << expanded_arg_concatenated << endl;
+
+        vector<char *> expanded_args;
+        int length = expanded_arg_concatenated.size();
+        char *w = (char *)malloc((length + 1) * sizeof(char));
+        int i = 0;
+        for (char ch : expanded_arg_concatenated)
+          w[i++] = ch;
+        w[length] = '\0';
+        expanded_args.push_back(w);
+
+        for (const auto &exp_arg : expanded_args)
+        {
+          cout << exp_arg << endl;
+          executeCommand(exp_arg, isBackgrnd);
+        }
+        continue;
+      }
     }
     // test delep with wild_card;
+    if(cmd[0]=='s' && cmd[1]=='b')
+    {
+      
 
+
+
+
+
+
+
+
+
+
+      
+    }
     // execute every other command
     executeCommand(cmd, isBackgrnd);
     // flush the standard input and output.

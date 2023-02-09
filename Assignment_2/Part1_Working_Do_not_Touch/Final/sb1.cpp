@@ -39,7 +39,8 @@ map<string, string> getProcessDetails(int pid)
 }
 
 // Function to traverse the process tree
-void traverseProcessTree(int pid, int indent, bool suggest)
+// string 
+void traverseProcessTree(int pid, int indent, bool suggest, int depth)
 {
   // Read the details of the process
   map<string, string> details = getProcessDetails(pid);
@@ -57,7 +58,8 @@ void traverseProcessTree(int pid, int indent, bool suggest)
     // DIR *dir = opendir(("/proc/" + to_string(pid) + "/task/" +  to_string(pid) + "/children").c_str());
     string s = "/proc/" + to_string(pid) + "/task/" +  to_string(pid) + "/children";
     ifstream file(s); 
-    if (!file) { 
+    if (!file) 
+    { 
       cout << "File not found!" << endl; 
       return; 
     }  
@@ -69,7 +71,7 @@ void traverseProcessTree(int pid, int indent, bool suggest)
     }  
     file.close();
     cout << time << " " << children << endl;
-    if (time > 10 || children >= 5)
+    if (time > 10 || (children >= 5 && children < 10))
     {
       cout << string(indent, ' ') << "SUSPICIOUS PROCESS!" << endl;
     }
@@ -79,31 +81,35 @@ void traverseProcessTree(int pid, int indent, bool suggest)
   int parentPID = atoi(details["PPid"].c_str());
   if (parentPID > 0)
   {
-    traverseProcessTree(parentPID, indent + 2, suggest);
+    traverseProcessTree(parentPID, indent, suggest, depth++);
   }
 }
 
-int main(int argc, char *argv[])
+int main()
 {
-  // Check if the correct number of arguments was provided
-  if (argc != 2 && argc != 3)
+  // Read the input as a string
+  string input;
+  cout << "Enter the input in the format: [PID] [-suggest]" << endl;
+  getline(cin, input);
+
+  // Split the input into two parts: the PID and the flag
+  int pos = input.find(" ");
+  if (pos == string::npos)
   {
-    cout << "Usage: sb [PID] [-suggest]" << endl;
+    cout << "Incorrect input format for sb command" << endl;
     exit(1);
   }
-
-  // Get the process ID
-  int pid = atoi(argv[1]);
+  int pid = stoi(input.substr(0, pos));
+  string flag = input.substr(pos + 1);
 
   // Check if the suggest flag is set
   bool suggest = false;
-  if (argc == 3 && string(argv[2]) == "-suggest")
+  if (flag == "-suggest")
   {
     suggest = true;
   }
-
   // Traverse the process tree
-  traverseProcessTree(pid, 0, suggest);
+  traverseProcessTree(pid, 0, suggest, 0);
 
   return 0;
 }
