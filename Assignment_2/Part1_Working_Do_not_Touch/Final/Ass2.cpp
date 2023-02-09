@@ -1001,15 +1001,17 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
   int inputModeSet = 0;
   set_input_mode();
   char **history = shellHistory.commands;
-  int hist_cur = max(0, shellHistory.index - 1);
+  int hist_cur = max(0, shellHistory.index);
   int cnt = 0;
-  int flag1 = 0;
+  int flag_hist = 0;
   string input = "";
   while (1)
   {
     ch = getchar();
     if ((int)ch == 1)
     {
+      flag_hist = 0;
+
       for (int i = 0; i < pos; i++)
       {
         char *pr = (char *)"\033[1D";
@@ -1020,6 +1022,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     }
     else if ((int)ch == 5)
     {
+      flag_hist = 0;
       for (int i = 0; i < strlen(cmd) - pos; i++)
       {
         char *pr = (char *)"\033[1C";
@@ -1041,6 +1044,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     // }
     if ((int)ch == 127)
     {
+      flag_hist = 0;
       if (pos == 0)
       {
         continue;
@@ -1062,6 +1066,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
         //   fputs("\033[1C", stdout);
         continue;
       }
+      
     }
     // else {
     //   cmd[pos++] = ch;
@@ -1070,6 +1075,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     else if ((int)ch == 9)
     {
       // autocomplete work
+      flag_hist = 0;
       reset_input_mode();
       int isFound = -1;
       char *cmd2 = tabHandler(cmd, pos, isFound);
@@ -1081,6 +1087,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     else if ((int)ch == 18)
     {
       // history work
+      flag_hist = 0;
       while (pos > 0)
       {
         fputs("\b \b", stdout);
@@ -1098,7 +1105,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
       if ((int)ch1 == 91)
       {
         char ch2 = getchar();
-        if ((int)ch2 == 65)
+        if ((int)ch2 == 65 )
         {
           for (int i = 0; i < strlen(cmd) + strlen(prompt); i++)
             fputs("\b \b", stdout);
@@ -1106,11 +1113,13 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
           // Up Arrow Key
           if (hist_cur >= 0 && shellHistory.index)
           {
-            cmd = history[hist_cur];
             hist_cur--;
-            pos = strlen(cmd);
             if (hist_cur == -1)
               hist_cur = 0;
+            cmd = history[hist_cur];
+            
+            pos = strlen(cmd);
+            
             // if(flag1 == 0) {
             //  shellHistory.push(cmd);
             //  flag1 = 1;
@@ -1127,11 +1136,11 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
           fputs(prompt1, stdout);
           if (hist_cur < shellHistory.index)
           {
-            cmd = history[hist_cur];
             hist_cur++;
-            pos = strlen(cmd);
             if (hist_cur == shellHistory.index)
               hist_cur = shellHistory.index - 1;
+            cmd = history[hist_cur];
+            pos = strlen(cmd);
             // if(flag1 == 0) {
             //  shellHistory.push(cmd);
             //  flag1 = 1;
