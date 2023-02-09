@@ -130,7 +130,7 @@ int KMPSearch(char *str1, char *str2)
   int M = strlen(str1);
   int N = strlen(str2);
   int lps[M];
-  computeLPSArray(str1, M, lps);
+  // computeLPSArray(str1, M, lps);
   int maxx = 0;
   int i = 0, j = 0;
   while (i < N)
@@ -176,7 +176,6 @@ std::vector<std::string> list_files(const std::string &dir, const std::string &p
   return files;
 }
 
-
 map<string, string> getProcessDetails(int pid)
 {
   map<string, string> details;
@@ -215,6 +214,7 @@ void traverseProcessTree(int pid, int indent, bool suggest, int depth)
   // Print the process ID and name
   cout << string(indent, ' ') << "Process ID: " << pid << endl;
   cout << string(indent, ' ') << "Process Name: " << details["Name"] << endl;
+  // printf("")
   // Check if the suggest flag is set
   if (suggest)
   {
@@ -966,7 +966,6 @@ void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid
   // return pids;
 }
 
-
 // void delep(char *cmd)
 // {
 //   vector<string> data_open, data_lock;
@@ -992,8 +991,8 @@ void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid
 //     executeCommand(ch2,0);
 //     // executeCommand(ch2,1);
 //   }
-  // else
-  // {
+// else
+// {
 //     int status;
 //     waitpid(pid, &status, 0);
 //     fprintf(stdout, "PID's that have the file open\n\n");
@@ -1022,82 +1021,75 @@ void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid
 //     free(ch);
 //   // }
 // }
-char **get_arg0(char *cmd){
-    char cmd_copy[1000] = {0};
-    strcpy(cmd_copy, cmd);
-    char **arg;
-
-    char *p = strtok(cmd, " ");
-    int cnt = 0;
-    while (p){
-        p = strtok(NULL, " ");
-        cnt++;
-    }
-    arg = (char **)calloc((cnt + 1), sizeof(char *));
-    p = strtok(cmd_copy, " ");
-    int i = 0;
-    for (; p; i++)
-    {
-        arg[i] = (char *)calloc((strlen(p) + 1), sizeof(char));
-        strcpy(arg[i], p);
-        arg[i][strlen(p)] = '\0';
-        p = strtok(NULL, " ");
-    }
-    arg[i] = NULL;
-    return arg;
-}
-int runExtCmd0(char *usr_cmd, char *file)
+char **get_arg0(char *cmd)
 {
-    char **arg = get_arg0(usr_cmd);
-    int fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd < 0){
-        perror("open");
-        return 1;
-    }
-    if (dup2(fd, STDOUT_FILENO) < 0){
-        perror("dup2");
-        return 1;
-    }
-    
-    if (execvp(arg[0], arg) < 0) {
-        fprintf(stderr, "\nERROR. Could not execute program.\n");
-        exit(0);
-    }
-    close(fd);
-    return 0;
-    // execvp(arg[0], arg);
-    // perror("execvp");
-    // return 0;
+  char cmd_copy[1000] = {0};
+  strcpy(cmd_copy, cmd);
+  char **arg;
+
+  char *p = strtok(cmd, " ");
+  int cnt = 0;
+  while (p)
+  {
+    p = strtok(NULL, " ");
+    cnt++;
+  }
+  arg = (char **)calloc((cnt + 1), sizeof(char *));
+  p = strtok(cmd_copy, " ");
+  int i = 0;
+  for (; p; i++)
+  {
+    arg[i] = (char *)calloc((strlen(p) + 1), sizeof(char));
+    strcpy(arg[i], p);
+    arg[i][strlen(p)] = '\0';
+    p = strtok(NULL, " ");
+  }
+  arg[i] = NULL;
+  return arg;
 }
+// void runExtCmd0(char *usr_cmd, char *file)
+// {
+
+// }
 void delep(char *cmd)
 {
   vector<string> data_open, data_lock;
   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
   char *ch1 = (char *)malloc(100 * sizeof(char));
-  // pid_t pid = fork();
-  // if (pid == 0)
+  pid_t pid = fork();
+  if (pid == 0)
   {
     memset(ch, '\0', (CMD_LEN + 1000));
     memset(ch1, '\0', (100));
     strcpy(ch1, "lsof ");
-    
+
     char *ch2 = (char *)malloc(100 * sizeof(char));
     memset(ch2, '\0', (100));
-    
+
     strcpy(ch2, "tmpfile.csv");
-    cout << 1 << endl;
     strcat(ch, ch1);
     strcat(ch, cmd);
-    runExtCmd0(ch, ch2);
+    cout << 1 << endl;
+    // runExtCmd0(ch, ch2);
+    cout << ch << " " << ch2 << endl;
+    char **arg = get_arg0(ch);
+    int fd = open(ch2, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0)
+      perror("open");
+    if (dup2(fd, STDOUT_FILENO) < 0)
+      perror("dup2");
+    if (execvp(arg[0], arg) < 0)
+      fprintf(stderr, "\nERROR. Could not execute program.\n");
+    cout << 1 << endl;
     // executeCommand(ch, 0);
     // lsof cmd > tmpfile.csv
-    parseFile("tmpfile.csv", data_open, data_lock);
   }
-  // else
+  else
   {
     // wait(NULL);
-    // int status;
-    // waitpid(pid, &status, 0);
+    int status;
+    waitpid(pid, &status, 0);
+    parseFile("tmpfile.csv", data_open, data_lock);
     fprintf(stdout, "PID's that have the file open\n\n");
     for (auto pid_open : data_open)
       cout << pid_open << "   ";
@@ -1111,20 +1103,19 @@ void delep(char *cmd)
     cin >> t;
     if (t.compare("YES") == 0)
     {
-      for (auto pid : data_open) {
-        if(kill(stoi(pid), SIGKILL) < 0)
+      for (auto pid : data_open)
+      {
+        if (kill(stoi(pid), SIGKILL) < 0)
           perror("Error with KILL.");
-        if(unlink(cmd) < 0) 
-          perror("Error with Unlinking.");
       }
-      memset(ch, '\0', (CMD_LEN + 1000));
-      memset(ch1, '\0', (100));
-      strcpy(ch1, "rm -f ");
-      strcat(ch, ch1);
-      strcat(ch, cmd);
-      // rm -f tmpfile.csv
+      if (remove(cmd) > 0)
+      {
+        perror("Error: Removing File.");
+      }
     }
     cout << endl;
+    if (remove((char *)"tmpfile.csv"))
+      ;
     free(ch);
   }
 }
@@ -1148,7 +1139,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
   int hist_cur = max(0, shellHistory.index);
   int cnt = 0;
   int flag_hist = 0;
-  string input = "";
   while (1)
   {
     ch = getchar();
@@ -1174,46 +1164,17 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
       pos = strlen(cmd);
       continue;
     }
-    // else if ((int)ch == 127)
-    // {
-    //   if (pos == 0)
-    //     continue;
-    //   else
-    //   {
-    //     pos--;
-    //     cmd[pos] = '\0';
-    //     fputs("\b \b", stdout);
-    //   }
-    // }
-    if ((int)ch == 127)
+    else if ((int)ch == 127)
     {
-      flag_hist = 0;
       if (pos == 0)
-      {
         continue;
-      }
       else
       {
         pos--;
-        int k = strlen(cmd);
-        for (int i = pos; i < strlen(cmd); i++)
-          cmd[i] = cmd[i + 1];
-        cmd[strlen(cmd) - 1] = '\0';
-        for (int i = 0; i < k + strlen(prompt1); i++)
-          fputs("\b \b", stdout);
-        fprintf(stdout, prompt1);
-        fprintf(stdout, cmd);
-        // printf("%.*s", strlen(cmd), cmd);
-        // pos = strlen(cmd);
-        // for (int i = 0; i < strlen(cmd) - pos; i++)
-        //   fputs("\033[1C", stdout);
-        continue;
+        cmd[pos] = '\0';
+        fputs("\b \b", stdout);
       }
     }
-    // else {
-    //   cmd[pos++] = ch;
-    //   putchar(ch);
-    // }
     else if ((int)ch == 9)
     {
       // autocomplete work
@@ -1259,13 +1220,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
             if (hist_cur == -1)
               hist_cur = 0;
             cmd = history[hist_cur];
-
             pos = strlen(cmd);
-
-            // if(flag1 == 0) {
-            //  shellHistory.push(cmd);
-            //  flag1 = 1;
-            // }
             cnt++;
           }
           fprintf(stdout, cmd);
@@ -1283,10 +1238,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
               hist_cur = shellHistory.index - 1;
             cmd = history[hist_cur];
             pos = strlen(cmd);
-            // if(flag1 == 0) {
-            //  shellHistory.push(cmd);
-            //  flag1 = 1;
-            // }
             cnt++;
           }
           fprintf(stdout, cmd);
@@ -1311,20 +1262,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
             fputs(pr, stdout);
           }
         }
-        // else
-        // {
-        //   cmd[pos++] = ch;
-        //   cmd[pos++] = ch1;
-        //   cmd[pos++] = ch2;
-        // }
       }
-      // else
-      // {
-      //   cmd[pos++] = ch;
-      //   cmd[pos++] = ch1;
-      //   // putchar(ch);
-      //   // putchar(ch1);
-      // }
     }
     else if ((ch == EOF || ch == '\n' || pos >= CMD_LEN - 1))
       break;
@@ -1344,8 +1282,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     isBackGrnd = 1;
   cmd[pos] = '\0';
   reset_input_mode();
-  // if(flag1 = 1)
-  // shellHistory.pop();
   return cmd;
 }
 
@@ -1526,9 +1462,7 @@ int main()
         {
           expanded_arg_concatenated += arg + " ";
         }
-
         cout << expanded_arg_concatenated << endl;
-
         vector<char *> expanded_args;
         int length = expanded_arg_concatenated.size();
         char *w = (char *)malloc((length + 1) * sizeof(char));
@@ -1537,7 +1471,6 @@ int main()
           w[i++] = ch;
         w[length] = '\0';
         expanded_args.push_back(w);
-
         for (const auto &exp_arg : expanded_args)
         {
           cout << exp_arg << endl;
@@ -1549,12 +1482,8 @@ int main()
       {
         expanded_arg_concatenated += "gedit ";
         for (const auto &arg : args)
-        {
           expanded_arg_concatenated += arg + " ";
-        }
-
         cout << expanded_arg_concatenated << endl;
-
         vector<char *> expanded_args;
         int length = expanded_arg_concatenated.size();
         char *w = (char *)malloc((length + 1) * sizeof(char));
@@ -1563,7 +1492,37 @@ int main()
           w[i++] = ch;
         w[length] = '\0';
         expanded_args.push_back(w);
-
+        for (const auto &exp_arg : expanded_args)
+        {
+          cout << exp_arg << endl;
+          executeCommand(exp_arg, isBackgrnd);
+        }
+        continue;
+      }
+      else
+      {
+        string first = "";
+        for (int i = 0; i < strlen(cmd); i++)
+        {
+          if (cmd[i] != ' ')
+            first.push_back((char)cmd[i]);
+          else {
+            first.push_back((char)cmd[i]);
+            break;
+          }
+        }
+        expanded_arg_concatenated += first;
+        for (const auto &arg : args)
+          expanded_arg_concatenated += arg + " ";
+        cout << expanded_arg_concatenated << endl;
+        vector<char *> expanded_args;
+        int length = expanded_arg_concatenated.size();
+        char *w = (char *)malloc((length + 1) * sizeof(char));
+        int i = 0;
+        for (char ch : expanded_arg_concatenated)
+          w[i++] = ch;
+        w[length] = '\0';
+        expanded_args.push_back(w);
         for (const auto &exp_arg : expanded_args)
         {
           cout << exp_arg << endl;
@@ -1573,20 +1532,40 @@ int main()
       }
     }
     // test delep with wild_card;
-    if(cmd[0]=='s' && cmd[1]=='b')
+    // sb command starts
+    if (cmd[0] == 's' && cmd[1] == 'b')
     {
-      
 
+      int pos = strcspn(cmd, " ");
+      if (pos == strlen(cmd))
+      {
+        cout << "Incorrect input format for sb command" << endl;
+        continue;
+      }
+      char *command = (char *)malloc(sizeof(char) * pos + 1);
+      strncpy(command, cmd, pos);
+      command[pos] = '\0';
 
+      int pid = atoi(cmd + pos + 1);
 
+      pos = strcspn(cmd + pos + 1, " ");
+      if (pos == strlen(cmd))
+      {
+        cout << "Incorrect input format for sb command" << endl;
+        continue;
+      }
+      char *flag = cmd + pos + 1;
 
-
-
-
-
-
-
-      
+      // Check if the suggest flag is set
+      bool suggest = false;
+      cout << "Flag:-" << flag << endl;
+      if (strstr(cmd, "-suggest") != nullptr)
+      {
+        suggest = true;
+      }
+      cout << suggest << endl;
+      traverseProcessTree(pid, 0, suggest, 0);
+      continue;
     }
     // execute every other command
     executeCommand(cmd, isBackgrnd);

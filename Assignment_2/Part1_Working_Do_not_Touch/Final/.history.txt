@@ -86,5 +86,40 @@ sb 22863 -suggest
 exit
 delep ./
 exit
-delep ./
+delep ./tmp/test-file
+exit
+ls -l
+pwd
+dor
+dir
+clear
+exit
+delep ./tmp/test-file
+exit
+delep ./tmp/test-file
+exit
+delep ./tmp/test-file
+exit
+sb 8269
+exit
+sb 8269
+sb
+sb
+sb 15033 -suggest
+sb 15033 -
+sb 15033 -
+sb 15175 -suggest
+exit
+sb 8
+sb 8011 -sugg
+sb 8011 -suggest
+exit
+sb 22383 -suggest
+exit
+sb 27590 -suggest
+sb 27590 -suggest
+sb 27590 -suggest
+sb 27590 -suggest
+sb 27590 -sug
+exit
 exit
