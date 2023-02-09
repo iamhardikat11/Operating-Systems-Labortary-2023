@@ -956,9 +956,7 @@ void delep(char *cmd)
   executeCommand(ch, 0);
   vector<string> data = parseFile("tmpfile.csv");
   for(auto pid: data) 
-  {
     kill(stoi(pid), SIGKILL);
-  }
   writeFile("tmpfile.csv", data);
   memset(ch, '\0', (CMD_LEN + 1000));
   memset(ch1, '\0', (100));
@@ -982,8 +980,7 @@ void delep(char *cmd)
   // // }
   // // cout << endl;
   // cout << info.size() << " " << info[0].size() << endl;
-  cout << endl;
-  
+  cout << endl;  
   free(ch);
 }
 
