@@ -122,4 +122,14 @@ sb 27590 -suggest
 sb 27590 -suggest
 sb 27590 -sug
 exit
+nano d*/f*
+nano d*/f*
+gedit d*/f*
+sort d*/f*
+ls
+ls -l
+ls | more
+sort 3 1 2 > infile.txt
+sort 3 1 2
+sort < infile.txt
 exit

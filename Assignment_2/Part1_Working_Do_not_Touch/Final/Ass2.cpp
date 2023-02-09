@@ -77,85 +77,6 @@ static volatile int stopWatch = 0;
 // during multiwatch. Kept Global so that it can be closed
 // when Ctrl+C is pressed.
 int inotifyFd;
-
-// KMP algorithm is implemented to search for pattern
-// matching in history
-
-/**
- * @brief
- *  LSP is longest prefix suffix. lps[i] represents the length
- *  of the longest suffix ending at index i that matches with
- *  the prefix of the string
- * @param str1 -> string passed
- * @param M -> size of the string
- * @param lps -> array to store the lps value
- */
-void computeLPSArray(char *str1, int M, int *lps)
-{
-  int len = 0;
-  lps[0] = 0;
-  int i = 1;
-  while (i < M)
-  {
-    if (str1[i] == str1[len])
-    {
-      len++;
-      lps[i] = len;
-      i++;
-    }
-    else
-    {
-      if (len != 0)
-        len = lps[len - 1];
-      else
-      {
-        lps[i] = 0;
-        i++;
-      }
-    }
-  }
-}
-
-/**
- * @brief
- * This function returns the length of the longest
- * prefix of the string1 that is in string 2
- *
- * @param str1
- * @param str2
- * @return int -> length of the longest match
- */
-int KMPSearch(char *str1, char *str2)
-{
-  int M = strlen(str1);
-  int N = strlen(str2);
-  int lps[M];
-  // computeLPSArray(str1, M, lps);
-  int maxx = 0;
-  int i = 0, j = 0;
-  while (i < N)
-  {
-    if (str1[j] == str2[i])
-    {
-      j++;
-      i++;
-      maxx = max(j, maxx);
-    }
-    if (j == M)
-    {
-      return M;
-    }
-    else if (i < N && str1[j] != str2[i])
-    {
-      if (j != 0)
-        j = lps[j - 1];
-      else
-        i = i + 1;
-    }
-  }
-  return maxx;
-}
-
 std::vector<std::string> list_files(const std::string &dir, const std::string &pattern)
 {
   std::vector<std::string> files;
@@ -268,68 +189,7 @@ void expandWildcards(const std::string &arg, std::vector<std::string> &args)
 // This function search file in the directory .
 // The function uses trie data structure to
 // store the file names in the folder
-/**
- * @brief
- *  The function reads the file names in the directory,
- * store it in fileTrie(a trie data structure) and
- * update isEnd
- * @param isEnd: a map of pair
- * isEnd[i].first = number of file end points in the subtree of node i
- * isEnd[i].second = 1 if the  a file ends here else 0
- * @param fileTrie a trie data structure to store the file names
- */
-void searchInDirectory(std::map<int, std::pair<int, int>> &isEnd,
-                       std::vector<std::map<char, int>> &fileTrie)
-{
-  DIR *dir;
-  struct dirent *dirp;
-  char **files = (char **)malloc(sizeof(char *));
-  files[0] = NULL;
-  fileTrie.resize(1);
-  fileTrie[0] = {};
-  dir = opendir(strdup("."));
-  int maxSize = 1;
-  while ((dirp = readdir(dir)) != NULL)
-  {
-    if (dirp->d_type == 4)
-    {
-      if (strcmp(dirp->d_name, ".") == 0 || strcmp(dirp->d_name, "..") == 0)
-      {
-        continue;
-      }
-    }
-    else
-    {
-      if (dirp->d_name[0] == '.')
-        continue;
-      int siz = strlen(dirp->d_name);
-      int index = 0;
-      for (int i = 0; i < siz; i++)
-      {
-        if (fileTrie[index].find(dirp->d_name[i]) == fileTrie[index].end())
-        {
-          fileTrie.push_back({});
-          fileTrie[index][dirp->d_name[i]] = maxSize++;
-        }
-        index = fileTrie[index][dirp->d_name[i]];
-      }
-      index = 0;
-      for (int i = 0; i < siz; i++)
-      {
-        if (isEnd.find(index) == isEnd.end())
-          isEnd[index] = {0, 0};
-        isEnd[index].first++;
-        index = fileTrie[index][dirp->d_name[i]];
-      }
-      if (isEnd.find(index) == isEnd.end())
-        isEnd[index] = {0, 0};
-      isEnd[index].first++;
-      isEnd[index].second = 1;
-    }
-  }
-  closedir(dir);
-  return;
-}
+
 
 /**
  * @brief
@@ -375,99 +235,7 @@ void dfs(std::map<int, std::pair<int, int>> &isEnd,
  *               = NULL if no file is found
  *               = command after completion of the file name
  */
-char *tabHandler(char *cmd, int &pos, int &isFound)
-{
-  std::map<int, std::pair<int, int>> isEnd;
-  std::vector<std::map<char, int>> fileTrie;
-  searchInDirectory(isEnd, fileTrie);
-  int i = pos - 1;
-  for (; i >= 0; i--)
-  {
-    if ((int)cmd[i] == 32)
-      break;
-  }
-  i++;
-  int fileNameStart = i;
-  int index = 0;
-  while (i < pos)
-  {
-    if (fileTrie[index].find(cmd[i]) == fileTrie[index].end())
-    {
-      isFound = 0;
-      return NULL;
-    }
-    index = fileTrie[index][cmd[i]];
-    i++;
-  }
-  int noOfFiles = isEnd[index].first;
-  char **files = (char **)malloc(sizeof(char *) * (noOfFiles + 1));
-  char *fileName = (char *)malloc(sizeof(char) * MAX_FILENAME_LENGTH);
-  i = fileNameStart;
-  int j = 0;
-  while (i < pos)
-  {
-    fileName[j++] = cmd[i++];
-  }
-  int filesPushed = 0;
-  dfs(isEnd, fileTrie, index, files, filesPushed, fileName, j);
-  files[noOfFiles] = NULL;
 
-  isFound = 1;
-  cmd = (char *)realloc(cmd, sizeof(char) * CMD_LEN);
-  // Only 1 file exists with the given prefix
-  if (noOfFiles == 1)
-  {
-    int length_ = strlen(files[0]);
-    for (int i = 0; i < length_; i++)
-    {
-      cmd[fileNameStart + i] = files[0][i];
-    }
-    cmd[fileNameStart + length_] = '\0';
-    set_input_mode();
-    for (int i = pos; i < fileNameStart + length_; i++)
-      putchar(cmd[i]);
-    reset_input_mode();
-    pos = fileNameStart + length_;
-    return cmd;
-  }
-  int k = 0;
-  fprintf(stdout, "\n");
-  while (files[k] != NULL)
-  {
-    printf("%d) %s\n", k + 1, files[k]);
-    k++;
-  }
-  int input = -1;
-  // Multiple files exist so asking for the index
-  while (input <= 0 || input > noOfFiles)
-  {
-    fprintf(stdout, "Enter the index: ");
-    fscanf(stdin, "%d", &input);
-  }
-  getchar();
-  // updating the command array
-  int length_ = strlen(files[input - 1]);
-  for (int i = 0; i < length_; i++)
-  {
-    cmd[fileNameStart + i] = files[input - 1][i];
-  }
-  cmd[fileNameStart + length_] = '\0';
-  pos = fileNameStart + length_;
-  fprintf(stdout, "\n");
-  fprintf(stdout, "$: ");
-  // printing the command
-  set_input_mode();
-  for (int i = 0; i < pos; i++)
-    putchar(cmd[i]);
-  reset_input_mode();
-  return cmd;
-}
-
-/**
- * @brief
- * The class stores the history.
- *
- */
 class shell_history
 {
 public:
@@ -551,56 +319,6 @@ public:
       fprintf(file, "\n");
     }
     fclose(file);
-  }
-
-  /**
-   * @brief
-   * The function gets executed when
-   * CTRL + R is pressed
-   *
-   */
-  void search()
-  {
-    fprintf(stdout, "Enter the search term: ");
-    char *cmd = (char *)malloc(sizeof(char) * CMD_LEN);
-    char ch;
-    int pos = 0;
-    while (1)
-    {
-      ch = getchar();
-      if ((ch == EOF || ch == '\n' || pos >= CMD_LEN - 1))
-        break;
-      else
-        cmd[pos++] = ch;
-    }
-    cmd[pos] = '\0';
-    int maxx = 0;
-    int maxIndex = -1;
-    for (int cind = this->index - 1; cind >= 0; cind--)
-    {
-      for (int i = 0; i < (int)strlen(cmd); i++)
-      {
-        char *cmdsubstring = cmd + i;
-        int len = KMPSearch(cmdsubstring, this->commands[cind]);
-        if (len > maxx)
-        {
-          maxx = len;
-          maxIndex = cind;
-        }
-      }
-    }
-    if (maxx == strlen(cmd))
-    {
-      fprintf(stdout, "%s\n", commands[maxIndex]);
-    }
-    else if (maxx <= 2)
-    {
-      fprintf(stdout, "No match for search term in history\n");
-    }
-    else
-    {
-      fprintf(stdout, "%s\n", commands[maxIndex]);
-    }
   }
 };
 
@@ -1174,33 +892,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
         cmd[pos] = '\0';
         fputs("\b \b", stdout);
       }
-    }
-    else if ((int)ch == 9)
-    {
-      // autocomplete work
-      flag_hist = 0;
-      reset_input_mode();
-      int isFound = -1;
-      char *cmd2 = tabHandler(cmd, pos, isFound);
-      set_input_mode();
-      if (isFound != 1)
-        continue;
-      cmd = cmd2;
-    }
-    else if ((int)ch == 18)
-    {
-      // history work
-      flag_hist = 0;
-      while (pos > 0)
-      {
-        fputs("\b \b", stdout);
-        pos--;
-      }
-      inputModeSet = 0;
-      reset_input_mode();
-      shellHistory.search();
-      needExecution = 0;
-      return cmd;
     }
     else if ((int)ch == 27)
     {
