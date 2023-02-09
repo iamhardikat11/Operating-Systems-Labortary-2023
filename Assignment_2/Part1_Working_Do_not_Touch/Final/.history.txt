@@ -201,3 +201,9 @@ exit
 sudo apt 
 exit
 exit
+delep ./tmp/test-file
+delep ./tmp/test-file
+lsof ./tmp/test-file
+exit
+delep ./tmp/test-file
+exit

@@ -955,11 +955,19 @@ void delep(char *cmd)
   printf("[%s]\n", ch);
   executeCommand(ch, 0);
   vector<string> data = parseFile("tmpfile.csv");
-  for(auto it: data)
+  for(auto pid: data) 
   {
-    cout << it << " ";
+    kill(stoi(pid), SIGKILL);
   }
   writeFile("tmpfile.csv", data);
+  memset(ch, '\0', (CMD_LEN + 1000));
+  memset(ch1, '\0', (100));
+  strcpy(ch1, "rm ");
+  strcat(ch, ch1);
+  strcat(ch, cmd);
+  executeCommand(ch, 0);
+  executeCommand((char *)"rm tmpfile.csv", 0);
+  // executeCommand(ch, 0);
   // vector<vector<string>> info;
   // info = readPIDs(".tmpfile.csv");
   // cout << "PID of all Process's that have Opened the file:\n";
@@ -975,7 +983,7 @@ void delep(char *cmd)
   // // cout << endl;
   // cout << info.size() << " " << info[0].size() << endl;
   cout << endl;
-  // executeCommand((char *)"rm .tmpfile.csv", 0);
+  
   free(ch);
 }
 
