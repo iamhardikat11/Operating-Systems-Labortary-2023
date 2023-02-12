@@ -480,33 +480,6 @@ bool isChar(char ch)
 {
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
-// int isNumeric(string st)
-// {
-//   bool flag_start = isChar(st[0]);
-//   bool flag1 = false;
-//   bool flag_num = false;
-//   bool flag_char = false;
-//   int num = 0;
-//   for(char ch: st)
-//   {
-//     if(ch >= '0' && ch=='9')
-//     {
-//       flag_num = true;
-//       continue;
-//     }
-//     else if(ch>='a' && ch<='z' || (ch>='A' && ch<='Z'))
-//     {
-//       flag_char = true;
-//     }
-//     else if(ch == ' ')
-//     {
-//       flag1 = true;  // Space is present
-//     }
-//   }
-//   // exit code is 2 (alphanumeric arguement)
-//   if(flag_num && !flag1) return 1;
-//   else if(flag_start && flag_char) return
-// }
 
 /**
  * @brief Function to execute piped or unpiped commands by tokenising the command
@@ -684,61 +657,7 @@ void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid
   // return pids;
 }
 
-// void delep(char *cmd)
-// {
-//   vector<string> data_open, data_lock;
-//   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
-//   char *ch1 = (char *)malloc(100 * sizeof(char));
-//   pid_t pid = fork();
-//   if (pid == 0)
-//   {
-//     memset(ch, '\0', (CMD_LEN + 1000));
-//     memset(ch1, '\0', (100));
-//     strcpy(ch1, "lsof ");
-//     char *ch2 = (char *)malloc(100 * sizeof(char));
-//     memset(ch2, '\0', (100));
-//     strcpy(ch2, " > tmpfile.csv");
-//     strcat(ch, ch1);
-//     strcat(ch, cmd);
-//     strcat(ch, ch2);
-//     executeCommand(ch, 0);
-//     parseFile("tmpfile.csv", data_open, data_lock);
-//     // exit(0);
-//     memset(ch2, '\0', (100));
-//     strcpy(ch2,"exit");
-//     executeCommand(ch2,0);
-//     // executeCommand(ch2,1);
-//   }
-// else
-// {
-//     int status;
-//     waitpid(pid, &status, 0);
-//     fprintf(stdout, "PID's that have the file open\n\n");
-//     for (auto pid_open : data_open)
-//       cout << pid_open << "   ";
-//     cout << endl;
-//     fprintf(stdout, "PID's that have the file lock\n\n");
-//     for (auto pid_lock : data_lock)
-//       cout << pid_lock << "   ";
-//     cout << endl;
-//     fprintf(stdout, "\n[?] Enter YES or NO to Kill the Processes:- ");
-//     string t;
-//     cin >> t;
-//     if (t.compare("YES") == 0)
-//     {
-//       for (auto pid : data_open)
-//         kill(stoi(pid), SIGKILL);
-//       memset(ch, '\0', (CMD_LEN + 1000));
-//       memset(ch1, '\0', (100));
-//       strcpy(ch1, "rm ");
-//       strcat(ch, ch1);
-//       strcat(ch, cmd);
-//       executeCommand(ch, 0);
-//     }
-//     cout << endl;
-//     free(ch);
-//   // }
-// }
+
 char **get_arg0(char *cmd)
 {
   char cmd_copy[1000] = {0};

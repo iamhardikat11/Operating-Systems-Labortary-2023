@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/dir.h>
-#include <sys/inotify.h>
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
@@ -40,20 +39,20 @@ char *prompt1 = (char *)"$: ";
  * or Ctrl+R is pressed then it can be detected directly
  * without the need of pressing enter and processing the input
  */
-struct termios saved_attributes;
+struct termios saved_attr;
 // function used to reset input to normal mode
 void reset_input_mode(void)
 {
-  saved_attributes.c_lflag |= (ICANON | ECHO);
-  saved_attributes.c_cc[VMIN] = 0;
-  saved_attributes.c_cc[VTIME] = 1;
-  tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
+  saved_attr.c_lflag |= (ICANON | ECHO);
+  saved_attr.c_cc[VMIN] = 0;
+  saved_attr.c_cc[VTIME] = 1;
+  tcsetattr(STDIN_FILENO, TCSANOW, &saved_attr);
 }
 // command to set input to character by character input mode
 void set_input_mode(void)
 {
   struct termios tattr;
-  tcgetattr(STDIN_FILENO, &saved_attributes);
+  tcgetattr(STDIN_FILENO, &saved_attr);
   atexit(reset_input_mode);
   tcgetattr(STDIN_FILENO, &tattr);
   tattr.c_lflag &= ~(ICANON | ECHO);
@@ -66,95 +65,15 @@ void set_input_mode(void)
 // Kept here so that they can be signalled
 // to continue when Ctrl Z is pressed
 pid_t *pids;
-int pipeCount, watchCmdCnt;
+int pipe_cnt;
 
 // some flags to switch code to background
 // or stop the multiWatch code
 static volatile int runInBackgrnd = 0;
-static volatile int stopWatch = 0;
 
 // Inotify File Descriptor that watches over temporary files
 // during multiwatch. Kept Global so that it can be closed
 // when Ctrl+C is pressed.
-int inotifyFd;
-
-// KMP algorithm is implemented to search for pattern
-// matching in history
-
-/**
- * @brief
- *  LSP is longest prefix suffix. lps[i] represents the length
- *  of the longest suffix ending at index i that matches with
- *  the prefix of the string
- * @param str1 -> string passed
- * @param M -> size of the string
- * @param lps -> array to store the lps value
- */
-void computeLPSArray(char *str1, int M, int *lps)
-{
-  int len = 0;
-  lps[0] = 0;
-  int i = 1;
-  while (i < M)
-  {
-    if (str1[i] == str1[len])
-    {
-      len++;
-      lps[i] = len;
-      i++;
-    }
-    else
-    {
-      if (len != 0)
-        len = lps[len - 1];
-      else
-      {
-        lps[i] = 0;
-        i++;
-      }
-    }
-  }
-}
-
-/**
- * @brief
- * This function returns the length of the longest
- * prefix of the string1 that is in string 2
- *
- * @param str1
- * @param str2
- * @return int -> length of the longest match
- */
-int KMPSearch(char *str1, char *str2)
-{
-  int M = strlen(str1);
-  int N = strlen(str2);
-  int lps[M];
-  computeLPSArray(str1, M, lps);
-  int maxx = 0;
-  int i = 0, j = 0;
-  while (i < N)
-  {
-    if (str1[j] == str2[i])
-    {
-      j++;
-      i++;
-      maxx = max(j, maxx);
-    }
-    if (j == M)
-    {
-      return M;
-    }
-    else if (i < N && str1[j] != str2[i])
-    {
-      if (j != 0)
-        j = lps[j - 1];
-      else
-        i = i + 1;
-    }
-  }
-  return maxx;
-}
 
 std::vector<std::string> list_files(const std::string &dir, const std::string &pattern)
 {
@@ -176,30 +95,80 @@ std::vector<std::string> list_files(const std::string &dir, const std::string &p
   return files;
 }
 
-std::vector<std::string> expand_wildcards(std::vector<std::string> args)
+map<string, string> getProcessDetails(int pid)
 {
-  std::vector<std::string> expanded_args;
-  for (const auto &arg : args)
+  map<string, string> details;
+
+  // Open the status file for the process
+  string filename = "/proc/" + to_string(pid) + "/status";
+  ifstream statusFile(filename.c_str());
+  if (!statusFile.is_open())
   {
-    if (arg.find("*") == std::string::npos && arg.find("?") == std::string::npos)
-    {
-      expanded_args.push_back(arg);
-      continue;
-    }
-    std::string dir = ".";
-    std::string pattern = arg;
-    size_t pos = arg.find_last_of("/");
-    if (pos != std::string::npos)
-    {
-      dir = arg.substr(0, pos);
-      pattern = arg.substr(pos + 1);
-    }
-    std::vector<std::string> files = list_files(dir, pattern);
-    std::sort(files.begin(), files.end());
-    for (const auto &file : files)
-      expanded_args.push_back(dir + "/" + file);
+    cout << "Error opening file: " << filename << endl;
+    exit(1);
   }
-  return expanded_args;
+
+  // Read the details from the status file
+  string line;
+  while (getline(statusFile, line))
+  {
+    int pos = line.find(':');
+    if (pos != string::npos)
+    {
+      string key = line.substr(0, pos);
+      string value = line.substr(pos + 1);
+      details[key] = value;
+    }
+  }
+  return details;
+}
+
+// Function to traverse the process tree
+// string
+void traverseProcessTree(int pid, int indent, bool suggest, int depth)
+{
+  // Read the details of the process
+  map<string, string> details = getProcessDetails(pid);
+
+  // Print the process ID and name
+  cout << string(indent, ' ') << "Process ID: " << pid << endl;
+  cout << string(indent, ' ') << "Process Name: " << details["Name"] << endl;
+  // printf("")
+  // Check if the suggest flag is set
+  if (suggest)
+  {
+    // Get the time spent by the process
+    long time = atoi(details["Uptime"].c_str());
+
+    // Get the number of child processes
+    // DIR *dir = opendir(("/proc/" + to_string(pid) + "/task/" +  to_string(pid) + "/children").c_str());
+    string s = "/proc/" + to_string(pid) + "/task/" + to_string(pid) + "/children";
+    ifstream file(s);
+    if (!file)
+    {
+      cout << "File not found!" << endl;
+      return;
+    }
+    string word;
+    int children = 0;
+    while (file >> word)
+    {
+      children++;
+    }
+    file.close();
+    cout << time << " " << children << endl;
+    if (time > 10 || (children >= 5 && children < 10))
+    {
+      cout << string(indent, ' ') << "SUSPICIOUS PROCESS!" << endl;
+    }
+  }
+
+  // Recursively traverse the process tree
+  int parentPID = atoi(details["PPid"].c_str());
+  if (parentPID > 0)
+  {
+    traverseProcessTree(parentPID, indent, suggest, depth++);
+  }
 }
 
 void expandWildcards(const std::string &arg, std::vector<std::string> &args)
@@ -218,102 +187,6 @@ void expandWildcards(const std::string &arg, std::vector<std::string> &args)
 // This function search file in the directory .
 // The function uses trie data structure to
 // store the file names in the folder
-/**
- * @brief
- *  The function reads the file names in the directory,
- * store it in fileTrie(a trie data structure) and
- * update isEnd
- * @param isEnd: a map of pair
- * isEnd[i].first = number of file end points in the subtree of node i
- * isEnd[i].second = 1 if the  a file ends here else 0
- * @param fileTrie a trie data structure to store the file names
- */
-void searchInDirectory(std::map<int, std::pair<int, int>> &isEnd,
-                       std::vector<std::map<char, int>> &fileTrie)
-{
-  DIR *dir;
-  struct dirent *dirp;
-  char **files = (char **)malloc(sizeof(char *));
-  files[0] = NULL;
-  fileTrie.resize(1);
-  fileTrie[0] = {};
-  dir = opendir(strdup("."));
-  int maxSize = 1;
-  while ((dirp = readdir(dir)) != NULL)
-  {
-    if (dirp->d_type == 4)
-    {
-      if (strcmp(dirp->d_name, ".") == 0 || strcmp(dirp->d_name, "..") == 0)
-      {
-        continue;
-      }
-    }
-    else
-    {
-      if (dirp->d_name[0] == '.')
-        continue;
-      int siz = strlen(dirp->d_name);
-      int index = 0;
-      for (int i = 0; i < siz; i++)
-      {
-        if (fileTrie[index].find(dirp->d_name[i]) == fileTrie[index].end())
-        {
-          fileTrie.push_back({});
-          fileTrie[index][dirp->d_name[i]] = maxSize++;
-        }
-        index = fileTrie[index][dirp->d_name[i]];
-      }
-      index = 0;
-      for (int i = 0; i < siz; i++)
-      {
-        if (isEnd.find(index) == isEnd.end())
-          isEnd[index] = {0, 0};
-        isEnd[index].first++;
-        index = fileTrie[index][dirp->d_name[i]];
-      }
-      if (isEnd.find(index) == isEnd.end())
-        isEnd[index] = {0, 0};
-      isEnd[index].first++;
-      isEnd[index].second = 1;
-    }
-  }
-  closedir(dir);
-  return;
-}
-
-/**
- * @brief
- * This is a helper function of searchInDirectory Function
- * It helps to traverse on the trie data structure
- * @param isEnd : Map to store the data related to the trie
- * isEnd[i].first = number of file end points in the subtree of node i
- * isEnd[i].second = 1 if the  a file ends here else 0
- * @param fileTrie a trie data structure to store the file names in the directory
- * @param index : the node value
- * @param files : a pointer pointing to a array of char* to store the file names found till now
- * @param filesPushed : a integer that represents the number of files pushed in the 'files' array
- * @param fileName : file name till current node
- * @param fileIndex : index where the next character should be placed in filename
- */
-void dfs(std::map<int, std::pair<int, int>> &isEnd,
-         std::vector<std::map<char, int>> &fileTrie, int index, char **files,
-         int &filesPushed, char *fileName, int fileIndex)
-{
-  if (isEnd[index].second == 1)
-  {
-    fileName[fileIndex] = '\0';
-    files[filesPushed] = (char *)malloc(sizeof(char) * MAX_FILENAME_LENGTH);
-    strcpy(files[filesPushed], fileName);
-    files[filesPushed][(int)strlen(fileName)] = '\0';
-    filesPushed++;
-  }
-  for (auto &x : fileTrie[index])
-  {
-    fileName[fileIndex] = x.first;
-    dfs(isEnd, fileTrie, x.second, files, filesPushed, fileName, fileIndex + 1);
-    fileName[fileIndex] = '\0';
-  }
-}
 
 /**
  * @brief
@@ -324,99 +197,6 @@ void dfs(std::map<int, std::pair<int, int>> &isEnd,
  * @return char*: updated command:
  *               = NULL if no file is found
  *               = command after completion of the file name
- */
-char *tabHandler(char *cmd, int &pos, int &isFound)
-{
-  std::map<int, std::pair<int, int>> isEnd;
-  std::vector<std::map<char, int>> fileTrie;
-  searchInDirectory(isEnd, fileTrie);
-  int i = pos - 1;
-  for (; i >= 0; i--)
-  {
-    if ((int)cmd[i] == 32)
-      break;
-  }
-  i++;
-  int fileNameStart = i;
-  int index = 0;
-  while (i < pos)
-  {
-    if (fileTrie[index].find(cmd[i]) == fileTrie[index].end())
-    {
-      isFound = 0;
-      return NULL;
-    }
-    index = fileTrie[index][cmd[i]];
-    i++;
-  }
-  int noOfFiles = isEnd[index].first;
-  char **files = (char **)malloc(sizeof(char *) * (noOfFiles + 1));
-  char *fileName = (char *)malloc(sizeof(char) * MAX_FILENAME_LENGTH);
-  i = fileNameStart;
-  int j = 0;
-  while (i < pos)
-  {
-    fileName[j++] = cmd[i++];
-  }
-  int filesPushed = 0;
-  dfs(isEnd, fileTrie, index, files, filesPushed, fileName, j);
-  files[noOfFiles] = NULL;
-
-  isFound = 1;
-  cmd = (char *)realloc(cmd, sizeof(char) * CMD_LEN);
-  // Only 1 file exists with the given prefix
-  if (noOfFiles == 1)
-  {
-    int length_ = strlen(files[0]);
-    for (int i = 0; i < length_; i++)
-    {
-      cmd[fileNameStart + i] = files[0][i];
-    }
-    cmd[fileNameStart + length_] = '\0';
-    set_input_mode();
-    for (int i = pos; i < fileNameStart + length_; i++)
-      putchar(cmd[i]);
-    reset_input_mode();
-    pos = fileNameStart + length_;
-    return cmd;
-  }
-  int k = 0;
-  fprintf(stdout, "\n");
-  while (files[k] != NULL)
-  {
-    printf("%d) %s\n", k + 1, files[k]);
-    k++;
-  }
-  int input = -1;
-  // Multiple files exist so asking for the index
-  while (input <= 0 || input > noOfFiles)
-  {
-    fprintf(stdout, "Enter the index: ");
-    fscanf(stdin, "%d", &input);
-  }
-  getchar();
-  // updating the command array
-  int length_ = strlen(files[input - 1]);
-  for (int i = 0; i < length_; i++)
-  {
-    cmd[fileNameStart + i] = files[input - 1][i];
-  }
-  cmd[fileNameStart + length_] = '\0';
-  pos = fileNameStart + length_;
-  fprintf(stdout, "\n");
-  fprintf(stdout, "$: ");
-  // printing the command
-  set_input_mode();
-  for (int i = 0; i < pos; i++)
-    putchar(cmd[i]);
-  reset_input_mode();
-  return cmd;
-}
-
-/**
- * @brief
- * The class stores the history.
- *
  */
 class shell_history
 {
@@ -502,56 +282,6 @@ public:
     }
     fclose(file);
   }
-
-  /**
-   * @brief
-   * The function gets executed when
-   * CTRL + R is pressed
-   *
-   */
-  void search()
-  {
-    fprintf(stdout, "Enter the search term: ");
-    char *cmd = (char *)malloc(sizeof(char) * CMD_LEN);
-    char ch;
-    int pos = 0;
-    while (1)
-    {
-      ch = getchar();
-      if ((ch == EOF || ch == '\n' || pos >= CMD_LEN - 1))
-        break;
-      else
-        cmd[pos++] = ch;
-    }
-    cmd[pos] = '\0';
-    int maxx = 0;
-    int maxIndex = -1;
-    for (int cind = this->index - 1; cind >= 0; cind--)
-    {
-      for (int i = 0; i < (int)strlen(cmd); i++)
-      {
-        char *cmdsubstring = cmd + i;
-        int len = KMPSearch(cmdsubstring, this->commands[cind]);
-        if (len > maxx)
-        {
-          maxx = len;
-          maxIndex = cind;
-        }
-      }
-    }
-    if (maxx == strlen(cmd))
-    {
-      fprintf(stdout, "%s\n", commands[maxIndex]);
-    }
-    else if (maxx <= 2)
-    {
-      fprintf(stdout, "No match for search term in history\n");
-    }
-    else
-    {
-      fprintf(stdout, "%s\n", commands[maxIndex]);
-    }
-  }
 };
 
 /**
@@ -563,10 +293,7 @@ public:
  */
 void ctrlCHandler(int dum)
 {
-  stopWatch = 1;
   fprintf(stdout, " Ctrl C Detected.\n");
-  if (inotifyFd != -1)
-    close(inotifyFd);
   return;
 }
 
@@ -582,15 +309,18 @@ void ctrlZHandler(int dum)
   // try and catch
   fprintf(stdout, " Ctrl Z Detected.\n");
   int x = 0;
-  for (int i = 0; i < pipeCount + 1 && i < sizeof(pids)/sizeof(pid_t); i++) {
-    try {
-      if(kill(pids[i], SIGCONT))
+  for (int i = 0; i < pipe_cnt + 1 && i < sizeof(pids) / sizeof(pid_t); i++)
+  {
+    try
+    {
+      if (kill(pids[i], SIGCONT))
         ;
       else
         throw x;
     }
-    catch(int x) {
-      fprintf(stdout,"No More Processes to Kill\n");
+    catch (int x)
+    {
+      fprintf(stdout, "No More Processes to Kill\n");
     }
   }
   runInBackgrnd = 1;
@@ -705,10 +435,10 @@ void trim(string &s)
   s = s.substr(i);
 }
 
-bool isChar(char ch)
-{
-  return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
-}
+// bool isChar(char ch)
+// {
+//   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+// }
 // int isNumeric(string st)
 // {
 //   bool flag_start = isChar(st[0]);
@@ -752,16 +482,16 @@ void executeCommand(char *cmd, int isBackGrnd)
   int ipFile = STD_INPUT, opFile = STD_OUTPUT;
   fprintf(stdout, "\n");
 
-  pipeCount = 0;
+  pipe_cnt = 0;
   for (int i = 0; cmd[i] != '\0'; i++)
   {
     if (cmd[i] == '|')
-      pipeCount++;
+      pipe_cnt++;
   }
-  int pipes[pipeCount + 1][2];
-  pid_t wpid[pipeCount + 1];
-  int status[pipeCount + 1];
-  for (int i = 0; i < pipeCount; i++)
+  int pipes[pipe_cnt + 1][2];
+  pid_t wpid[pipe_cnt + 1];
+  int status[pipe_cnt + 1];
+  for (int i = 0; i < pipe_cnt; i++)
   {
     if (pipe(pipes[i]) < 0)
     {
@@ -770,11 +500,11 @@ void executeCommand(char *cmd, int isBackGrnd)
     }
   }
 
-  pids = (pid_t *)malloc((pipeCount + 1) * sizeof(pid_t));
+  pids = (pid_t *)malloc((pipe_cnt + 1) * sizeof(pid_t));
   char *command;
   char **cmds;
-  char **commandsPipeSep = (char **)(malloc((pipeCount + 2) * sizeof(char *)));
-  for (int i = 0; i < pipeCount + 1; i++)
+  char **commandsPipeSep = (char **)(malloc((pipe_cnt + 2) * sizeof(char *)));
+  for (int i = 0; i < pipe_cnt + 1; i++)
   {
     if (i == 0)
     {
@@ -786,8 +516,8 @@ void executeCommand(char *cmd, int isBackGrnd)
     strcpy(commandsPipeSep[i], command);
     commandsPipeSep[i][strlen(command)] = '\0';
   }
-  commandsPipeSep[pipeCount + 1] = NULL;
-  for (int i = 0; i < pipeCount + 1; i++)
+  commandsPipeSep[pipe_cnt + 1] = NULL;
+  for (int i = 0; i < pipe_cnt + 1; i++)
   {
     pids[i] = fork();
     if (pids[i] == -1)
@@ -797,7 +527,7 @@ void executeCommand(char *cmd, int isBackGrnd)
     }
     if (pids[i] == 0)
     {
-      for (int j = 0; j < pipeCount; j++)
+      for (int j = 0; j < pipe_cnt; j++)
       {
         if (i != j)
           close(pipes[j][1]);
@@ -810,7 +540,7 @@ void executeCommand(char *cmd, int isBackGrnd)
       }
       else
         ipFile = pipes[i - 1][0];
-      if (i == pipeCount)
+      if (i == pipe_cnt)
       {
         opFile = STD_OUTPUT;
       }
@@ -821,7 +551,7 @@ void executeCommand(char *cmd, int isBackGrnd)
       cmds = splitCommand(commandsPipeSep[i], ipFile, opFile);
       char **tem = cmds;
 
-      if (i < pipeCount)
+      if (i < pipe_cnt)
         close(pipes[i][1]);
       if (i > 0)
         close(pipes[i - 1][0]);
@@ -830,11 +560,10 @@ void executeCommand(char *cmd, int isBackGrnd)
         fprintf(stderr, "\nERROR. Could not execute program %s.\n", cmds[0]);
         exit(0);
       }
-
       return;
     }
   }
-  for (int i = 0; i < pipeCount; i++)
+  for (int i = 0; i < pipe_cnt; i++)
   {
     close(pipes[i][0]);
     close(pipes[i][1]);
@@ -844,9 +573,9 @@ void executeCommand(char *cmd, int isBackGrnd)
     do
     {
       int done = 0;
-      for (int i = 0; i < pipeCount + 1; i++)
+      for (int i = 0; i < pipe_cnt + 1; i++)
         wpid[i] = waitpid(pids[i], &status[i], WUNTRACED | WCONTINUED);
-      for (int i = 0; i < pipeCount + 1; i++)
+      for (int i = 0; i < pipe_cnt + 1; i++)
       {
         if (WIFEXITED(status[i]) || WIFSIGNALED(status[i]) ||
             WIFCONTINUED(status[i]))
@@ -862,67 +591,210 @@ void executeCommand(char *cmd, int isBackGrnd)
     } while (true);
   }
 }
-vector<vector<string>> readPIDs(string s)
+struct Data
 {
-  // Open the file
-  vector<vector<string>> data;
-  ifstream file(s);
-  string line, cell;
+  string COMMAND;
+  string PID;
+  string USER;
+  string FD;
+  string TYPE;
+  string DEVICE;
+  string SIZE_OFF;
+  string NODE;
+  string NAME;
+};
+
+void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid_lock)
+{
+  ifstream file(fileName);
+  // vector<string> pids;
+  string line;
+  int lineNum = 0;
   while (getline(file, line))
   {
-    vector<string> cells;
-    stringstream lineStream(line);
-    while (getline(lineStream, cell, ','))
-      cells.push_back(cell);
-    data.push_back(cells);
-  }
-  file.close();
-  // Print the vector data
-  for (int i = 0; i < data.size(); i++)
-  {
-    cout << data.size() << " " << data[i].size();
-    for (int j = 0; j < data[i].size() - 1 ; j++)
-      cout << data[i][j] << " ";
+    lineNum++;
+    if (lineNum == 1)
+      continue; // skip the first line (header)
+    istringstream ss(line);
+    string token;
+    int tokenNum = 0;
+    vector<string> total;
+    while (getline(ss, token, ' '))
+    {
+      tokenNum++;
+      if (token.size() != 0)
+      {
+        total.push_back(token);
+        if (tokenNum == 2)
+          pids.push_back(token);
+      }
+    }
+    for (auto it : total)
+    {
+      cout << it << " ";
+    }
     cout << endl;
+    if (total[3].find("W") != string::npos)
+    {
+      pid_lock.push_back(total[1]);
+    }
   }
-  cout << data.size() << data[0].size() << data[1].size() << endl;
-  return data;
-}
-void delep(char *cmd)
-{
-  char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
-  memset(ch, '\0', (CMD_LEN + 1000));
-  char *ch1 = (char *)malloc(100 * sizeof(char));
-  memset(ch1, '\0', (100));
-  strcpy(ch1, "lsof ");
-  // fprintf(stdout, ch1);
-  char *ch2 = (char *)malloc(100 * sizeof(char));
-  memset(ch2, '\0', (100));
-  strcpy(ch2, " > .tmpfile.csv");
-  strcat(ch, ch1);
-  strcat(ch, cmd);
-  strcat(ch, ch2);
-  printf("[%s]\n", ch);
-  executeCommand(ch, 0);
-  vector<vector<string>> info;
-  info = readPIDs(".tmpfile.csv");
-  // cout << "PID of all Process's that have Opened the file:\n";
-  // vector<pid_t> pid_lock, pid_open;
-  // cout << info.size() << info[1].size() << info[0].size() << endl;
-  // for(int i = 1; i < info.size(); i++)
-  // {
-  //   cout << info[i][1] << " ";
-  //   pid_open.push_back(stoi(info[i][1]));
-  // }
-  // // cout << endl;
-  // // }
-  // // cout << endl;
-  cout << info.size() << " " << info[0].size() << endl;
-  cout << endl;
-  // executeCommand((char *)"rm .tmpfile.csv", 0);
-  free(ch);
+  cout << pid_lock.size() << endl;
+  // return pids;
 }
 
+// void delep(char *cmd)
+// {
+//   vector<string> data_open, data_lock;
+//   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
+//   char *ch1 = (char *)malloc(100 * sizeof(char));
+//   pid_t pid = fork();
+//   if (pid == 0)
+//   {
+//     memset(ch, '\0', (CMD_LEN + 1000));
+//     memset(ch1, '\0', (100));
+//     strcpy(ch1, "lsof ");
+//     char *ch2 = (char *)malloc(100 * sizeof(char));
+//     memset(ch2, '\0', (100));
+//     strcpy(ch2, " > tmpfile.csv");
+//     strcat(ch, ch1);
+//     strcat(ch, cmd);
+//     strcat(ch, ch2);
+//     executeCommand(ch, 0);
+//     parseFile("tmpfile.csv", data_open, data_lock);
+//     // exit(0);
+//     memset(ch2, '\0', (100));
+//     strcpy(ch2,"exit");
+//     executeCommand(ch2,0);
+//     // executeCommand(ch2,1);
+//   }
+// else
+// {
+//     int status;
+//     waitpid(pid, &status, 0);
+//     fprintf(stdout, "PID's that have the file open\n\n");
+//     for (auto pid_open : data_open)
+//       cout << pid_open << "   ";
+//     cout << endl;
+//     fprintf(stdout, "PID's that have the file lock\n\n");
+//     for (auto pid_lock : data_lock)
+//       cout << pid_lock << "   ";
+//     cout << endl;
+//     fprintf(stdout, "\n[?] Enter YES or NO to Kill the Processes:- ");
+//     string t;
+//     cin >> t;
+//     if (t.compare("YES") == 0)
+//     {
+//       for (auto pid : data_open)
+//         kill(stoi(pid), SIGKILL);
+//       memset(ch, '\0', (CMD_LEN + 1000));
+//       memset(ch1, '\0', (100));
+//       strcpy(ch1, "rm ");
+//       strcat(ch, ch1);
+//       strcat(ch, cmd);
+//       executeCommand(ch, 0);
+//     }
+//     cout << endl;
+//     free(ch);
+//   // }
+// }
+char **get_arg0(char *cmd)
+{
+  char cmd_copy[1000] = {0};
+  strcpy(cmd_copy, cmd);
+  char **arg;
+
+  char *p = strtok(cmd, " ");
+  int cnt = 0;
+  while (p)
+  {
+    p = strtok(NULL, " ");
+    cnt++;
+  }
+  arg = (char **)calloc((cnt + 1), sizeof(char *));
+  p = strtok(cmd_copy, " ");
+  int i = 0;
+  for (; p; i++)
+  {
+    arg[i] = (char *)calloc((strlen(p) + 1), sizeof(char));
+    strcpy(arg[i], p);
+    arg[i][strlen(p)] = '\0';
+    p = strtok(NULL, " ");
+  }
+  arg[i] = NULL;
+  return arg;
+}
+// void runExtCmd0(char *usr_cmd, char *file)
+// {
+
+// }
+void delep(char *cmd)
+{
+  vector<string> data_open, data_lock;
+  char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
+  char *ch1 = (char *)malloc(100 * sizeof(char));
+  pid_t pid = fork();
+  if (pid == 0)
+  {
+    memset(ch, '\0', (CMD_LEN + 1000));
+    memset(ch1, '\0', (100));
+    strcpy(ch1, "lsof ");
+
+    char *ch2 = (char *)malloc(100 * sizeof(char));
+    memset(ch2, '\0', (100));
+
+    strcpy(ch2, "tmpfile.csv");
+    strcat(ch, ch1);
+    strcat(ch, cmd);
+    // runExtCmd0(ch, ch2);
+    cout << ch << " " << ch2 << endl;
+    char **arg = get_arg0(ch);
+    int fd = open(ch2, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0)
+      perror("open");
+    if (dup2(fd, STDOUT_FILENO) < 0)
+      perror("dup2");
+    if (execvp(arg[0], arg) < 0)
+      fprintf(stderr, "\nERROR. Could not execute program.\n");
+    cout << 1 << endl;
+    // executeCommand(ch, 0);
+    // lsof cmd > tmpfile.csv
+  }
+  else
+  {
+    // wait(NULL);
+    int status;
+    waitpid(pid, &status, 0);
+    parseFile("tmpfile.csv", data_open, data_lock);
+    fprintf(stdout, "PID's that have the file open\n\n");
+    for (auto pid_open : data_open)
+      cout << pid_open << "   ";
+    cout << endl;
+    fprintf(stdout, "PID's that have the file lock\n\n");
+    for (auto pid_lock : data_lock)
+      cout << pid_lock << "   ";
+    cout << endl;
+    fprintf(stdout, "\n[?] Enter YES or NO to Kill the Processes:- ");
+    string t;
+    cin >> t;
+    if (t.compare("YES") == 0)
+    {
+      for (auto pid : data_open)
+      {
+        if (kill(stoi(pid), SIGKILL) < 0)
+          perror("Error with KILL.");
+      }
+      if (remove(cmd) > 0)
+      {
+        perror("Error: Removing File.");
+      }
+    }
+    cout << endl;
+    if (remove((char *)"tmpfile.csv"))
+      ;
+    free(ch);
+  }
+}
 /**
  * @brief Function to read input command from command line
  *
@@ -940,15 +812,15 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
   int inputModeSet = 0;
   set_input_mode();
   char **history = shellHistory.commands;
-  int hist_cur = max(0, shellHistory.index - 1);
+  int hist_cur = max(0, shellHistory.index);
   int cnt = 0;
-  int flag1 = 0;
-  string input = "";
+  int flag_hist = 0;
   while (1)
   {
     ch = getchar();
     if ((int)ch == 1)
     {
+      flag_hist = 0;
       for (int i = 0; i < pos; i++)
       {
         char *pr = (char *)"\033[1D";
@@ -959,6 +831,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     }
     else if ((int)ch == 5)
     {
+      flag_hist = 0;
       for (int i = 0; i < strlen(cmd) - pos; i++)
       {
         char *pr = (char *)"\033[1C";
@@ -967,69 +840,16 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
       pos = strlen(cmd);
       continue;
     }
-    // else if ((int)ch == 127)
-    // {
-    //   if (pos == 0)
-    //     continue;
-    //   else
-    //   {
-    //     pos--;
-    //     cmd[pos] = '\0';
-    //     fputs("\b \b", stdout);
-    //   }
-    // }
-    if ((int)ch == 127)
+    else if ((int)ch == 127)
     {
       if (pos == 0)
-      {
         continue;
-      }
       else
       {
         pos--;
-        int k = strlen(cmd);
-        for (int i = pos; i < strlen(cmd); i++)
-          cmd[i] = cmd[i + 1];
-        cmd[strlen(cmd) - 1] = '\0';
-        for (int i = 0; i < k + strlen(prompt1); i++)
-          fputs("\b \b", stdout);
-        fprintf(stdout, prompt1);
-        fprintf(stdout, cmd);
-        // printf("%.*s", strlen(cmd), cmd);
-        // pos = strlen(cmd);
-        // for (int i = 0; i < strlen(cmd) - pos; i++)
-        //   fputs("\033[1C", stdout);
-        continue;
-      }
-    }
-    // else {
-    //   cmd[pos++] = ch;
-    //   putchar(ch);
-    // }
-    else if ((int)ch == 9)
-    {
-      // autocomplete work
-      reset_input_mode();
-      int isFound = -1;
-      char *cmd2 = tabHandler(cmd, pos, isFound);
-      set_input_mode();
-      if (isFound != 1)
-        continue;
-      cmd = cmd2;
-    }
-    else if ((int)ch == 18)
-    {
-      // history work
-      while (pos > 0)
-      {
+        cmd[pos] = '\0';
         fputs("\b \b", stdout);
-        pos--;
       }
-      inputModeSet = 0;
-      reset_input_mode();
-      shellHistory.search();
-      needExecution = 0;
-      return cmd;
     }
     else if ((int)ch == 27)
     {
@@ -1045,15 +865,11 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
           // Up Arrow Key
           if (hist_cur >= 0 && shellHistory.index)
           {
-            cmd = history[hist_cur];
             hist_cur--;
-            pos = strlen(cmd);
             if (hist_cur == -1)
               hist_cur = 0;
-            // if(flag1 == 0) {
-            //  shellHistory.push(cmd);
-            //  flag1 = 1;
-            // }
+            cmd = history[hist_cur];
+            pos = strlen(cmd);
             cnt++;
           }
           fprintf(stdout, cmd);
@@ -1066,15 +882,11 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
           fputs(prompt1, stdout);
           if (hist_cur < shellHistory.index)
           {
-            cmd = history[hist_cur];
             hist_cur++;
-            pos = strlen(cmd);
             if (hist_cur == shellHistory.index)
               hist_cur = shellHistory.index - 1;
-            // if(flag1 == 0) {
-            //  shellHistory.push(cmd);
-            //  flag1 = 1;
-            // }
+            cmd = history[hist_cur];
+            pos = strlen(cmd);
             cnt++;
           }
           fprintf(stdout, cmd);
@@ -1099,20 +911,7 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
             fputs(pr, stdout);
           }
         }
-        // else
-        // {
-        //   cmd[pos++] = ch;
-        //   cmd[pos++] = ch1;
-        //   cmd[pos++] = ch2;
-        // }
       }
-      // else
-      // {
-      //   cmd[pos++] = ch;
-      //   cmd[pos++] = ch1;
-      //   // putchar(ch);
-      //   // putchar(ch1);
-      // }
     }
     else if ((ch == EOF || ch == '\n' || pos >= CMD_LEN - 1))
       break;
@@ -1132,8 +931,6 @@ char *readLine(int &isBackGrnd, int &needExecution, shell_history &shellHistory)
     isBackGrnd = 1;
   cmd[pos] = '\0';
   reset_input_mode();
-  // if(flag1 = 1)
-  // shellHistory.pop();
   return cmd;
 }
 
@@ -1185,7 +982,6 @@ int main()
     // initialise variables
     int isBackgrnd = 0;
     int needExecution = 1;
-    inotifyFd = -1;
     // get command line input
     char *cmd = readLine(isBackgrnd, needExecution, shellHistory);
     fprintf(stdout, "\n");
@@ -1294,6 +1090,7 @@ int main()
         break;
       }
     }
+
     if (flag_wildcard)
     {
       string arg;
@@ -1305,27 +1102,119 @@ int main()
       while (ss >> arg)
         expandWildcards(arg, args);
       cout << "Expanded arguments:" << endl;
-      vector<string> args_standard;
-      for (const auto &arg : args)
-        args_standard.push_back(c + " " + arg);
-      int i = 0;
-      if (fork() == 0)
+      string expanded_arg_concatenated = "";
+      if (strstr(cmd, "sort") != nullptr)
       {
+        expanded_arg_concatenated += "sort ";
         for (const auto &arg : args)
         {
-          string s = c + " " + arg + " & ";
-          char *w = (char *)malloc(s.size() * sizeof(char));
-          int i = 0;
-          for (char ch : s)
-            w[i++] = ch;
-          executeCommand(w, isBackgrnd);
+          expanded_arg_concatenated += arg + " ";
         }
+        cout << expanded_arg_concatenated << endl;
+        vector<char *> expanded_args;
+        int length = expanded_arg_concatenated.size();
+        char *w = (char *)malloc((length + 1) * sizeof(char));
+        int i = 0;
+        for (char ch : expanded_arg_concatenated)
+          w[i++] = ch;
+        w[length] = '\0';
+        expanded_args.push_back(w);
+        for (const auto &exp_arg : expanded_args)
+        {
+          cout << exp_arg << endl;
+          executeCommand(exp_arg, isBackgrnd);
+        }
+        continue;
       }
-      wait(NULL);
-      continue;
+      if (strstr(cmd, "gedit") != nullptr)
+      {
+        expanded_arg_concatenated += "gedit ";
+        for (const auto &arg : args)
+          expanded_arg_concatenated += arg + " ";
+        cout << expanded_arg_concatenated << endl;
+        vector<char *> expanded_args;
+        int length = expanded_arg_concatenated.size();
+        char *w = (char *)malloc((length + 1) * sizeof(char));
+        int i = 0;
+        for (char ch : expanded_arg_concatenated)
+          w[i++] = ch;
+        w[length] = '\0';
+        expanded_args.push_back(w);
+        for (const auto &exp_arg : expanded_args)
+        {
+          cout << exp_arg << endl;
+          executeCommand(exp_arg, isBackgrnd);
+        }
+        continue;
+      }
+      else
+      {
+        string first = "";
+        for (int i = 0; i < strlen(cmd); i++)
+        {
+          if (cmd[i] != ' ')
+            first.push_back((char)cmd[i]);
+          else {
+            first.push_back((char)cmd[i]);
+            break;
+          }
+        }
+        expanded_arg_concatenated += first;
+        for (const auto &arg : args)
+          expanded_arg_concatenated += arg + " ";
+        cout << expanded_arg_concatenated << endl;
+        vector<char *> expanded_args;
+        int length = expanded_arg_concatenated.size();
+        char *w = (char *)malloc((length + 1) * sizeof(char));
+        int i = 0;
+        for (char ch : expanded_arg_concatenated)
+          w[i++] = ch;
+        w[length] = '\0';
+        expanded_args.push_back(w);
+        for (const auto &exp_arg : expanded_args)
+        {
+          cout << exp_arg << endl;
+          executeCommand(exp_arg, isBackgrnd);
+        }
+        continue;
+      }
     }
     // test delep with wild_card;
+    // sb command starts
+    if (cmd[0] == 's' && cmd[1] == 'b')
+    {
 
+      int pos = strcspn(cmd, " ");
+      if (pos == strlen(cmd))
+      {
+        cout << "Incorrect input format for sb command" << endl;
+        continue;
+      }
+      char *command = (char *)malloc(sizeof(char) * pos + 1);
+      strncpy(command, cmd, pos);
+      command[pos] = '\0';
+
+      int pid = atoi(cmd + pos + 1);
+
+      pos = strcspn(cmd + pos + 1, " ");
+      if (pos == strlen(cmd))
+      {
+        cout << "Incorrect input format for sb command" << endl;
+        continue;
+      }
+      char *flag = cmd + pos + 1;
+
+      // Check if the suggest flag is set
+      bool suggest = false;
+      cout << "Flag:-" << flag << endl;
+      if (strstr(cmd, "-suggest") != nullptr)
+      {
+        suggest = true;
+      }
+      cout << suggest << endl;
+      traverseProcessTree(pid, 0, suggest, 0);
+      continue;
+    }
     // execute every other command
     executeCommand(cmd, isBackgrnd);
     // flush the standard input and output.
