@@ -72,14 +72,17 @@ int main(int argc, char *argv[])
     /*
         End of Main Process
     */
-    cout << shm_int[0] << endl;
     // Creating Producer Process
     if(fork()==0)
     {
-        vector<int> nodes(20);
-        int x = 0;
+        vector<int> nodes(21);
+        int x = 10;
         std::generate(nodes.begin(), nodes.end(), [&]{ return  x++; });
-        cout << nodes[rand()%20] << endl;
+        for(int i=0;i<nodes.size();i++) cout << nodes[i] << " ";
+        cout << endl;
+        int m = nodes[rand()%20];
+        cout << m << endl;
+        shm_int[0] += m;
         shmdt(shm_int);
         exit(0);
     }
@@ -88,7 +91,25 @@ int main(int argc, char *argv[])
     // Write adjacency list to a file
     FILE *out;
     out = fopen("output.txt", "w");
-    fprintf(out, "%d:::\n\n", shm_int[0]);
+    // fprintf(out, "%d:::\n\n", shm_int[0]);
+    // for (int j = 0; j <= n; j++)
+    // {
+    //     fprintf(out, "%d: ", j);
+    //     for (int i = 0; i < edges.size(); i++)
+    //     {
+    //         if (shm_int[2 * i + 2] == j)
+    //         {
+    //             fprintf(out, "%d ", shm_int[2 * i + 3]);
+    //         }
+    //         if (shm_int[2 * i + 3] == j)
+    //         {
+    //             fprintf(out, "%d ", shm_int[2 * i + 2]);
+    //         }
+    //     }
+    //     fprintf(out, "\n");
+    // }
+
+    // Modify the format of the output
     for (int j = 0; j <= n; j++)
     {
         fprintf(out, "%d: ", j);
@@ -106,37 +127,19 @@ int main(int argc, char *argv[])
         fprintf(out, "\n");
     }
 
-    // Modify the format of the output
-    for (int j = 0; j <= n; j++)
-    {
-        fprintf(out, "%d: ", j);
-        for (int i = 0; i < edges.size(); i++)
-        {
-            if (shm_int[2 * i + 2] == j)
-            {
-                fprintf(out, "%d ", shm_int[2 * i + 3]);
-            }
-            if (shm_int[2 * i + 3] == j)
-            {
-                fprintf(out, "%d ", shm_int[2 * i + 2]);
-            }
-        }
-        fprintf(out, "\n\n");
-    }
-
     // Compute and print additional information
-    for (int j = 0; j <= n; j++)
-    {
-        int degree = 0;
-        for (int i = 0; i < edges.size(); i++)
-        {
-            if (shm_int[2 * i + 2] == j || shm_int[2 * i + 3] == j)
-            {
-                degree++;
-            }
-        }
-        fprintf(out, "%d: degree = %d\n", j, degree);
-    }
+    // for (int j = 0; j <= n; j++)
+    // {
+    //     int degree = 0;
+    //     for (int i = 0; i < edges.size(); i++)
+    //     {
+    //         if (shm_int[2 * i + 2] == j || shm_int[2 * i + 3] == j)
+    //         {
+    //             degree++;
+    //         }
+    //     }
+    //     fprintf(out, "%d: degree = %d\n", j, degree);
+    // }
 
     fclose(out);
 #endif
