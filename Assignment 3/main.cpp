@@ -1,4 +1,4 @@
-#include <iostream>
+#include <bits/stdc++.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -14,9 +14,10 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-   
-  
-    
+    srand((unsigned long int)time(NULL));
+    /*
+        Start of Main Process
+    */
     // Create shared memory
     int shmid_mem;
     key_t key = ftok("shmfile", 69);
@@ -68,10 +69,26 @@ int main(int argc, char *argv[])
         shm_int[2 * i + 2] = edges[i].first;
         shm_int[2 * i + 3] = edges[i].second;
     }
+    /*
+        End of Main Process
+    */
+    cout << shm_int[0] << endl;
+    // Creating Producer Process
+    if(fork()==0)
+    {
+        vector<int> nodes(20);
+        int x = 0;
+        std::generate(nodes.begin(), nodes.end(), [&]{ return  x++; });
+        cout << nodes[rand()%20] << endl;
+        shmdt(shm_int);
+        exit(0);
+    }
+    wait(NULL);
 #ifdef DEBUG
     // Write adjacency list to a file
     FILE *out;
     out = fopen("output.txt", "w");
+    fprintf(out, "%d:::\n\n", shm_int[0]);
     for (int j = 0; j <= n; j++)
     {
         fprintf(out, "%d: ", j);
@@ -123,7 +140,7 @@ int main(int argc, char *argv[])
 
     fclose(out);
 #endif
-
-    shmdt(shm);
+    shmdt(shm_int);
+    shmctl(shmid_mem,IPC_RMID, NULL);
     return 0;
 }
