@@ -37,15 +37,16 @@ int main()
     pq_ptr->push(make_pair(3, 5));
     pq_ptr->push(make_pair(1, 7));
     pq_ptr->push(make_pair(2, 6));
-
-    if(fork()==0)
+    pid_t pid = fork(); 
+    if(pid==0)
     {
         pq_ptr2->push(make_pair(9,10));
-        // exit(0);
+        exit(0);
     }
     wait(NULL);
     print(pq_ptr);
     // cleanup
+    cout << "HI " << pq_ptr->size() << endl;
     munmap(shm_ptr, shm_size);
     munmap(shm_ptr2, shm_size);
     shm_unlink(shm_name);
