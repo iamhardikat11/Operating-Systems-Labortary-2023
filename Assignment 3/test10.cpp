@@ -76,6 +76,7 @@ int main()
         return 1;
     }
     // create a shared memory segment of size 1MB
+
     int shm_id = shmget(IPC_PRIVATE, 1048576, IPC_CREAT | 0666);
     if (shm_id < 0)
     {
@@ -92,11 +93,14 @@ int main()
     }
 
     // cast the pointer to a pointer of Node pointers
-    Node **adj_list = (Node **)shm_ptr;
+    Node **adj_list = static_cast<Node **>(shm_ptr);
 
     // initialize the linked lists to NULL
-    for (int i = 0; i < NUM_NODES; i++)
+    for (int i = 0; i < NUM_NODES; i++) 
+    {
+        adj_list[i] = (Node *)shmat(shm_id, NULL, 0);
         adj_list[i] = NULL;
+    }
     // read the edges from the file and create the adjacency list
     int a, b;
     while (infile >> a >> b)
@@ -115,8 +119,10 @@ int main()
     }
     print(adj_list, NUM_NODES, "output1.txt");
     // detach the shared memory segment
-    shmdt(shm_ptr);
+    for(int i=0;i<NUM_NODES;i++)
+        shmdt(adj_list[i]);
+    shmdt(adj_list);
     // delete the shared memory segment
-    shmctl(shm_id, IPC_RMID, NULL);
+    // shmctl(shm_id, IPC_RMID, NULL);
     return 0;
 }

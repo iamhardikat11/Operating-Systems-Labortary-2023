@@ -19,11 +19,9 @@ int main(int argc, char *argv[])
         Start of Main Process
     */
     // Create shared memory
-    int shmid_mem;
-    key_t key = ftok("shmfile", 69);
     char *shm, *s;
     // Create the segment of size 2MB
-    shmid_mem = shmget(key, 2 * 1024 * 1024, 0666 | IPC_CREAT);
+    int shmid_mem = shmget(200, 2 * 1024 * 1024, 0666 | IPC_CREAT);
     if (shmid_mem < 0)
     {
         perror("shmget");
@@ -48,7 +46,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
     int n = 0;
-    vector<pair<int, int> > edges;
+    vector<pair<int, int>> edges;
     int u, v;
     while (fscanf(fp, "%d %d", &u, &v) != EOF)
     {
@@ -62,88 +60,22 @@ int main(int argc, char *argv[])
     // We will load the number of vertices and edges in the first 2 integers
     // We will load the edges in the next 2*edges.size() integers
     int *shm_int = (int *)shm;
-    shm_int[0] = n + 1;
-    shm_int[1] = edges.size();
+    shm_int[0] = 2 + edges.size()*2;
+    shm_int[1] = n + 1;
+    map<int,int> degree;
     for (int i = 0; i < edges.size(); i++)
     {
         shm_int[2 * i + 2] = edges[i].first;
         shm_int[2 * i + 3] = edges[i].second;
+        degree[edges[i].first]++;
+        degree[edges[i].second]++;
     }
     /*
         End of Main Process
     */
-    // Creating Producer Process
-    if(fork()==0)
-    {
-        vector<int> nodes(21);
-        int x = 10;
-        std::generate(nodes.begin(), nodes.end(), [&]{ return  x++; });
-        for(int i=0;i<nodes.size();i++) cout << nodes[i] << " ";
-        cout << endl;
-        int m = nodes[rand()%20];
-        cout << m << endl;
-        shm_int[0] += m;
-        shmdt(shm_int);
-        exit(0);
-    }
-    wait(NULL);
-#ifdef DEBUG
-    // Write adjacency list to a file
-    FILE *out;
-    out = fopen("output.txt", "w");
-    // fprintf(out, "%d:::\n\n", shm_int[0]);
-    // for (int j = 0; j <= n; j++)
-    // {
-    //     fprintf(out, "%d: ", j);
-    //     for (int i = 0; i < edges.size(); i++)
-    //     {
-    //         if (shm_int[2 * i + 2] == j)
-    //         {
-    //             fprintf(out, "%d ", shm_int[2 * i + 3]);
-    //         }
-    //         if (shm_int[2 * i + 3] == j)
-    //         {
-    //             fprintf(out, "%d ", shm_int[2 * i + 2]);
-    //         }
-    //     }
-    //     fprintf(out, "\n");
-    // }
-
-    // Modify the format of the output
-    for (int j = 0; j <= n; j++)
-    {
-        fprintf(out, "%d: ", j);
-        for (int i = 0; i < edges.size(); i++)
-        {
-            if (shm_int[2 * i + 2] == j)
-            {
-                fprintf(out, "%d ", shm_int[2 * i + 3]);
-            }
-            if (shm_int[2 * i + 3] == j)
-            {
-                fprintf(out, "%d ", shm_int[2 * i + 2]);
-            }
-        }
-        fprintf(out, "\n");
-    }
-
-    // Compute and print additional information
-    // for (int j = 0; j <= n; j++)
-    // {
-    //     int degree = 0;
-    //     for (int i = 0; i < edges.size(); i++)
-    //     {
-    //         if (shm_int[2 * i + 2] == j || shm_int[2 * i + 3] == j)
-    //         {
-    //             degree++;
-    //         }
-    //     }
-    //     fprintf(out, "%d: degree = %d\n", j, degree);
-    // }
-
-    fclose(out);
-#endif
+    for(auto it: degree)
+        cout << it.first << " " << it.second << endl;
     shmdt(shm_int);
-    shmctl(shmid_mem,IPC_RMID, NULL);
+    // shmctl(shmid_mem,IPC_RMID, NULL);
     return 0;
 }
