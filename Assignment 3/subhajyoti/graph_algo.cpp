@@ -4,6 +4,15 @@ using namespace std;
 
 vector<vector<int> > g;
 
+void print_dist_vec(vector<vector<int> > &dist){
+    for(int i=0; i<dist.size(); i++){
+        cout<<"dist["<<i<<"]:";
+        for(auto x: dist[i])
+            cout << x << " ";
+        cout << endl;
+    }
+}
+
 // djikstra algorithm to find shortest path from source to all other nodes in a graph with non-negative edge weights using adjacency list representation of graph
 vector<int> djikstra(int src, int n){
     vector<int> dist(n+1, INT_MAX);
@@ -112,28 +121,8 @@ void add_more_edges(vector<pair<int, int> > &new_edges){
     file.close();
 }
 
-int main(){
-    int n, m, la;
-    get_initial_graph(n,m);
-
-    vector<vector<int> > dist(2);
-    dist[0] = djikstra(0, n);
-    dist[1] = djikstra(6, n);
-
-    cout<<"dist[0]:";
-    for(auto x: dist[0])
-        cout << x << " ";
-    cout << endl<<"dist[1]:";
-    for(auto x: dist[1])
-        cout << x << " ";
-    cout << endl;
-
-    vector<pair<int, int> > new_edges;
-    add_more_edges(new_edges);
-
-    cout<< "new_edges: "<<new_edges.size()<<endl;
-    vector<pair<int, int> > temp;
-    for(int i=0; i<2; i++){
+void update_dist_vec(vector<vector<int> > &dist, vector<pair<int, int> > &new_edges){
+    for(int i=0; i<dist.size(); i++){
         for(auto x: new_edges){
             if(dist[i][x.first] >=0 || dist[i][x.second] >= 0){
                 int a,b;
@@ -161,16 +150,25 @@ int main(){
             }
         }
     }
+}
 
+int main(){
+    int n, m, la;
+    get_initial_graph(n,m);
 
+    vector<vector<int> > dist(2);
+    dist[0] = djikstra(0, n);
+    dist[1] = djikstra(6, n);
 
-    cout<<"dist[0]:";
-    for(auto x: dist[0])
-        cout << x << " ";
-    cout << endl<<"dist[1]:";
-    for(auto x: dist[1])
-        cout << x << " ";
-    cout << endl;
+    print_dist_vec(dist);
 
+    vector<pair<int, int> > new_edges;
+    add_more_edges(new_edges);
+
+    cout<< "new_edges: "<<new_edges.size()<<endl;
+    update_dist_vec(dist, new_edges);
+
+    print_dist_vec(dist);
+    
     return 0;
 }
