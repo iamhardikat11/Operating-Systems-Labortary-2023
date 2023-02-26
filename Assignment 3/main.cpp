@@ -73,8 +73,10 @@ int main(int argc, char *argv[])
     /*
         End of Main Process
     */
-    for(auto it: degree)
-        cout << it.first << " " << it.second << endl;
+    for(int i=2;i<shm_int[0];i+=2)
+    {
+        cout << shm_int[i] << " " << shm_int[i+1] << endl;
+    }
     shmdt(shm_int);
     // shmctl(shmid_mem,IPC_RMID, NULL);
     return 0;
