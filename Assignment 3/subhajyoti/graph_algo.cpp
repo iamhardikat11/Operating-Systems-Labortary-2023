@@ -55,30 +55,8 @@ void update_distance(vector<int> &dist,int u,int v){
     }
 }
 
-// distance of a node from source in unweighted graph from adjacency list representation of graph
-vector<int> bfs(int src, int n){
-    vector<int> dist(n+1, -1);
-    dist[src] = 0;
-
-    queue<int> q;
-    q.push(src);
-
-    while(!q.empty()){
-        int u = q.front();
-        q.pop();
-
-        for(int v: g[u]){
-            if(dist[v] == -1){
-                dist[v] = dist[u] + 1;
-                q.push(v);
-            }
-        }
-    }
-    return dist;
-}
-
-int main(){
-    int n, m, la;
+void get_initial_graph(int &n, int &m){
+    int la;
     fstream file;
     string word, t, q, filename;
 
@@ -111,22 +89,16 @@ int main(){
         e++;
     }
     file.close();
+}
 
-    vector<int> dist[2];
-    dist[0] = djikstra(0, n);
-    dist[1] = djikstra(6, n);
+void add_more_edges(vector<pair<int, int> > &new_edges){
+    fstream file;
+    string word, t, q, filename;
+    int u, v;
 
-    cout<<"dist[0]:";
-    for(auto x: dist[0])
-        cout << x << " ";
-    cout << endl<<"dist[1]:";
-    for(auto x: dist[1])
-        cout << x << " ";
-    cout << endl;
-
+    new_edges.clear();
     filename = "new_nodes.txt";
     file.open(filename.c_str());
-    vector<pair<int, int> > new_edges;
     while(file >> word){
         // cout<<word<<endl;
         u = stoi(word);
@@ -138,6 +110,26 @@ int main(){
         new_edges.push_back({u, v});
     }
     file.close();
+}
+
+int main(){
+    int n, m, la;
+    get_initial_graph(n,m);
+
+    vector<vector<int> > dist(2);
+    dist[0] = djikstra(0, n);
+    dist[1] = djikstra(6, n);
+
+    cout<<"dist[0]:";
+    for(auto x: dist[0])
+        cout << x << " ";
+    cout << endl<<"dist[1]:";
+    for(auto x: dist[1])
+        cout << x << " ";
+    cout << endl;
+
+    vector<pair<int, int> > new_edges;
+    add_more_edges(new_edges);
 
     cout<< "new_edges: "<<new_edges.size()<<endl;
     vector<pair<int, int> > temp;
