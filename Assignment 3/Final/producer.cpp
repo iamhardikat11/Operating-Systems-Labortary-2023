@@ -79,7 +79,7 @@ int main()
                 }
                 offset += 2 * numNewEdge;
                 shm_int[0] = offset;
-                pq.push(make_pair(shm_int[+ i, numNewEdge));
+                pq.push(make_pair(shm_int[1]+ i, numNewEdge));
                 for (int i = 0; i < nodes.size(); i++)
                     pq.push(make_pair(nodes[i].first, nodes[i].second + 1));
             }
