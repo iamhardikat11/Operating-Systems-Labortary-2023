@@ -51,7 +51,8 @@ int main()
     for (auto it : degree)
         pq.push(make_pair(it.first, it.second));
     shmdt(shm_ptr);
-    while (1)
+    // while (1)
+    for(int x = 0; x < 2; x++)
     {
         sleep(5);
         void *shm_ptr_p = shmat(shm_id, NULL, 0);
@@ -78,7 +79,7 @@ int main()
                     pq.pop();
                 }
                 offset += 2 * numNewEdge;
-                shm_int[0] = offset+1;
+                shm_int[0] = offset;
                 pq.push(make_pair(shm_int[1]+ i, numNewEdge));
                 for (int i = 0; i < nodes.size(); i++)
                     pq.push(make_pair(nodes[i].first, nodes[i].second + 1));

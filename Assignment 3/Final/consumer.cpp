@@ -22,13 +22,21 @@ vector<vector<int>> g;
 
 void print_dist_vec(vector<vector<int>> &dist)
 {
+    ofstream file("output4.txt");
+    if (!file.is_open())
+    {
+        cerr << "Failed to open output file "
+             << "output4.txt" << endl;
+        exit(1);
+    }
     for (int i = 0; i < dist.size(); i++)
     {
-        cout << "dist[" << i << "]:";
+        file << "dist[" << i << "]:";
         for (auto x : dist[i])
-            cout << x << " ";
-        cout << endl;
+            file << x << " ";
+        file << endl;
     }
+    file.close();
 }
 
 // djikstra algorithm to find shortest path from source to all other nodes in a graph with non-negative edge weights using adjacency list representation of graph
@@ -201,8 +209,8 @@ int main()
         cout << "Error: could not create shared memory segment." << endl;
         return 1;
     }
-
-    while (1)
+    g.clear();
+    for(int x = 0; x < 2; x++)
     {
         sleep(5);
         void *shm_ptr_p = shmat(shm_id, NULL, 0);
@@ -213,10 +221,11 @@ int main()
         }
         // cast the pointer to a pointer of Node pointers
         int *shm_int = static_cast<int *>(shm_ptr_p);
+
         if (fork() == 0)
         {
             size_t NUM_NODES = (shm_int[1]);
-            size_t NUM_EDGES = ((shm_int[0]-3) / 2);
+            size_t NUM_EDGES = ((shm_int[0] - 3) / 2);
             ofstream file("output3.txt");
             if (!file.is_open())
             {
@@ -224,20 +233,23 @@ int main()
                      << "output3.txt" << endl;
                 exit(1);
             }
+            cout << g.size() << " " << shm_int[1] << endl;
+            for (int i = g.size(); i < shm_int[1]; i++)
+            {
+                g.push_back(vector<int>());
+            }
             file << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
-            for (int i = shm_int[2]; i < shm_int[0]; i++)
+            for (int i = 3; i < shm_int[0]; i += 2)
             {
                 g[shm_int[i]].push_back(shm_int[i + 1]);
                 g[shm_int[i + 1]].push_back(shm_int[i]);
-                file << shm_int[i++] << " " << shm_int[i] << endl;
-                file << "Hi" << endl; 
+                file << shm_int[i] << " " << shm_int[i + 1] << endl;
             }
+            shm_int[2] = shm_int[0];
             int n = NUM_NODES, m = NUM_EDGES;
-            
-            vector<vector<int>> dist(2);
+            vector<vector<int>> dist(1);
             dist[0] = djikstra(0, n);
-            dist[1] = djikstra(6, n);
-
+            // dist[1] = djikstra(6, n);
             print_dist_vec(dist);
             file << endl;
             file.close();
