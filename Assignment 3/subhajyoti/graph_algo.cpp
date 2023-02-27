@@ -71,26 +71,37 @@ vector<int> djikstra_with_path(int src, int n, vector<vector<int> > &path){
 }
 
 void update_distance(vector<int> &dist, vector<vector<int> > &path, int u,int v){
-    queue<int> q, temp;
-    q.push(v);
+    queue<pair<int,int> > q, temp;
+    q.push({v,u});
     dist[v] = dist[u] + 1;
     int val=2;
     while(!q.empty()){
-        int x = q.front();
+        int x = q.front().first;
+        int h = q.front().second;
+
+        path[x].clear();
+        path[x] = path[h];
+        path[x].push_back(h);
+        path[x].push_back(x);
+
         q.pop();
-        for(int y: g[x]){
+        for(auto y: g[x]){
             if(dist[y] == -1){
                 dist[y] = dist[u] + val;
-                q.push(y);
+                path[y].clear();    path[y] = path[x];
+                path[y].push_back(y);
+                q.push({y,x});
             }
             else if(dist[y] > dist[u] + val){
                 dist[y] = dist[u] + val;
-                temp.push(y);
+                path[y].clear();    path[y] = path[x];
+                path[y].push_back(y);
+                temp.push({y,x});
             }
         }
         if(q.empty()){
             q = temp;
-            temp = queue<int>();
+            temp = queue<pair<int,int> >();
             val++;
         }
     }
