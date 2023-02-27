@@ -51,8 +51,7 @@ int main()
     for (auto it : degree)
         pq.push(make_pair(it.first, it.second));
     shmdt(shm_ptr);
-    // while (1)
-    while(1)
+    while (1)
     {
         sleep(5);
         void *shm_ptr_p = shmat(shm_id, NULL, 0);
@@ -80,7 +79,7 @@ int main()
                 }
                 offset += 2 * numNewEdge;
                 shm_int[0] = offset;
-                pq.push(make_pair(shm_int[1]+ i, numNewEdge));
+                pq.push(make_pair(shm_int[1] + i, numNewEdge));
                 for (int i = 0; i < nodes.size(); i++)
                     pq.push(make_pair(nodes[i].first, nodes[i].second + 1));
             }
@@ -101,13 +100,26 @@ int main()
             exit(1);
         }
         file << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
-        for (int i = 3; i < shm_int[0]; i++)
-            file << shm_int[i++] << " " << shm_int[i] << endl;
+        vector<vector<int>> g(shm_int[1]);
+        for (int i = 3; i < shm_int[0]; i+=2)
+        {
+            g[shm_int[i]].push_back(shm_int[i + 1]);
+            g[shm_int[i + 1]].push_back(shm_int[i]);
+        }
+        for (int i = 0; i < g.size(); i++)
+        {
+            file << i << ": ";
+            for (int j = 0; j < g[i].size(); j++)
+            {
+                file << g[i][j] << " ";
+            }
+            file << endl;
+        }
         file << endl;
         file.close();
         shmdt(shm_ptr_p);
     }
-    
+
     // shmctl(shm_id, IPC_RMID, NULL);
     return 0;
 }
