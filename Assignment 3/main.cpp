@@ -62,21 +62,21 @@ int main(int argc, char *argv[])
     int *shm_int = (int *)shm;
     shm_int[0] = 2 + edges.size()*2;
     shm_int[1] = n + 1;
+    shm_int[2] = 3;
     map<int,int> degree;
     for (int i = 0; i < edges.size(); i++)
     {
-        shm_int[2 * i + 2] = edges[i].first;
-        shm_int[2 * i + 3] = edges[i].second;
+        shm_int[2 * i + 3] = edges[i].first;
+        shm_int[2 * i + 4] = edges[i].second;
         degree[edges[i].first]++;
         degree[edges[i].second]++;
     }
     /*
         End of Main Process
     */
-    for(int i=2;i<shm_int[0];i+=2)
-    {
+    cout << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
+    for(int i=3;i<shm_int[0];i+=2)
         cout << shm_int[i] << " " << shm_int[i+1] << endl;
-    }
     shmdt(shm_int);
     // shmctl(shmid_mem,IPC_RMID, NULL);
     return 0;

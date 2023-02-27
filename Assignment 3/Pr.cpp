@@ -50,49 +50,52 @@ int main()
     priority_queue<pair<int, int>, vector<pair<int, int>>, Compare> pq; // priority queue of pairs with custom comparator
     for (auto it : degree)
         pq.push(make_pair(it.first, it.second));
-    for(int x=0;x<1;x++)
+    while (1)
     {
-        sleep(5);
-        // if (fork() == 0)
+        sleep(20);
+        if (fork() == 0)
         {
             int numNewNodes = rand() % 21 + 10;
-            cout << "Creating " << numNewNodes << endl;
-            for(int i=0;i<numNewNodes;i++)
+            for (int i = 0; i < numNewNodes; i++)
             {
                 int numNewEdge = rand() % 20 + 1;
-                cout << "Adding " << numNewEdge << endl;
-                vector<pair<int,int>> nodes;
+                vector<pair<int, int>> nodes;
                 int offset = shm_int[0];
-                for(int cnt = 0; cnt < numNewEdge; cnt++)
+                for (int cnt = 0; cnt < numNewEdge; cnt++)
                 {
                     nodes.push_back(pq.top());
-                    shm_int[offset+2*cnt] = nodes.back().first;
-                    shm_int[offset+2*cnt+1] = NUM_NODES + i;
+                    shm_int[offset + 2 * cnt] = nodes.back().first;
+                    shm_int[offset + 2 * cnt + 1] = NUM_NODES + i;
                     pq.pop();
                 }
-                offset += numNewEdge;
+                offset += 2 * numNewEdge;
                 shm_int[0] = offset;
                 pq.push(make_pair(NUM_NODES + i, numNewEdge));
-                for(int i=0;i<nodes.size();i++)
-                {
-                    pq.push(make_pair(nodes[i].first, nodes[i].second+1));
-                }
+                for (int i = 0; i < nodes.size(); i++)
+                    pq.push(make_pair(nodes[i].first, nodes[i].second + 1));
             }
             NUM_NODES += numNewNodes;
             shm_int[1] += numNewNodes;
-            // shmdt(shm_ptr_p);
-            // exit(0);
+            shmdt(shm_ptr_p);
+            exit(0);
         }
-        // while (wait(NULL) > 0)
-        // {
-        //     ;
-        // }
+        while (wait(NULL) > 0)
+        {
+            ;
+        }
+        ofstream file("output2.txt");
+        if (!file.is_open())
+        {
+            cerr << "Failed to open output file " << "output2.txt" << endl;
+            exit(1);
+        }
+        file << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
+        for (int i = 3; i < shm_int[0]; i++)
+            file << shm_int[i++] << " " << shm_int[i] << endl;
+        file << endl;
+        file.close();
     }
-    cout << shm_int[0] << " " << shm_int[1] << endl;
-    for (int i = 2; i < shm_int[0]; i++)
-        cout << shm_int[i++] << " " << shm_int[i] << endl;
-    cout << endl;
     shmdt(shm_ptr_p);
-    shmctl(shm_id, IPC_RMID, NULL);
+    // shmctl(shm_id, IPC_RMID, NULL);
     return 0;
 }
