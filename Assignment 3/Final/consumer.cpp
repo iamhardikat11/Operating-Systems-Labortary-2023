@@ -179,7 +179,6 @@ void print_dist_vec(vector<int> &dist, vector<vector<int>> &path, int n, string 
             file << path[i][j] << " ";
         file << endl;
     }
-
 }
 
 // djikstra algorithm to find shortest path from source to all other nodes in a graph with non-negative edge weights using adjacency list representation of graph
@@ -536,7 +535,32 @@ int main(int argc, char *argv[])
                 }
                 shm_int[2] = shm_int[0] + 1;
                 int n = NUM_NODES, m = NUM_EDGES;
-
+                for (int i = 1; i <= 10; i++)
+                {
+                    if (fork() == 0)
+                    {
+                        string s = "./output/graph" + to_string(i) + ".txt";
+                        for (int j = 0; j < n / 10; i++)
+                        {
+                            // vector<vector<int>> dist(1);
+                            // dist[0] = djikstra(j + (i - 1) * (n / 10), n);
+                            // print_dist_vec(dist, j + (i - 1) * (n / 10), s)
+                            int N = 1;
+                            vector<vector<int>> dist(N);
+                            vector<vector<vector<int>>> path(N, vector<vector<int>>(n + 1));
+                            print_dist_vec(dist[0], path[0], NUM_NODES, s);
+                            dist[0] = djikstra_with_path(j + (i - 1) * (n / 10), n, path[0]);
+                            print_dist_vec(dist[0], path[0], n, s);
+                            add_more_edges(new_edges);
+                            cout << "new_edges: " << new_edges.size() << endl;
+                            update_dist_vec(dist, path, new_edges);
+                        }
+                    }
+                    while (wait(NULL) > 0)
+                    {
+                        ;
+                    }
+                }
                 shmdt(shm_ptr_p);
                 exit(0);
             }
