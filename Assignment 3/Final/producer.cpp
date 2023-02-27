@@ -52,7 +52,7 @@ int main()
         pq.push(make_pair(it.first, it.second));
     shmdt(shm_ptr);
     // while (1)
-    for(int x = 0; x < 2; x++)
+    while(1)
     {
         sleep(5);
         void *shm_ptr_p = shmat(shm_id, NULL, 0);

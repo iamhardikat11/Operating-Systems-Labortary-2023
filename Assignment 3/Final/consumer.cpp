@@ -200,8 +200,27 @@ void update_dist_vec(vector<vector<int>> &dist, vector<pair<int, int>> &new_edge
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if (argc > 2)
+    {
+        cout << "Usage: ./main [-optimize]" << endl;
+        exit(1);
+    }
+    if (argc == 2)
+    {
+        string s = argv[1];
+        if (s != "-optimize")
+        {
+            cout << "Usage: ./main [-optimize]" << endl;
+            exit(1);
+        }
+    }
+    bool optimize = false;
+    if (argc == 2)
+    {
+        optimize = true;
+    }
     srand(time(NULL));
     int shm_id = shmget(200, 2 * 1024 * 1024, 0666);
     if (shm_id < 0)
@@ -209,58 +228,69 @@ int main()
         cout << "Error: could not create shared memory segment." << endl;
         return 1;
     }
-    g.clear();
-    for(int x = 0; x < 2; x++)
+    if (optimize)
     {
-        sleep(5);
-        void *shm_ptr_p = shmat(shm_id, NULL, 0);
-        if (shm_ptr_p == (void *)-1)
+        // Optimised
+        cout << "1" << endl;
+    }
+    else
+    {
+        cout << "2" << endl;
+        // Unoptimized Version
+        g.clear();
+        int k = 0;
+        while (1)
         {
-            cout << "Error: could not attach shared memory segment." << endl;
-            return 1;
-        }
-        // cast the pointer to a pointer of Node pointers
-        int *shm_int = static_cast<int *>(shm_ptr_p);
-
-        if (fork() == 0)
-        {
-            size_t NUM_NODES = (shm_int[1]);
-            size_t NUM_EDGES = ((shm_int[0] - 3) / 2);
-            ofstream file("output3.txt");
-            if (!file.is_open())
+            sleep(5);
+            void *shm_ptr_p = shmat(shm_id, NULL, 0);
+            if (shm_ptr_p == (void *)-1)
             {
-                cerr << "Failed to open output file "
-                     << "output3.txt" << endl;
-                exit(1);
+                cout << "Error: could not attach shared memory segment." << endl;
+                return 1;
             }
-            cout << g.size() << " " << shm_int[1] << endl;
-            for (int i = g.size(); i < shm_int[1]; i++)
+            // cast the pointer to a pointer of Node pointers
+            int *shm_int = static_cast<int *>(shm_ptr_p);
+            if (fork() == 0)
             {
-                g.push_back(vector<int>());
+                size_t NUM_NODES = (shm_int[1]);
+                size_t NUM_EDGES = ((shm_int[0] - 3) / 2);
+                ofstream file("output3.txt");
+                if (!file.is_open())
+                {
+                    cerr << "Failed to open output file "
+                         << "output3.txt" << endl;
+                    exit(1);
+                }
+                cout << k << " " << shm_int[1] << endl;
+                for (int i = g.size(); i < shm_int[1]; i++)
+                {
+                    g.push_back(vector<int>());
+                }
+                file << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
+                for (int i = 3; i < shm_int[0]; i += 2)
+                {
+                    g[shm_int[i]].push_back(shm_int[i + 1]);
+                    g[shm_int[i + 1]].push_back(shm_int[i]);
+                    file << shm_int[i] << " " << shm_int[i + 1] << endl;
+                }
+                shm_int[2] = shm_int[0];
+                int n = NUM_NODES, m = NUM_EDGES;
+                vector<vector<int>> dist(1);
+                dist[0] = djikstra(0, n);
+                // dist[1] = djikstra(6, n);
+                print_dist_vec(dist);
+                file << endl;
+                file.close();
+                shmdt(shm_ptr_p);
+                k = g.size();
+                exit(0);
             }
-            file << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
-            for (int i = 3; i < shm_int[0]; i += 2)
+            while (wait(NULL) > 0)
             {
-                g[shm_int[i]].push_back(shm_int[i + 1]);
-                g[shm_int[i + 1]].push_back(shm_int[i]);
-                file << shm_int[i] << " " << shm_int[i + 1] << endl;
+                ;
             }
-            shm_int[2] = shm_int[0];
-            int n = NUM_NODES, m = NUM_EDGES;
-            vector<vector<int>> dist(1);
-            dist[0] = djikstra(0, n);
-            // dist[1] = djikstra(6, n);
-            print_dist_vec(dist);
-            file << endl;
-            file.close();
             shmdt(shm_ptr_p);
-            exit(0);
         }
-        while (wait(NULL) > 0)
-        {
-            ;
-        }
-        shmdt(shm_ptr_p);
     }
     shmctl(shm_id, IPC_RMID, NULL);
     return 0;
