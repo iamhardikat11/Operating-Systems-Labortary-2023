@@ -216,7 +216,7 @@ int main()
         if (fork() == 0)
         {
             size_t NUM_NODES = (shm_int[1]);
-            size_t NUM_EDGES = (shm_int[0] / 2 - 1);
+            size_t NUM_EDGES = ((shm_int[0]-3) / 2);
             ofstream file("output3.txt");
             if (!file.is_open())
             {
@@ -225,13 +225,14 @@ int main()
                 exit(1);
             }
             file << shm_int[0] << " " << shm_int[1] << " " << shm_int[2] << endl;
-            for (int i = shm_int[2]; i < shm_int[0]; i++)
+            for (int i = shm_int[2]; i < shm_int[0]; i=i+2)
             {
                 g[shm_int[i]].push_back(shm_int[i + 1]);
                 g[shm_int[i + 1]].push_back(shm_int[i]);
                 file << shm_int[i++] << " " << shm_int[i] << endl;
             }
             int n = NUM_NODES, m = NUM_EDGES;
+            
             vector<vector<int>> dist(2);
             dist[0] = djikstra(0, n);
             dist[1] = djikstra(6, n);

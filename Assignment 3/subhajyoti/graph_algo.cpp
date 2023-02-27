@@ -156,7 +156,8 @@ int main(){
     int n, m, la;
     get_initial_graph(n,m);
 
-    vector<vector<int> > dist(2);
+    int N = n/10;
+    vector<vector<int> > dist(N+1);
     dist[0] = djikstra(0, n);
     dist[1] = djikstra(6, n);
 
