@@ -4,12 +4,12 @@ using namespace std;
 
 vector<vector<int> > g;
 
-void print_dist_vec(vector<vector<int> > &dist){
-    for(int i=0; i<dist.size(); i++){
-        cout<<"dist["<<i<<"]:";
-        for(auto x: dist[i])
-            cout << x << " ";
-        cout << endl;
+void print_dist_vec(vector<int> &dist, vector<vector<int> > &path, int n){
+    for(int i=0; i<=n; i++){
+        cout<<i<<":"<<dist[i]<<": ";
+        for(int j=0; j<path[i].size(); j++)
+            cout<<path[i][j]<<" ";
+        cout<<endl;
     }
 }
 
@@ -38,7 +38,39 @@ vector<int> djikstra(int src, int n){
     return dist;
 }
 
-void update_distance(vector<int> &dist,int u,int v){
+// djikstra algorithm to find shortest path from source to all other nodes in a graph with non-negative edge weights using adjacency list representation of graph while saving the path in parameter vector of vectors
+vector<int> djikstra_with_path(int src, int n, vector<vector<int> > &path){
+    vector<int> dist(n+1, INT_MAX);
+    path.clear();
+    dist[src] = 0;
+
+    priority_queue<pair<int, int>, vector<pair<int, int> >, greater<pair<int, int> > > pq;
+    pq.push({0, src});
+
+    while(!pq.empty()){
+        int u = pq.top().second;
+        pq.pop();
+
+        for(int v: g[u]){
+            if(dist[v] > dist[u] + 1){
+                dist[v] = dist[u] + 1;
+                pq.push({dist[v], v});
+
+                path[v].clear();
+                path[v] = path[u];
+                path[v].push_back(u);
+            }
+        }
+    }
+    for(int i=0; i<=n; i++)
+        if(dist[i] == INT_MAX)
+            dist[i] = -1;
+        else
+            path[i].push_back(i);
+    return dist;
+}
+
+void update_distance(vector<int> &dist, vector<vector<int> > &path, int u,int v){
     queue<int> q, temp;
     q.push(v);
     dist[v] = dist[u] + 1;
@@ -121,7 +153,7 @@ void add_more_edges(vector<pair<int, int> > &new_edges){
     file.close();
 }
 
-void update_dist_vec(vector<vector<int> > &dist, vector<pair<int, int> > &new_edges){
+void update_dist_vec(vector<vector<int> > &dist, vector< vector<vector<int> > > &path, vector<pair<int, int> > &new_edges){
     for(int i=0; i<dist.size(); i++){
         for(auto x: new_edges){
             if(dist[i][x.first] >=0 || dist[i][x.second] >= 0){
@@ -146,7 +178,7 @@ void update_dist_vec(vector<vector<int> > &dist, vector<pair<int, int> > &new_ed
                     continue;
 
                 cout<<"i:"<<i<<" a:"<<a<<" b:"<<b<<endl;
-                update_distance(dist[i], a, b);
+                update_distance(dist[i], path[i], a, b);
             }
         }
     }
@@ -156,20 +188,19 @@ int main(){
     int n, m, la;
     get_initial_graph(n,m);
 
-    int N = n/10;
-    vector<vector<int> > dist(N+1);
-    dist[0] = djikstra(0, n);
-    dist[1] = djikstra(6, n);
+    int N = 1;
+    vector<vector<int> > dist(N);
+    vector< vector<vector<int> > > path(N, vector<vector<int> > (n+1));
+    dist[0] = djikstra_with_path(0, n, path[0]);
 
-    print_dist_vec(dist);
+    print_dist_vec(dist[0], path[0], n);
 
     vector<pair<int, int> > new_edges;
     add_more_edges(new_edges);
 
     cout<< "new_edges: "<<new_edges.size()<<endl;
-    update_dist_vec(dist, new_edges);
+    update_dist_vec(dist, path, new_edges);
 
-    print_dist_vec(dist);
-    
+    print_dist_vec(dist[0], path[0], n);    
     return 0;
 }
