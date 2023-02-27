@@ -70,7 +70,41 @@ vector<int> djikstra_with_path(int src, int n, vector<vector<int> > &path){
     return dist;
 }
 
+// get path from source to destination using dfs in a graph with non-negative edge weights using adjacency list representation of graph
+vector<int> get_path(int src, int dest, int n){
+    vector<int> dist(n+1, INT_MAX);
+    vector<vector<int> > path(n+1);
+    dist[src] = 0;
+
+    priority_queue<pair<int, int>, vector<pair<int, int> >, greater<pair<int, int> > > pq;
+    pq.push({0, src});
+
+    while(!pq.empty()){
+        int u = pq.top().second;
+        pq.pop();
+
+        for(int v: g[u]){
+            if(dist[v] > dist[u] + 1){
+                dist[v] = dist[u] + 1;
+                pq.push({dist[v], v});
+
+                path[v].clear();
+                path[v] = path[u];
+                path[v].push_back(u);
+            }
+        }
+    }
+    for(int i=0; i<=n; i++)
+        if(dist[i] == INT_MAX)
+            dist[i] = -1;
+        else
+            path[i].push_back(i);
+    return path[dest];
+}
+
+
 void update_distance(vector<int> &dist, vector<vector<int> > &path, int u,int v){
+    int src = path[u][0];
     queue<pair<int,int> > q, temp;
     q.push({v,u});
     dist[v] = dist[u] + 1;
@@ -83,6 +117,7 @@ void update_distance(vector<int> &dist, vector<vector<int> > &path, int u,int v)
         path[x] = path[h];
         path[x].push_back(h);
         path[x].push_back(x);
+        path[x] = get_path(src, x, g.size()-1);
 
         q.pop();
         for(auto y: g[x]){
