@@ -238,7 +238,6 @@ int main(int argc, char *argv[])
         cout << "2" << endl;
         // Unoptimized Version
         g.clear();
-        int k = 0;
         while (1)
         {
             sleep(5);
@@ -261,8 +260,8 @@ int main(int argc, char *argv[])
                          << "output3.txt" << endl;
                     exit(1);
                 }
-                cout << k << " " << shm_int[1] << endl;
-                for (int i = g.size(); i < shm_int[1]; i++)
+                cout << g.size() << " " << shm_int[1] << endl;
+                for (int i = 0; i < shm_int[1]; i++)
                 {
                     g.push_back(vector<int>());
                 }
@@ -282,7 +281,6 @@ int main(int argc, char *argv[])
                 file << endl;
                 file.close();
                 shmdt(shm_ptr_p);
-                k = g.size();
                 exit(0);
             }
             while (wait(NULL) > 0)
