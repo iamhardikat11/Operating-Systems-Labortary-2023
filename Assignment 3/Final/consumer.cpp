@@ -201,17 +201,18 @@ int main()
         cout << "Error: could not create shared memory segment." << endl;
         return 1;
     }
-    void *shm_ptr_p = shmat(shm_id, NULL, 0);
-    if (shm_ptr_p == (void *)-1)
-    {
-        cout << "Error: could not attach shared memory segment." << endl;
-        return 1;
-    }
-    // cast the pointer to a pointer of Node pointers
-    int *shm_int = static_cast<int *>(shm_ptr_p);
+
     while (1)
     {
         sleep(5);
+        void *shm_ptr_p = shmat(shm_id, NULL, 0);
+        if (shm_ptr_p == (void *)-1)
+        {
+            cout << "Error: could not attach shared memory segment." << endl;
+            return 1;
+        }
+        // cast the pointer to a pointer of Node pointers
+        int *shm_int = static_cast<int *>(shm_ptr_p);
         if (fork() == 0)
         {
             size_t NUM_NODES = (shm_int[1]);
@@ -231,7 +232,7 @@ int main()
                 file << shm_int[i++] << " " << shm_int[i] << endl;
             }
             int n = NUM_NODES, m = NUM_EDGES;
-            vector<vector<int> > dist(2);
+            vector<vector<int>> dist(2);
             dist[0] = djikstra(0, n);
             dist[1] = djikstra(6, n);
 
@@ -245,7 +246,8 @@ int main()
         {
             ;
         }
+        shmdt(shm_ptr_p);
     }
-    // shmctl(shm_id, IPC_RMID, NULL);
+    shmctl(shm_id, IPC_RMID, NULL);
     return 0;
 }
