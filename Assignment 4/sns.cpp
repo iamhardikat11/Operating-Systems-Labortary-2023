@@ -25,6 +25,8 @@ using namespace std;
 #define COLOR_BLUE "\033[1;34m"
 #define COLOR_RESET "\033[0m"
 
+string filename = "musae_git_edges.csv";
+
 // Returns a random number between low and high
 int rand(int low, int high)
 {
@@ -100,9 +102,8 @@ typedef struct
         this->Wall.ActionQueue();
         this->Feed.ActionQueue();
     }
-    void addEdge(int id, int neigh_id)
+    void addEdge(int neigh_id)
     {
-        this->id = id;
         this->degree++;
         this->neighbours[neigh_id] = 1;
     }
@@ -110,5 +111,37 @@ typedef struct
 
 signed main()
 {
+    // Open the CSV file for reading
+    ifstream infile(filename);
     
+    map<int, Node> graph;
+    // Read the CSV file line by line
+    string line;
+    int i = 0, id1, id2;
+    while (getline(infile, line)) {
+        // Split the line by commas
+        if(i == 0)
+        {
+            i++;
+            continue;
+        }
+        sscanf(line.c_str(), "%d,%d", &id1, &id2);
+        i++;
+        // Add the ids to the vector
+        Node n1, n2;
+        if(graph.count(id1)==0)
+        {
+            n1.init();
+            graph[id1] = n1;
+        }
+        if(graph.count(id2)==0)
+        {
+            n2.init();
+            graph[id2] = n2;
+        }
+        n1.addEdge(id2);
+        n2.addEdge(id1);
+    }
+    
+    return 0;
 }
