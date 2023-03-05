@@ -33,3 +33,11 @@ do
     done
     echo
 done < $1
+
+echo 5 > input1.txt
+echo > input1.txt
+echo 15 > input1.txt
+echo > input1.txt
+echo 25 > input1.txt
+echo > input1.txt
+echo 22 > input1.txt
