@@ -93,9 +93,9 @@ typedef struct
     map<int,int> neighbours; // Hashmap to store the neighbours of the given Node
     ActionQueue Wall;  // Action by U itself
     ActionQueue Feed; //  Action by All it's Neighbours
-    void init()
+    void init(int id)
     {
-        this->id = 0;
+        this->id = id;
         this->degree = 0;
         this->neighbours.clear();
         this->order = rand()%2;
@@ -113,7 +113,7 @@ signed main()
 {
     // Open the CSV file for reading
     ifstream infile(filename);
-    
+    map<int,set<int>> test;
     map<int, Node> graph;
     // Read the CSV file line by line
     string line;
@@ -131,17 +131,46 @@ signed main()
         Node n1, n2;
         if(graph.count(id1)==0)
         {
-            n1.init();
+            n1.init(id1);
             graph[id1] = n1;
         }
+        else
+            n1 = graph[id1];
         if(graph.count(id2)==0)
         {
-            n2.init();
+            n2.init(id2);
             graph[id2] = n2;
         }
+        else
+            n2 = graph[id2];
         n1.addEdge(id2);
+        graph[id1] = n1; 
         n2.addEdge(id1);
+        graph[id2] = n2;
+        test[id1].insert(id2);
+        test[id2].insert(id1);
     }
-    
+    infile.close();
+    ofstream file1("output_graph.txt");
+    for(auto it: graph)
+    {
+        file1 << it.first << ": ";
+        for(auto x: it.second.neighbours)
+        {
+            file1 << x.first << " ";
+        }
+        file1 << endl;
+    }
+    file1.close();
+    ofstream file2("output_test.txt");
+    for(auto it: test)
+    {
+        file2 << it.first << ": ";
+        for(auto x: it.second)
+        {
+            file2 << x << " ";
+        }
+        file2 << endl;
+    }
     return 0;
 }
