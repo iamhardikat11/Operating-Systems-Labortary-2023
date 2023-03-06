@@ -25,4 +25,19 @@ Node
     deque<Action> Feed; // Action by All it's Neighbours     
 }; 
 
-UserSimulator Thread:-     choose
+UserSimulator Thread:-     
+Choose
+
+1. Sequential
+1 UserSimulator
++
+25 PushUpdate
++
+10 ReadPost
+
+
+2. A bit more Concurrent
+1 UserSimulator
+if size == 0
+LOCK Queue
+END: LOCK DESTROY

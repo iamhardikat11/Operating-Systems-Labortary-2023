@@ -67,6 +67,7 @@ typedef struct
         this->user_id = user_id;
         this->action_id = action_id;
         this->action_type = action_type;
+        this->timestamp = 
     }
 } Action;
 
@@ -107,7 +108,53 @@ typedef struct
         this->degree++;
         this->neighbours[neigh_id] = 1;
     }
+    void addWallQueue(string action_type)
+    {
+        Action aq;
+        int q = 0;
+        if(action_type == "post")
+        {
+            q = Wall.cnt_post+1;
+        }
+        else if(action_type == "comment") 
+        {
+            q = Wall.cnt_comment+1;
+        }
+        else if(action_type == "like")
+        {
+            q = Wall.cnt_like+1;
+        }
+        else
+        {
+            perror("The Action is NOT a comment, post, or like\n");
+            exit(1);
+        }
+        aq.Action(this->id, q, action_type);
+        this->Wall.actl.push_back(aq);
+    }
+    void addFeedQueue(string action_type, int action_id)
+    {
+        Action aq;
+        if(action_type != "post" && action_type != "comment" && action_type != "like")
+        {
+            perror("The Action is NOT a comment, post, or like\n");
+            exit(1);
+        }
+        else if(action_type == "post")
+            this->Feed.cnt_post++;
+        else if(action_type == "comment")
+            this->Feed.cnt_comment++;
+        else
+            this->Feed.cnt_like++;
+        aq.Action(this->id, action_id, action_type);
+        this->Feed.actl.push_back(aq);
+    }
 } Node;
+
+void* userSimulator()
+{
+
+}
 
 signed main()
 {
@@ -151,26 +198,37 @@ signed main()
         test[id2].insert(id1);
     }
     infile.close();
-    ofstream file1("output_graph.txt");
-    for(auto it: graph)
-    {
-        file1 << it.first << ": ";
-        for(auto x: it.second.neighbours)
+    #ifdef DEBUG_LOAD
+        std::ofstream file1("output_graph.txt");
+        for(auto it: graph)
         {
-            file1 << x.first << " ";
+            file1 << it.first << ": " << it.second.neighbours.size() << " ";
+            for(auto x: it.second.neighbours)
+            {
+                file1 << x.first << " ";
+            }
+            file1 << endl;
         }
-        file1 << endl;
-    }
-    file1.close();
-    ofstream file2("output_test.txt");
-    for(auto it: test)
-    {
-        file2 << it.first << ": ";
-        for(auto x: it.second)
+        file1.close();
+        std::ofstream file2("output_test.txt");
+        for(auto it: test)
         {
-            file2 << x << " ";
+            file2 << it.first << ": " << it.second.size() << " ";
+            for(auto x: it.second)
+            {
+                file2 << x << " ";
+            }
+            file2 << endl;
         }
-        file2 << endl;
-    }
+        file2.close();
+    #endif
+    //     pthread_t user_simulator;
+    //     int ret;
+    //     printf("In main: creating thread\n");
+    //     int ret =  pthread_create(&user_simulator, NULL, &userSimulator, NULL);
+    //     if(ret != 0) {
+    //             printf("Error: pthread_create() failed\n");
+    //             exit(EXIT_FAILURE);
+    //     }
     return 0;
 }
