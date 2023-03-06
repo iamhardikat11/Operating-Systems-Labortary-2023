@@ -156,6 +156,67 @@ void* userSimulator()
 
 }
 
+//  create map of nodes
+//  create map of all action queues, from where to pop in pushUpdates
+
+
+ActionQueue AQueue;
+map<int, Node> node_map;
+
+void* pushUpdates()
+{
+    Action A = AQueue.actl.front();
+    AQueue.actl.pop_front();
+    if(A.action_type == "post")
+    {
+        AQueue.cnt_post--;
+    }
+    else if(A.action_type == "comment")
+    {
+        AQueue.cnt_comment--;
+    }
+    else
+    {
+        AQueue.cnt_like--;
+    }
+    // Push the Action to the Feed of the User
+    Node n = node_map[A.user_id];
+    n.Feed.actl.push_back(A);
+    if(A.action_type == "post")
+    {
+        n.Feed.cnt_post++;
+    }
+    else if(A.action_type == "comment")
+    {
+        n.Feed.cnt_comment++;
+    }
+    else
+    {
+        n.Feed.cnt_like++;
+    }
+
+    // Push the Action to the Wall of the User's Neighbours
+    for(auto it = n.neighbours.begin(); it != n.neighbours.end(); it++)
+    {
+        Node n1 = node_map[it->first];
+        n1.Wall.actl.push_back(A);
+        if(A.action_type == "post")
+        {
+            n1.Wall.cnt_post++;
+        }
+        else if(A.action_type == "comment")
+        {
+            n1.Wall.cnt_comment++;
+        }
+        else
+        {
+            n1.Wall.cnt_like++;
+        }
+    }
+    
+    
+}
+
 signed main()
 {
     // Open the CSV file for reading
