@@ -67,7 +67,7 @@ typedef struct
         this->user_id = user_id;
         this->action_id = action_id;
         this->action_type = action_type;
-        this->timestamp = 
+        time(&this->timestamp);
     }
 } Action;
 
