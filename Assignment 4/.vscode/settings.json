@@ -2,6 +2,7 @@
     "files.associations": {
         "*.html": "html",
         "iosfwd": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "chrono": "cpp"
     }
 }
