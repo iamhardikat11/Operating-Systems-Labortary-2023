@@ -274,3 +274,264 @@ for(auto node : graph) {
     nodePriority[nodeId] = priority;
 }
 ********************************************************************************************************************************************************************************************************************************************************************
+
+1
+********************************************************************************************************************************************************************************************************************************************************************
+
+void* readPost(void* arg) {
+    ThreadArgs* thread_args = (ThreadArgs*)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    int node_type = thread_args->node_type;
+    int node_id = thread_args->node_id;
+    
+    while (1) {
+        LOCK(mutex);
+        while (!mp1[node_id]) { // Wait for feed to be updated
+            pthread_cond_wait(&condSecond, &mutex);
+        }
+        Node n = graph[node_id];
+        FeedQueue& feed = (node_type == PRIORITY) ? n.Feed.priority : n.Feed.chronological;
+        if (!feed.actl.empty()) {
+            Action A = feed.actl.front();
+            feed.actl.pop_front();
+            mp1[node_id] = 0;
+            UNLOCK(mutex);
+            cout << "I read action number " << A.action_id << " of type " << A.action_type 
+                << " posted by user " << A.user_id << " at time " << A.time << endl;
+            LOG("I read action number " + to_string(A.action_id) + " of type " + A.action_type 
+                + " posted by user " + to_string(A.user_id) + " at time " + to_string(A.time));
+        }
+        else {
+            UNLOCK(mutex);
+        }
+    }
+    pthread_exit(NULL);
+}
+
+********************************************************************************************************************************************************************************************************************************************************************
+********************************************************************************************************************************************************************************************************************************************************************
+
+Here is a possible implementation for the priority order in the pushUpdate thread:
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+2
+********************************************************************************************************************************************************************************************************************************************************************
+void *pushUpdate(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        LOCK(mutex);
+        while (AQueue.actl.empty())
+            pthread_cond_wait(&condFirst, &mutex);
+        while (!AQueue.actl.empty())
+        {
+            Action A = AQueue.actl.front();
+            AQueue.actl.pop_front();
+            if (A.action_type == "post")
+                AQueue.cnt_post--;
+            else if (A.action_type == "comment")
+                AQueue.cnt_comment--;
+            else
+                AQueue.cnt_like--;
+            // Push the Action to the Wall of the User
+            Node n = graph[A.user_id];
+            n.AddWallAction(A);
+            graph[A.user_id] = n;
+            // Push the Action to the Feed of the User's Neighbours
+            for (auto it : n.neighbours)
+            {
+                Node n1 = graph[it.first];
+                A.reader_id = it.first;
+                int priority = 0;
+                if (priority_map.count({A.user_id, it.first}))
+                    priority = priority_map[{A.user_id, it.first}];
+                A.priority = priority;
+                n1.AddFeedAction(A);
+                n1.Feed.actl.push_back(A);
+                graph[it.first] = n1;
+                mp1[it.first] = 1;
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+And here is a possible implementation for the priority order in the readPost thread:
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+3
+********************************************************************************************************************************************************************************************************************************************************************
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        LOCK(mutex);
+        while (readQueue.empty())
+            pthread_cond_wait(&condSecond, &mutex);
+        while (!readQueue.empty())
+        {
+            ReadAction RA = readQueue.top();
+            readQueue.pop();
+            int node_id = RA.node_id;
+            Node n = graph[node_id];
+            Feed F = n.Feed;
+            vector<Action> actl = F.actl;
+            int chronological = F.chronological;
+            int priority = F.priority;
+            int cnt = 0;
+            for (auto it : actl)
+            {
+                if (chronological && it.timestamp > RA.last_read_time)
+                {
+                    cnt++;
+                    cout << "I read action number " << cnt << " of type " << it.action_type << " posted by user " << it.user_id << " at time " << it.timestamp << endl;
+                    RA.last_read_time = it.timestamp;
+                }
+                else if (priority && it.priority > RA.last_priority && RA.common_neighbours.count(it.user_id))
+                {
+                    cnt++;
+                    cout << "I read action number " << cnt << " of type " << it.action_type << " posted by user " << it.user_id << " at time " << it.timestamp << endl;
+                    RA.last_priority = it.priority;
+                }
+            }
+            if (cnt > 0)
+            {
+                readQueue.push(RA);
+            }
+            else
+            {
+                n.Feed.actl.clear();
+                graph[node_id] = n;
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+Note that in the readPost thread, we use a priority queue to keep track of the last read
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+4
+********************************************************************************************************************************************************************************************************************************************************************
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    int node_type = thread_args->node_type;
+    int node_id = thread_args->node_id;
+    string node_type_str = (node_type == 0) ? "priority" : "chronological";
+    while (1)
+    {
+        LOCK(mutex);
+        while (!mp1[node_id])
+            pthread_cond_wait(&condFeed, &mutex);
+        vector<Action> &feed = graph[node_id].Feed.actl;
+        if (node_type == 0)
+        {
+            for (auto &a : feed)
+            {
+                int priority = mp2[node_id][a.user_id];
+                a.priority = priority;
+            }
+            sort(feed.begin(), feed.end(), [](Action &a1, Action &a2) {
+                return a1.priority > a2.priority;
+            });
+        }
+        else
+        {
+            sort(feed.begin(), feed.end(), [](Action &a1, Action &a2) {
+                return a1.timestamp < a2.timestamp;
+            });
+        }
+        while (!feed.empty())
+        {
+            Action A = feed.back();
+            feed.pop_back();
+            string message = "I read action number " + to_string(A.action_id) + " of type " + A.action_type + " posted by user " + to_string(A.user_id) + " at time " + to_string(A.timestamp) + "\n";
+            writeToLog(message, node_id);
+            cout << message;
+        }
+        mp2[node_id].clear();
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+5
+********************************************************************************************************************************************************************************************************************************************************************
+
+
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    int user_id = thread_args->user_id;
+    int node_type = thread_args->node_type;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    pthread_cond_t *cond = &thread_args->cond;
+    unordered_set<int> &mp1 = thread_args->mp1;
+    int cnt = 0;
+    while (1)
+    {
+        LOCK(mutex);
+        while (!mp1.count(user_id))
+            pthread_cond_wait(cond, &mutex);
+        Node n = graph[user_id];
+        while (!n.Feed.actl.empty())
+        {
+            vector<Action> actions;
+            actions.reserve(n.Feed.actl.size());
+            while (!n.Feed.actl.empty())
+            {
+                actions.push_back(n.Feed.actl.front());
+                n.Feed.actl.pop_front();
+            }
+            UNLOCK(mutex);
+            if (node_type == CHRONOLOGICAL)
+            {
+                sort(actions.begin(), actions.end(), [](const Action &a, const Action &b) {
+                    return a.timestamp < b.timestamp;
+                });
+            }
+            else if (node_type == PRIORITY)
+            {
+                for (auto &action : actions)
+                {
+                    Node poster = graph[action.user_id];
+                    action.priority = poster.common_neighbours[user_id];
+                }
+                sort(actions.begin(), actions.end(), [](const Action &a, const Action &b) {
+                    return a.priority > b.priority;
+                });
+            }
+            LOCK(mutex);
+            for (auto &action : actions)
+            {
+                cout << "I read action number " << action.action_id << " of type " << action.action_type
+                     << " posted by user " << action.user_id << " at time " << action.timestamp << endl;
+                fprintf(fp, "I read action number %d of type %s posted by user %d at time %ld\n", action.action_id,
+                        action.action_type.c_str(), action.user_id, action.timestamp);
+                cnt++;
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+
+********************************************************************************************************************************************************************************************************************************************************************
+********************************************************************************************************************************************************************************************************************************************************************
