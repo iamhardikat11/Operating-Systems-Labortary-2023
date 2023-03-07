@@ -179,38 +179,38 @@ void* pushUpdates()
     {
         AQueue.cnt_like--;
     }
-    // Push the Action to the Feed of the User
+    // Push the Action to the Wall of the User
     Node n = node_map[A.user_id];
-    n.Feed.actl.push_back(A);
+    n.Wall.actl.push_back(A);
     if(A.action_type == "post")
     {
-        n.Feed.cnt_post++;
+        n.Wall.cnt_post++;
     }
     else if(A.action_type == "comment")
     {
-        n.Feed.cnt_comment++;
+        n.Wall.cnt_comment++;
     }
     else
     {
-        n.Feed.cnt_like++;
+        n.Wall.cnt_like++;
     }
 
-    // Push the Action to the Wall of the User's Neighbours
+    // Push the Action to the Feed of the User's Neighbours
     for(auto it = n.neighbours.begin(); it != n.neighbours.end(); it++)
     {
         Node n1 = node_map[it->first];
-        n1.Wall.actl.push_back(A);
+        n1.Feed.actl.push_back(A);
         if(A.action_type == "post")
         {
-            n1.Wall.cnt_post++;
+            n1.Feed.cnt_post++;
         }
         else if(A.action_type == "comment")
         {
-            n1.Wall.cnt_comment++;
+            n1.Feed.cnt_comment++;
         }
         else
         {
-            n1.Wall.cnt_like++;
+            n1.Feed.cnt_like++;
         }
     }
     
@@ -291,5 +291,20 @@ signed main()
     //             printf("Error: pthread_create() failed\n");
     //             exit(EXIT_FAILURE);
     //     }
+
+    pthread_t push_updates[25];
+    int ret;
+    for(int i = 0; i < 25; i++){
+        ret =  pthread_create(&push_updates[i], NULL, &pushUpdates, NULL);
+        if(ret != 0) {
+                printf("Error: pthread_create() failed\n");
+                exit(EXIT_FAILURE);
+        }
+    }
+    // join all the threads
+    for(int i = 0; i < 25; i++)
+        pthread_join(push_updates[i], NULL);
+
+
     return 0;
 }
