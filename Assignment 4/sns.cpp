@@ -16,6 +16,7 @@ using namespace std;
 #define USER_SIMULATOR 1
 #define PUSH_UPDATE 25
 #define READ_POST 10
+#define QUEUE_SIZE 150
 
 #define COLOR_RED "\033[1;31m"
 #define COLOR_GREEN "\033[1;32m"
@@ -237,19 +238,38 @@ typedef struct Node
 //  create map of nodes
 //  create map of all action queues, from where to pop in pushUpdates
 
-bool compareN(pair<int, int> &p, pair<int, int> &q)
+struct cmp
 {
-    return p.second < q.second;
-}
+    bool operator()(const std::pair<int, int>& a, const std::pair<int, int>& b) const { return a.second > b.second; }
+};
 ActionQueue AQueue;
 map<int, set<int>> test;
-// map<int, map<int,int, compareN>> priority;
+std::map<int, std::map<int, int>> priority_map;
 map<int, Node> graph;
 map<int, int> mp;
 map<int, int> mp1;
 int sleep_flag = 0;
-// pthread_mutex_t lock;
 
+/*
+* implementation of the priority map
+*/
+void precomutePriority()
+{
+    for (auto const &node : graph)
+    {
+        map<int, int> neighbor_counts;
+        for (auto const &neighbor_id : node.second.neighbours)
+        {
+            for (auto const &neighbor_of_neighbor_id : graph[neighbor_id.first].neighbours)
+            {
+                if (neighbor_of_neighbor_id.first != node.first)
+                {
+                    priority_map[node.first][neighbor_of_neighbor_id.first]++;
+                }
+            }
+        }
+    }
+}
 // The function for the producer threads to execute
 void *userSimulator(void *arg)
 {
@@ -287,6 +307,10 @@ void *userSimulator(void *arg)
         printf("Nodes Selected: The following randomly selected Users will Create Actions.\n");
         outfile << "Nodes Selected: The following randomly selected Users will Create actions.\n";
         LOCK(mutex);
+        while (AQueue.actl.size() == QUEUE_SIZE)
+        {
+            pthread_cond_wait(&condWall, &mutex);
+        }
         for (int i = 0; i < 100; i++)
         {
             int user_id = (rand() % (NUM_NODE));
@@ -309,7 +333,6 @@ void *userSimulator(void *arg)
                 outfile << endl;
                 cout << endl;
             }
-            outfile << "Size" << AQueue.actl.size() << endl;
         }
         if (outfile.is_open())
             outfile.close();
@@ -368,25 +391,25 @@ void *pushUpdate(void *arg)
             {
                 A.add_Reader(it.first);
                 graph[it.first].AddFeedAction(A);
-                // std::ofstream outfile(output_file, std::ios::app);
-                // if (!outfile.is_open())
-                // {
-                //     cerr << "Unable to open "
-                //          << output_file << endl;
-                //     exit(EXIT_FAILURE);
-                // }
+                std::ofstream outfile(output_file, std::ios::app);
+                if (!outfile.is_open())
+                {
+                    cerr << "Unable to open "
+                         << output_file << endl;
+                    exit(EXIT_FAILURE);
+                }
                 cout << "Pushing to " << A.reader_id << " "
                      << "from " << A.user_id << endl;
-                // if(outfile.is_open())
-                //     outfile.close();
+                outfile << "Pushing to " << A.reader_id << " "
+                        << "from " << A.user_id << endl;
+                if (outfile.is_open())
+                    outfile.close();
                 mp1[it.first] = 1;
             }
-            cout << AQueue.actl.size() << endl;
             // if (sleep_flag)
             // {
             //     while(sleep_flag && !message.empty())
             //     {
-
             //     }
             // }
             i++;
@@ -451,6 +474,25 @@ signed main()
     graph.clear();
     mp.clear();
     mp1.clear();
+    priority_map.clear();
+    precomutePriority();
+#ifdef DEBUG_PRIORITY
+    ofstream file(filename);
+    if (!file)
+    {
+        cerr << "Unable to open " << filename << endl;
+        exit(EXIT_FAILURE);
+    }
+    for(auto it: priority_map)
+    {
+        for(auto x: it.second)
+        {
+            cout << it.first << " " << x.first << " " << x.second << endl;
+        }
+    }
+    if(file.is_open())
+        file.close();
+#endif
     void *status;
     // Starting Time of Execution
     auto start = chrono::high_resolution_clock::now();
