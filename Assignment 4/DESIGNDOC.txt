@@ -41,3 +41,236 @@ Choose
 if size == 0
 LOCK Queue
 END: LOCK DESTROY
+
+
+
+Locks to be implemented in the userSimulator function
+In the userSimulation function, the following lines of code need to be enclosed in locks:
+
+Accessing and modifying the graph data structure
+Accessing and modifying the mp map
+Adding an Action to the AQueue data structure
+
+
+like this:
+
+// Create a mutex lock
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// ...
+
+void *userSimulator(void *arg)
+{
+    // ...
+    
+    // Acquire the lock before accessing/modifying the graph data structure
+    pthread_mutex_lock(&mutex);
+    
+    // Access and modify the graph data structure
+    // ...
+    
+    // Release the lock after modifying the graph data structure
+    pthread_mutex_unlock(&mutex);
+    
+    // ...
+    
+    // Acquire the lock before accessing/modifying the mp map
+    pthread_mutex_lock(&mutex);
+    
+    // Access and modify the mp map
+    // ...
+    
+    // Release the lock after modifying the mp map
+    pthread_mutex_unlock(&mutex);
+    
+    // ...
+    
+    // Acquire the lock before adding an Action to the AQueue data structure
+    pthread_mutex_lock(&mutex);
+    
+    // Add an Action to the AQueue data structure
+    // ...
+    
+    // Release the lock after adding the Action to the AQueue data structure
+    pthread_mutex_unlock(&mutex);
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+main function ke liye
+Based on the code provided, here are some suggestions for where to implement locks:
+
+When reading from the file: Since multiple threads will be accessing the same file, you should use a lock to ensure that only one thread reads from the file at a time. You can put a lock around the getline(infile, line) statement to achieve this.
+
+When updating the graph: Since multiple threads may be updating the same graph at the same time, you should use a lock to ensure that only one thread updates the graph at a time. You can put a lock around the code that updates the graph, specifically around the graph.count(id1) and graph.count(id2) statements.
+
+When accessing the test data structure: Since multiple threads may be accessing the same test data structure at the same time, you should use a lock to ensure that only one thread accesses the test data structure at a time. You can put a lock around the test[id1].insert(id2) and test[id2].insert(id1) statements.
+
+When creating UserSimulator Threads: Since multiple threads may be creating UserSimulator threads at the same time, you should use a lock to ensure that only one thread creates UserSimulator threads at a time. You can put a lock around the for loop that creates UserSimulator threads.
+
+When accessing the graph data structure for debugging purposes: Since multiple threads may be accessing the same graph data structure at the same time, you should use a lock to ensure that only one thread accesses the graph data structure at a time. You can put a lock around the code that writes to the output_graph.txt file and the degree.txt file.
+
+
+
+
+LOCK:-
+1. Lock only in userSimulator
+2. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+to store the priority for the readPost thread functionality, we can create a map of nodes to priority values. The priority value for each node will be calculated as follows:
+
+For each node, find the set of its neighbors.
+For each neighbor, find the set of its neighbors.
+Count the number of common nodes between the two sets of neighbors.
+Set the priority value for the node as the count of common nodes.
+Here's an algorithm in C++ that implements this:
+
+// Map of nodes to priority values
+
+map<int, int> nodePriority;
+
+// For each node in the graph
+for(auto node : graph) {
+    Node n = node.second; // implement Equal to Operator
+    int nodeId = node.second.user_id;
+    map<int,int> neighbors = node.second.getNeighbors();
+    int priority = 0;
+    
+    // For each neighbor of the node
+    for(auto& [neighborId, f] : neighbors) {
+        map<int,int> neighborNeighbors = graph[neighborId].getNeighbors();
+        
+        // Count the number of common nodes between the two sets of neighbors
+        int commonNeighbors = 0;
+        for(auto& [neighborNeighborId,g] : neighborNeighbors) {
+            if(neighbors.count(neighborNeighborId) > 0) {
+                commonNeighbors++;
+            }
+        }
+        
+        // Add the count of common nodes to the priority value
+        priority += commonNeighbors;
+    }
+    
+    // Set the priority value for the node
+    nodePriority[nodeId] = priority;
+}
+Once we have the priority values for each node, we can use them to order the actions in the readPost thread according to priority.
+
+
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+
+ we can implement a similar approach to read posts in chronological order. We can use a priority queue to store the posts in chronological order based on the timestamp, and then deque the posts from the priority queue.
+
+Here's an example implementation:
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+// Define a custom comparator to sort posts by timestamp
+struct PostComparator {
+    bool operator()(const Post& p1, const Post& p2) const {
+        return p1.timestamp > p2.timestamp;
+    }
+};
+
+// Create a priority queue to store posts in chronological order
+priority_queue<Post, vector<Post>, PostComparator> postQueue;
+
+// For each node in the graph
+for(auto& [nodeId, node] : graph) {
+    map<int, set<int>> posts = node.getPosts();
+
+    // For each post of the node
+    for(auto& [postId, post] : posts) {
+        postQueue.push(post);
+    }
+}
+
+// Deque posts from the priority queue in chronological order
+while(!postQueue.empty()) {
+    Post post = postQueue.top();
+    postQueue.pop();
+    int postId = post.post_id;
+    int userId = post.user_id;
+    int actionType = post.action_type;
+    int timestamp = post.timestamp;
+    string message = "I read action number " + to_string(postId) + " of type " + to_string(actionType) + " posted by user " + to_string(userId) + " at time " + to_string(timestamp);
+    logMessage(message);
+    cout << message << endl;
+}
+This implementation creates a priority queue of Post objects sorted by their timestamp field, and then dequeues the posts in chronological order by popping them from the priority queue. It also logs and prints a message for each post that is dequeued.
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+Implemetation using set for choronology:
+********************************************************************************************************************************************************************************************************************************************************************
+
+// For each node in the graph
+for(auto node : graph) {
+    Node n = node.second; // implement Equal to Operator
+    int nodeId = node.second.user_id;
+    set<int> neighbors = node.second.getNeighborIds();
+    int priority = 0;
+    
+    // For each neighbor of the node
+    for(auto neighborId : neighbors) {
+        set<int> neighborNeighbors = graph[neighborId].getNeighborIds();
+        
+        // Count the number of common nodes between the two sets of neighbors
+        int commonNeighbors = 0;
+        for(auto neighborNeighborId : neighborNeighbors) {
+            if(neighbors.count(neighborNeighborId) > 0) {
+                commonNeighbors++;
+            }
+        }
+        
+        // Add the count of common nodes to the priority value
+        priority += commonNeighbors;
+    }
+    
+    // Set the priority value for the node
+    nodePriority[nodeId] = priority;
+}
+********************************************************************************************************************************************************************************************************************************************************************

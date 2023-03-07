@@ -1,8 +1,7 @@
+#include <pthread.h>
 #include <bits/stdc++.h>
 #include <errno.h>
 #include <execinfo.h>
-#include <pthread.h>
-#include <mutex>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +23,10 @@
 
 using namespace std;
 
+#define USER_SIMULATOR 1
+#define PUSH_UPDATE 25
+#define READ_POST 10
+
 #define COLOR_RED "\033[1;31m"
 #define COLOR_GREEN "\033[1;32m"
 #define COLOR_BLUE "\033[1;34m"
@@ -31,7 +34,8 @@ using namespace std;
 
 string filename = "musae_git_edges.csv";
 string output_file = "sns.log";
-mutex mtx; // global lock
+pthread_cond_t condFirst = PTHREAD_COND_INITIALIZER;
+pthread_cond_t condSecond = PTHREAD_COND_INITIALIZER;
 // Returns a random number between low and high
 int rand(int low, int high)
 {
@@ -39,9 +43,9 @@ int rand(int low, int high)
 }
 
 // A wrapper around pthread_mutex_lock for error detection
-void LOCK(pthread_mutex_t *mutex)
+void LOCK(pthread_mutex_t mutex)
 {
-    int status = pthread_mutex_lock(mutex);
+    int status = pthread_mutex_lock(&mutex);
     if (status != 0)
     {
         printf(COLOR_RED "pthread_mutex_lock failed: %s\n" COLOR_RESET, strerror(status));
@@ -50,9 +54,9 @@ void LOCK(pthread_mutex_t *mutex)
 }
 
 // A wrapper around pthread_mutex_unlock for error detection
-void UNLOCK(pthread_mutex_t *mutex)
+void UNLOCK(pthread_mutex_t mutex)
 {
-    int status = pthread_mutex_unlock(mutex);
+    int status = pthread_mutex_unlock(&mutex);
     if (status != 0)
     {
         printf(COLOR_RED "pthread_mutex_unlock failed: %s\n" COLOR_RESET, strerror(status));
@@ -63,6 +67,7 @@ void UNLOCK(pthread_mutex_t *mutex)
 struct ThreadArgs
 {
     chrono::high_resolution_clock::time_point start_time;
+    pthread_mutex_t mutex;
 };
 
 typedef struct
@@ -93,7 +98,6 @@ typedef struct
     int cnt_comment;
     int cnt_like;
     deque<Action> actl;
-    pthread_mutex_t* mutex; 
     void ActionQueue()
     {
         this->cnt_comment = 0;
@@ -111,7 +115,6 @@ typedef struct
     map<int, int> neighbours; // Hashmap to store the neighbours of the given Node
     ActionQueue Wall;         // Action by U itself
     ActionQueue Feed;         //  Action by All it's Neighbours
-    pthread_mutex_t* mutex;
     void init(int id)
     {
         this->id = id;
@@ -169,20 +172,44 @@ typedef struct
         aq.add_Reader(this->id);
         this->Feed.actl.push_back(aq);
     }
+    void AddFeedAction(Action A)
+    {
+        if (A.action_type == "post")
+            this->Feed.cnt_post++;
+        else if (A.action_type == "comment")
+            this->Feed.cnt_comment++;
+        else if (A.action_type == "like")
+            this->Feed.cnt_like++;
+        else
+        {
+            perror("action_error: No Such Action Exists.\n");
+            exit(0);
+        }
+        this->Feed.actl.push_back(A);
+    }
 } Node;
 
 //  create map of nodes
 //  create map of all action queues, from where to pop in pushUpdates
 
+bool compareN(pair<int, int> &p, pair<int, int> &q)
+{
+    return p.second < q.second;
+}
 ActionQueue AQueue;
 map<int, set<int>> test;
+// map<int, map<int,int, compareN>> priority;
 map<int, Node> graph;
 map<int, int> mp;
+map<int, int> mp1;
+// pthread_mutex_t lock;
+
 // The function for the producer threads to execute
 void *userSimulator(void *arg)
 {
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
     srand(time(NULL) * getpid());
     std::ofstream outfile(output_file);
     if (!outfile.is_open())
@@ -196,9 +223,7 @@ void *userSimulator(void *arg)
     outfile << "UserSimulator started. Runtime " << chrono::duration_cast<chrono::seconds>(curr - start).count() << " seconds\n";
     int i = 1;
     vector<string> action = {"post", "comment", "like"};
-    AQueue.ActionQueue();
-    // while (1)
-    for (int x = 1; x <= 6; x++)
+    for (int x = 1;; x++)
     {
         curr = chrono::high_resolution_clock::now();
         printf(COLOR_RED "Iteration #%d. Runtime %lld seconds\n" COLOR_RESET, x, chrono::duration_cast<chrono::seconds>(curr - start));
@@ -211,6 +236,7 @@ void *userSimulator(void *arg)
         for (int i = 0; i < 100; i++)
         {
             int user_id = (rand() % (NUM_NODE));
+            LOCK(mutex);
             int action_created = log2(graph[user_id].degree);
             mp[user_id] += action_created;
             for (int j = 0; j < action_created; j++)
@@ -222,6 +248,7 @@ void *userSimulator(void *arg)
                 ac.Action(user_id, action_id, action_type);
                 AQueue.actl.push_back(ac);
                 graph[user_id] = n;
+                pthread_cond_signal(&condFirst);
             }
             cout << user_id << " ";
             outfile << user_id << " ";
@@ -230,68 +257,100 @@ void *userSimulator(void *arg)
                 outfile << endl;
                 cout << endl;
             }
+            UNLOCK(mutex);
         }
         sleep(2);
         i++;
-        // Check if it has executed for the specified number of seconds
-        // LOCK(&shm->mutex);
-        // int child_pos = shm->addNode(node);  // Add a new node to the tree
-        // UNLOCK(&shm->mutex);
-        // if (child_pos == -1) {
-        //     UNLOCK(&shm->tree[par_pos].mutex);
-        //     usleep(5);
-        //     continue;
-        // }
-        // int status = shm->tree[par_pos].addChild(child_pos);  // Set child link
-        // if (status != -1) {
-        //     printf(COLOR_GREEN "Producer %d added child index %d to parent index %d. Job id: %d\n" COLOR_RESET, ind, child_pos, par_pos, node.job_id);
-        // }
-        // UNLOCK(&shm->tree[par_pos].mutex);
     }
     pthread_exit(NULL);
     outfile.close();
-    cout << "Exit" << endl;
 }
 
-void *pushUpdates(void *data)
+void *pushUpdate(void *arg)
 {
-    while (!AQueue.actl.empty())
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
     {
-        Action A = AQueue.actl.front();
-        AQueue.actl.pop_front();
-        if (A.action_type == "post")
-            AQueue.cnt_post--;
-        else if (A.action_type == "comment")
-            AQueue.cnt_comment--;
-        else
-            AQueue.cnt_like--;
-        // Push the Action to the Wall of the User
-        Node n = graph[A.user_id];
-        // Push the Action to the Feed of the User's Neighbours
-        for (auto it : n.neighbours)
+        LOCK(mutex);
+        while (AQueue.actl.empty())
+            pthread_cond_wait(&condFirst, &mutex);
+        while (!AQueue.actl.empty())
         {
-            Node n1 = graph[it.first];
-            A.reader_id = it.first;
-            n1.Feed.actl.push_back(A);
+            Action A = AQueue.actl.front();
+            AQueue.actl.pop_front();
             if (A.action_type == "post")
-                n1.Feed.cnt_post++;
+                AQueue.cnt_post--;
             else if (A.action_type == "comment")
-                n1.Feed.cnt_comment++;
+                AQueue.cnt_comment--;
             else
-                n1.Feed.cnt_like++;
+                AQueue.cnt_like--;
+            // Push the Action to the Wall of the User
+            Node n = graph[A.user_id];
+            // Push the Action to the Feed of the User's Neighbours
+            for (auto it : n.neighbours)
+            {
+                Node n1 = graph[it.first];
+                A.reader_id = it.first;
+                n1.AddFeedAction(A);
+                n1.Feed.actl.push_back(A);
+                graph[it.first] = n1;
+                mp1[it.first] = 1;
+            }
         }
+        UNLOCK(mutex);
     }
     pthread_exit(NULL);
-    // for(auto it: n.neighbours)
-    // {
-    //     n = graph[it.first];
-    //     n.addFeedQueue(user_id, action_type, action_id);
-    //     graph[it.first] = n;
-    // }
 }
 
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        LOCK(mutex);
+        while (AQueue.actl.empty())
+            pthread_cond_wait(&condFirst, &mutex);
+        while (!AQueue.actl.empty())
+        {
+            Action A = AQueue.actl.front();
+            AQueue.actl.pop_front();
+            if (A.action_type == "post")
+                AQueue.cnt_post--;
+            else if (A.action_type == "comment")
+                AQueue.cnt_comment--;
+            else
+                AQueue.cnt_like--;
+            // Push the Action to the Wall of the User
+            Node n = graph[A.user_id];
+            // Push the Action to the Feed of the User's Neighbours
+            for (auto it : n.neighbours)
+            {
+                Node n1 = graph[it.first];
+                A.reader_id = it.first;
+                n1.AddFeedAction(A);
+                n1.Feed.actl.push_back(A);
+                graph[it.first] = n1;
+                mp1[it.first] = 1;
+            }
+        }
+        UNLOCK(mutex);
+    }
+}
 signed main()
 {
+    test.clear();
+    graph.clear();
+    mp.clear();
+    mp1.clear();
+    void *status;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+
+    ::pthread_mutex_init(&mutex, NULL);
     // Starting Time of Execution
     auto start = chrono::high_resolution_clock::now();
     // Open the CSV file for reading
@@ -387,22 +446,60 @@ signed main()
     }
     file2.close();
 #endif
+    AQueue.ActionQueue();
     // UserSimulator Thread
-    pthread_t user_simulator;
+    pthread_t user_simulator[USER_SIMULATOR];
     ThreadArgs thread_args;
     thread_args.start_time = start;
+    thread_args.mutex = mutex;
     printf("In main: Creating UserSimulator Thread\n");
+    int ret = 0;
     // mtx.lock();
-    int ret = pthread_create(&user_simulator, NULL, userSimulator, (void *)&thread_args);
-    if (ret != 0)
+    for (int i = 0; i < USER_SIMULATOR; i++)
     {
-        printf("Error: pthread_create() failed\n");
-        exit(EXIT_FAILURE);
+        ret = pthread_create(&user_simulator[i], NULL, userSimulator, (void *)&thread_args);
+        if (ret != 0)
+        {
+            perror("Error: pthread_create() failed\n");
+            exit(EXIT_FAILURE);
+        }
     }
-    pthread_join(user_simulator, NULL);
-    pthread_cancel(user_simulator);
-    pthread_join(user_simulator, NULL);
-    // mtx.unlock();
+
+    // PushUpdate Threads
+    pthread_t push_updates[PUSH_UPDATE];
+    // mtx.lock();
+    for (int i = 0; i < PUSH_UPDATE; i++)
+    {
+        cout << i << endl;
+        ret = pthread_create(&push_updates[i], NULL, pushUpdate, (void *)&thread_args);
+        if (ret != 0)
+        {
+            printf("Error: pthread_create() failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    int cnt = 0;
+    for (int i = 0; i < USER_SIMULATOR; i++)
+    {
+        ret = pthread_join(user_simulator[i], &status);
+        cnt++;
+        if (ret != 0)
+        {
+            perror("Error: pthread_join() failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    // join all the threads
+    for (int i = 0; i < PUSH_UPDATE; i++)
+    {
+        ret = pthread_join(push_updates[i], &status);
+        cnt++;
+        if (ret != 0)
+        {
+            perror("Error: pthread_join() failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 #ifdef DEBUG_SUM
     int ans = 0;
     for (auto it : mp)
@@ -412,26 +509,8 @@ signed main()
     }
     cout << ans << " " << AQueue.actl.size() << endl;
 #endif
-    
-    // PushUpdate Threads
-    pthread_t push_updates[25]; 
-    // mtx.lock();
-    for (int i = 0; i < 25; i++)
-    {
-        cout << i << endl;
-        ret = pthread_create(&push_updates[i], NULL, pushUpdates, NULL);
-        if (ret != 0)
-        {
-            printf("Error: pthread_create() failed\n");
-            exit(EXIT_FAILURE);
-        }
-        cout << "3" << endl;
-    }
-    // mtx.unlock();
-    // join all the threads   
-    for (int i = 0; i < 25; i++)
-        pthread_join(push_updates[i], NULL);
-    for(int i=0;i<25;i++)
-        pthread_cancel(push_updates[i]);
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cond);
+    cout << cnt << endl;
     pthread_exit(NULL);
 }

@@ -1,4 +1,6 @@
-1. Mutex Locks
+1. Mutex Locks Initialize
+Use them
 2. ReadPost
 3. pthread_cond, pthread_broadcast use
-4. 
+4. Priorities of Friends Implementation
+5. Convert map<int,int> neighbors to set<int> neighbors;
