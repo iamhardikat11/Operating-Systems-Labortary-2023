@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <fstream>
 #include <string.h>
@@ -69,14 +70,16 @@ typedef struct Action
     int action_id;      // Additional Information about 4th like, 5th post
     string action_type; // one of "post, comment, like"
     time_t timestamp;   // Simple Unix/Linux Timestamp
+    int order;
     int reader_id;
 
-    void init(int user_id, int action_id, string action_type)
+    void init(int user_id, int action_id, string action_type, int order)
     {
         this->user_id = user_id;
         this->action_id = action_id;
         this->action_type = action_type;
         this->reader_id = -1;
+        this->order = order;
         time(&this->timestamp);
     }
     void add_Reader(int reader_id)
@@ -93,6 +96,7 @@ typedef struct Action
             this->action_type = other.action_type;
             this->timestamp = other.timestamp;
             this->reader_id = other.reader_id;
+            this->order = order;
         }
         return *this;
     }
@@ -182,7 +186,7 @@ typedef struct Node
             perror("The Action is NOT a comment, post, or like\n");
             exit(1);
         }
-        aq.init(this->id, q, action_type);
+        aq.init(this->id, q, action_type, graph[this->id].order);
         this->Wall.actl.push_back(aq);
         return q;
     }
@@ -200,7 +204,7 @@ typedef struct Node
             this->Feed.cnt_comment++;
         else
             this->Feed.cnt_like++;
-        aq.init(user_id, action_id, action_type);
+        aq.init(user_id, action_id, action_type, graph[this->id].order);
         aq.add_Reader(this->id);
         this->Feed.actl.push_back(aq);
     }
@@ -240,31 +244,39 @@ typedef struct Node
 
 struct cmp
 {
-    bool operator()(const std::pair<int, int>& a, const std::pair<int, int>& b) const { return a.second > b.second; }
+    bool operator()(const std::pair<int, int> &a, const std::pair<int, int> &b) const { return a.second > b.second; }
 };
 ActionQueue AQueue;
+ActionQueue FQueue;
 map<int, set<int>> test;
-std::map<int, std::map<int, int>> priority_map;
+std::map<int, unordered_map<int, int>> priority_map;
 map<int, Node> graph;
 map<int, int> mp;
 map<int, int> mp1;
 int sleep_flag = 0;
 
 /*
-* implementation of the priority map
-*/
+ * implementation of the priority map
+ */
 void precomutePriority()
 {
+    // Initialize priority_map with an empty unordered_map for each node
     for (auto const &node : graph)
     {
-        map<int, int> neighbor_counts;
-        for (auto const &neighbor_id : node.second.neighbours)
+        priority_map[node.first] = unordered_map<int, int>();
+    }
+
+    // Iterate over all edges to compute neighbor counts
+    for (auto const &node : graph)
+    {
+        for (auto const &neighbor : node.second.neighbours)
         {
-            for (auto const &neighbor_of_neighbor_id : graph[neighbor_id.first].neighbours)
+            for (auto const &neighbor_of_neighbor : graph[neighbor.first].neighbours)
             {
-                if (neighbor_of_neighbor_id.first != node.first)
+                if (neighbor_of_neighbor.first != node.first)
                 {
-                    priority_map[node.first][neighbor_of_neighbor_id.first]++;
+                    auto &neighbor_counts = priority_map[node.first];
+                    neighbor_counts[neighbor_of_neighbor.first]++;
                 }
             }
         }
@@ -322,7 +334,7 @@ void *userSimulator(void *arg)
                 string action_type = action[rand() % 3];
                 int action_id = n.addWallQueue(action_type);
                 Action ac;
-                ac.init(user_id, action_id, action_type);
+                ac.init(user_id, action_id, action_type, n.order);
                 AQueue.addAction(ac);
                 graph[user_id] = n;
             }
@@ -406,12 +418,6 @@ void *pushUpdate(void *arg)
                     outfile.close();
                 mp1[it.first] = 1;
             }
-            // if (sleep_flag)
-            // {
-            //     while(sleep_flag && !message.empty())
-            //     {
-            //     }
-            // }
             i++;
         }
         pthread_cond_broadcast(&condWall);
@@ -422,42 +428,50 @@ void *pushUpdate(void *arg)
     pthread_exit(NULL);
 }
 
-// void *readPost(void *arg)
-// {
-//     ThreadArgs *thread_args = (ThreadArgs *)arg;
+// void *readPost(void *arg) {
+//     ThreadArgs *thread_args = (ThreadArgs *) arg;
 //     chrono::high_resolution_clock::time_point start = thread_args->start_time;
 //     pthread_mutex_t mutex = thread_args->mutex;
-//     while (1)
-//     {
-//         LOCK(mutex);
-//         while (AQueue.actl.empty())
-//             pthread_cond_wait(&condWall, &mutex);
-//         while (!AQueue.actl.empty())
-//         {
-//             Action A = AQueue.actl.front();
-//             AQueue.actl.pop_front();
-//             if (A.action_type == "post")
-//                 AQueue.cnt_post--;
-//             else if (A.action_type == "comment")
-//                 AQueue.cnt_comment--;
-//             else
-//                 AQueue.cnt_like--;
-//             // Push the Action to the Wall of the User
-//             Node n = graph[A.user_id];
-//             // Push the Action to the Feed of the User's Neighbours
-//             for (auto it : n.neighbours)
-//             {
-//                 Node n1 = graph[it.first];
-//                 A.reader_id = it.first;
-//                 n1.AddFeedAction(A);
-//                 n1.Feed.actl.push_back(A);
-//                 graph[it.first] = n1;
-//                 mp1[it.first] = 1;
 
+//     while (1) {
+//         LOCK(mutex);
+//         while (FQueue.actl.empty()) {
+//             pthread_cond_wait(&condFeed, &mutex);
+//         }
+//         while (!FQueue.actl.empty()) {
+//             Action f = AQueue.pop();
+//             bool chronological_order = f.order;
+//             int reader_id = f.reader_id;
+//             int user_id = f.user_id;
+//             Node n = graph[reader_id];
+//             ActionQueue reader_feed = n.Feed;
+//             deque<Action> actions = reader_feed.actl;
+//             sort(actions.begin(), actions.end(), [](const Action& a1, const Action& a2) {
+//                 if (priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id]) {
+//                     return priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id];
+//                 } else {
+//                     return a1.timestamp < a2.timestamp;
+//                 }
+//             });
+
+//             for (auto const& a : actions) {
+//                 if (chronological_order) {
+//                     if (a.timestamp >= start) {
+//                         printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
+//                         fflush(stdout);
+//                     }
+//                 } else {
+//                     if (a.priority >= thread_args->priority_threshold && a.timestamp >= start) {
+//                         printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
+//                         fflush(stdout);
+//                     }
+//                 }
 //             }
 //         }
+//         pthread_cond_broadcast(&condFeed);
 //         UNLOCK(mutex);
 //     }
+//     pthread_exit(NULL);
 // }
 signed main()
 {
@@ -475,24 +489,6 @@ signed main()
     mp.clear();
     mp1.clear();
     priority_map.clear();
-    precomutePriority();
-#ifdef DEBUG_PRIORITY
-    ofstream file(filename);
-    if (!file)
-    {
-        cerr << "Unable to open " << filename << endl;
-        exit(EXIT_FAILURE);
-    }
-    for(auto it: priority_map)
-    {
-        for(auto x: it.second)
-        {
-            cout << it.first << " " << x.first << " " << x.second << endl;
-        }
-    }
-    if(file.is_open())
-        file.close();
-#endif
     void *status;
     // Starting Time of Execution
     auto start = chrono::high_resolution_clock::now();
@@ -593,7 +589,28 @@ signed main()
     if (file2.is_open())
         file2.close();
 #endif
+    priority_map.clear();
+    precomutePriority();
+#ifdef DEBUG_PRIORITY
+    ofstream file("priority.txt");
+    if (!file)
+    {
+        cerr << "Unable to open "
+             << "priority.txt" << endl;
+        exit(EXIT_FAILURE);
+    }
+    for (auto it : priority_map)
+    {
+        for (auto x : it.second)
+        {
+            cout << it.first << " " << x.first << " " << x.second << endl;
+        }
+    }
+    if (file.is_open())
+        file.close();
+#endif
     AQueue.init();
+    FQueue.init();
     // UserSimulator Thread
     pthread_t user_simulator[USER_SIMULATOR];
     ThreadArgs thread_args;
