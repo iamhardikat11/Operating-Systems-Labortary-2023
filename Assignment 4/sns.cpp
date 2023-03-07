@@ -156,6 +156,67 @@ void* userSimulator()
 
 }
 
+//  create map of nodes
+//  create map of all action queues, from where to pop in pushUpdates
+
+
+ActionQueue AQueue;
+map<int, Node> node_map;
+
+void* pushUpdates()
+{
+    Action A = AQueue.actl.front();
+    AQueue.actl.pop_front();
+    if(A.action_type == "post")
+    {
+        AQueue.cnt_post--;
+    }
+    else if(A.action_type == "comment")
+    {
+        AQueue.cnt_comment--;
+    }
+    else
+    {
+        AQueue.cnt_like--;
+    }
+    // Push the Action to the Wall of the User
+    Node n = node_map[A.user_id];
+    n.Wall.actl.push_back(A);
+    if(A.action_type == "post")
+    {
+        n.Wall.cnt_post++;
+    }
+    else if(A.action_type == "comment")
+    {
+        n.Wall.cnt_comment++;
+    }
+    else
+    {
+        n.Wall.cnt_like++;
+    }
+
+    // Push the Action to the Feed of the User's Neighbours
+    for(auto it = n.neighbours.begin(); it != n.neighbours.end(); it++)
+    {
+        Node n1 = node_map[it->first];
+        n1.Feed.actl.push_back(A);
+        if(A.action_type == "post")
+        {
+            n1.Feed.cnt_post++;
+        }
+        else if(A.action_type == "comment")
+        {
+            n1.Feed.cnt_comment++;
+        }
+        else
+        {
+            n1.Feed.cnt_like++;
+        }
+    }
+    
+    
+}
+
 signed main()
 {
     // Open the CSV file for reading
@@ -230,5 +291,20 @@ signed main()
     //             printf("Error: pthread_create() failed\n");
     //             exit(EXIT_FAILURE);
     //     }
+
+    pthread_t push_updates[25];
+    int ret;
+    for(int i = 0; i < 25; i++){
+        ret =  pthread_create(&push_updates[i], NULL, &pushUpdates, NULL);
+        if(ret != 0) {
+                printf("Error: pthread_create() failed\n");
+                exit(EXIT_FAILURE);
+        }
+    }
+    // join all the threads
+    for(int i = 0; i < 25; i++)
+        pthread_join(push_updates[i], NULL);
+
+
     return 0;
 }
