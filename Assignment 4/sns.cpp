@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <execinfo.h>
 #include <pthread.h>
+#include <mutex>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +31,7 @@ using namespace std;
 
 string filename = "musae_git_edges.csv";
 string output_file = "sns.log";
+mutex mtx; // global lock
 // Returns a random number between low and high
 int rand(int low, int high)
 {
@@ -91,6 +93,7 @@ typedef struct
     int cnt_comment;
     int cnt_like;
     deque<Action> actl;
+    pthread_mutex_t* mutex; 
     void ActionQueue()
     {
         this->cnt_comment = 0;
@@ -108,6 +111,7 @@ typedef struct
     map<int, int> neighbours; // Hashmap to store the neighbours of the given Node
     ActionQueue Wall;         // Action by U itself
     ActionQueue Feed;         //  Action by All it's Neighbours
+    pthread_mutex_t* mutex;
     void init(int id)
     {
         this->id = id;
@@ -173,18 +177,13 @@ typedef struct
 ActionQueue AQueue;
 map<int, set<int>> test;
 map<int, Node> graph;
-map<int,int> mp;
+map<int, int> mp;
 // The function for the producer threads to execute
 void *userSimulator(void *arg)
 {
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
     srand(time(NULL) * getpid());
-    auto curr = chrono::high_resolution_clock::now();
-    printf(COLOR_GREEN "UserSimulator started. Runtime %lld seconds\n" COLOR_RESET, chrono::duration_cast<chrono::seconds>(curr - start));
-    int i = 1;
-    vector<string> action = {"post", "comment", "like"};
-    AQueue.ActionQueue();
     std::ofstream outfile(output_file);
     if (!outfile.is_open())
     {
@@ -192,11 +191,17 @@ void *userSimulator(void *arg)
              << output_file << endl;
         exit(EXIT_FAILURE);
     }
+    auto curr = chrono::high_resolution_clock::now();
+    printf(COLOR_GREEN "UserSimulator started. Runtime %lld seconds\n" COLOR_RESET, chrono::duration_cast<chrono::seconds>(curr - start));
+    outfile << "UserSimulator started. Runtime " << chrono::duration_cast<chrono::seconds>(curr - start).count() << " seconds\n";
+    int i = 1;
+    vector<string> action = {"post", "comment", "like"};
+    AQueue.ActionQueue();
     // while (1)
-    for(int i=0;i<5;i++)
+    for (int x = 1; x <= 6; x++)
     {
         curr = chrono::high_resolution_clock::now();
-        printf(COLOR_RED "Iteration #%d. Runtime %lld seconds\n" COLOR_RESET, i, chrono::duration_cast<chrono::seconds>(curr - start));
+        printf(COLOR_RED "Iteration #%d. Runtime %lld seconds\n" COLOR_RESET, x, chrono::duration_cast<chrono::seconds>(curr - start));
         outfile << "Iteration #" << i << ". Runtime " << (chrono::duration_cast<chrono::seconds>(curr - start).count()) << " seconds\n";
         int NUM_NODE = graph.size();
         auto curr = chrono::high_resolution_clock::now();
@@ -205,9 +210,9 @@ void *userSimulator(void *arg)
         outfile << "Nodes Selected: The following randomly selected Users will Create actions.\n";
         for (int i = 0; i < 100; i++)
         {
-            int user_id = (rand() % (NUM_NODE - 1) + 1);
+            int user_id = (rand() % (NUM_NODE));
             int action_created = log2(graph[user_id].degree);
-            mp[user_id]+=action_created;
+            mp[user_id] += action_created;
             for (int j = 0; j < action_created; j++)
             {
                 Node n = graph[user_id];
@@ -226,7 +231,7 @@ void *userSimulator(void *arg)
                 cout << endl;
             }
         }
-        sleep(12);
+        sleep(2);
         i++;
         // Check if it has executed for the specified number of seconds
         // LOCK(&shm->mutex);
@@ -249,42 +254,39 @@ void *userSimulator(void *arg)
 
 void *pushUpdates(void *data)
 {
-    Action A = AQueue.actl.front();
-    AQueue.actl.pop_front();
-    if (A.action_type == "post")
-        AQueue.cnt_post--;
-    else if (A.action_type == "comment")
-        AQueue.cnt_comment--;
-    else
-        AQueue.cnt_like--;
-    // Push the Action to the Wall of the User
-    Node n = graph[A.user_id];
-    n.Wall.actl.push_back(A);
-    if (A.action_type == "post")
-        n.Wall.cnt_post++;
-    else if (A.action_type == "comment")
-        n.Wall.cnt_comment++;
-    else
-        n.Wall.cnt_like++;
-    // Push the Action to the Feed of the User's Neighbours
-    for (auto it = n.neighbours.begin(); it != n.neighbours.end(); it++)
+    while (!AQueue.actl.empty())
     {
-        Node n1 = graph[it->first];
-        n1.Feed.actl.push_back(A);
+        Action A = AQueue.actl.front();
+        AQueue.actl.pop_front();
         if (A.action_type == "post")
-            n1.Feed.cnt_post++;
+            AQueue.cnt_post--;
         else if (A.action_type == "comment")
-            n1.Feed.cnt_comment++;
+            AQueue.cnt_comment--;
         else
-            n1.Feed.cnt_like++;
+            AQueue.cnt_like--;
+        // Push the Action to the Wall of the User
+        Node n = graph[A.user_id];
+        // Push the Action to the Feed of the User's Neighbours
+        for (auto it : n.neighbours)
+        {
+            Node n1 = graph[it.first];
+            A.reader_id = it.first;
+            n1.Feed.actl.push_back(A);
+            if (A.action_type == "post")
+                n1.Feed.cnt_post++;
+            else if (A.action_type == "comment")
+                n1.Feed.cnt_comment++;
+            else
+                n1.Feed.cnt_like++;
+        }
     }
     pthread_exit(NULL);
     // for(auto it: n.neighbours)
-                // {
-                //     n = graph[it.first];
-                //     n.addFeedQueue(user_id, action_type, action_id);
-                //     graph[it.first] = n;
-                // }
+    // {
+    //     n = graph[it.first];
+    //     n.addFeedQueue(user_id, action_type, action_id);
+    //     graph[it.first] = n;
+    // }
 }
 
 signed main()
@@ -337,6 +339,18 @@ signed main()
     }
     infile.close();
 #ifdef DEBUG_LOAD
+    std::ofstream file("degree.txt");
+    if (!file)
+    {
+        cerr << "Unable to open "
+             << "degree.txt" << endl;
+        exit(EXIT_FAILURE);
+    }
+    for (auto it : graph)
+    {
+        file << it.first << ": " << it.second.degree << endl;
+    }
+    file.close();
     std::ofstream file1("output_graph.txt");
     if (!file1)
     {
@@ -377,6 +391,7 @@ signed main()
     ThreadArgs thread_args;
     thread_args.start_time = start;
     printf("In main: Creating UserSimulator Thread\n");
+    mtx.lock();
     int ret = pthread_create(&user_simulator, NULL, userSimulator, (void *)&thread_args);
     if (ret != 0)
     {
@@ -386,24 +401,33 @@ signed main()
     pthread_join(user_simulator, NULL);
     pthread_cancel(user_simulator);
     pthread_join(user_simulator, NULL);
-    for(auto it: mp)
+    mtx.unlock();
+#ifdef DEBUG_SUM
+    int ans = 0;
+    for (auto it : mp)
     {
-        cout << it.first << " " << graph[it.first].Feed.actl.size() << " " << graph[it.first].Wall.actl.size() << endl;   
+        cout << it.first << " " << graph[it.first].Feed.actl.size() << " " << graph[it.first].Wall.actl.size() << endl;
+        ans += graph[it.first].Wall.actl.size();
     }
+    cout << ans << " " << AQueue.actl.size();
+#endif
     // PushUpdate Threads
-    // pthread_t push_updates[25];
-    // for (int i = 0; i < 25; i++)
-    // {
-    //     ret = pthread_create(&push_updates[i], NULL, pushUpdates, (void *)i);
-    //     if (ret != 0)
-    //     {
-    //         printf("Error: pthread_create() failed\n");
-    //         exit(EXIT_FAILURE);
-    //     }
-    // }
-    // // join all the threads
-    // for (int i = 0; i < 25; i++)
-    //     pthread_join(push_updates[i], NULL);
-
+    pthread_t push_updates[25]; 
+    mtx.lock();
+    for (int i = 0; i < 25; i++)
+    {
+        ret = pthread_create(&push_updates[i], NULL, pushUpdates, (void *)i);
+        if (ret != 0)
+        {
+            printf("Error: pthread_create() failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    mtx.unlock();
+    // join all the threads
+    for (int i = 0; i < 25; i++)
+        pthread_join(push_updates[i], NULL);
+    for(int i=0;i<25;i++)
+        pthread_join(push_updates[i], NULL);
     pthread_exit(NULL);
 }

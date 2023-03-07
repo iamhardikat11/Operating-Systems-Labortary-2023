@@ -214,9 +214,6 @@ signed main()
     }
     infile.close();
     pthread_t consumer_thread[10];
-    
-
-
 
 #ifdef DEBUG_LOAD
     std::ofstream file1("output_graph.txt");
