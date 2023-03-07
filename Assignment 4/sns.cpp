@@ -1,26 +1,16 @@
-#include <pthread.h>
-#include <bits/stdc++.h>
-#include <errno.h>
-#include <execinfo.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <cstdio>
-#include <fstream>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <chrono>
-#include <cassert>
-#include <chrono>
-#include <cstring>
 #include <iostream>
+#include <map>
+#include <set>
+#include <fstream>
+#include <string.h>
+#include <cmath>
 #include <vector>
-
+#include <algorithm>
+#include <pthread.h>
+#include <unistd.h>
+#include <queue>
+#include <chrono>
+#include <thread>
 using namespace std;
 
 #define USER_SIMULATOR 1
@@ -34,6 +24,7 @@ using namespace std;
 
 string filename = "musae_git_edges.csv";
 string output_file = "sns.log";
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t condWall = PTHREAD_COND_INITIALIZER;
 pthread_cond_t condFeed = PTHREAD_COND_INITIALIZER;
 pthread_cond_t condSleeep = PTHREAD_COND_INITIALIZER;
@@ -91,6 +82,19 @@ typedef struct Action
     {
         this->reader_id = reader_id;
     }
+    Action &operator=(const Action &other)
+    {
+        if (this != &other)
+        { // check for self-assignment
+
+            this->user_id = other.user_id;
+            this->action_id = other.action_id;
+            this->action_type = other.action_type;
+            this->timestamp = other.timestamp;
+            this->reader_id = other.reader_id;
+        }
+        return *this;
+    }
 } Action;
 
 typedef struct ActionQueue
@@ -120,6 +124,17 @@ typedef struct ActionQueue
             exit(0);
         }
         actl.push_back(A);
+    }
+    Action pop()
+    {
+        if (this->actl.empty())
+        {
+            perror("queue_error: Queue Empty\n");
+            exit(1);
+        }
+        Action a = this->actl.front();
+        this->actl.pop_front();
+        return a;
     }
 } ActionQueue;
 
@@ -240,7 +255,6 @@ void *userSimulator(void *arg)
 {
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
-    pthread_mutex_t mutex = thread_args->mutex;
     srand(time(NULL) * getpid());
     std::ofstream file(output_file, std::ios::app);
     if (!file.is_open())
@@ -272,22 +286,21 @@ void *userSimulator(void *arg)
         auto diff = chrono::duration_cast<chrono::seconds>(curr - start);
         printf("Nodes Selected: The following randomly selected Users will Create Actions.\n");
         outfile << "Nodes Selected: The following randomly selected Users will Create actions.\n";
+        LOCK(mutex);
         for (int i = 0; i < 100; i++)
         {
             int user_id = (rand() % (NUM_NODE));
-            LOCK(mutex);
             int action_created = log2(graph[user_id].degree);
             mp[user_id] += action_created;
             for (int j = 0; j < action_created; j++)
             {
                 Node n = graph[user_id];
                 string action_type = action[rand() % 3];
-                int action_id = n.addWallQueue(action[rand() % 3]);
+                int action_id = n.addWallQueue(action_type);
                 Action ac;
                 ac.init(user_id, action_id, action_type);
                 AQueue.addAction(ac);
                 graph[user_id] = n;
-                pthread_cond_signal(&condWall);
             }
             cout << user_id << " ";
             outfile << user_id << " ";
@@ -296,13 +309,17 @@ void *userSimulator(void *arg)
                 outfile << endl;
                 cout << endl;
             }
-            UNLOCK(mutex);
+            outfile << "Size" << AQueue.actl.size() << endl;
         }
-        outfile.close();
+        if (outfile.is_open())
+            outfile.close();
         sleep_flag = 1;
-        sleep(60);
+        pthread_cond_broadcast(&condWall);
+        UNLOCK(mutex);
+        sleep(3);
+        // std::this_thread::sleep_for(std::chrono::minutes(2));
         sleep_flag = 0;
-        pthread_cond_signal(&condSleeep);
+        pthread_cond_broadcast(&condSleeep);
         i++;
     }
     pthread_exit(NULL);
@@ -312,62 +329,72 @@ void *pushUpdate(void *arg)
 {
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
-    pthread_mutex_t mutex = thread_args->mutex;
     int i = 1;
     while (1)
     {
-        LOCK(mutex);
-        vector<pair<int, int>> message;
+        // LOCK(mutex);
+        queue<pair<int, int>> message;
+        std::ofstream outfile(output_file, std::ios::app);
+        if (!outfile.is_open())
+        {
+            cerr << "Unable to open "
+                 << output_file << endl;
+            exit(EXIT_FAILURE);
+        }
+        outfile.close();
         while (AQueue.actl.empty())
             pthread_cond_wait(&condWall, &mutex);
         while (!AQueue.actl.empty())
         {
-        //     Action A = AQueue.actl.front();
-        //     AQueue.actl.pop_front();
-        //     if (A.action_type == "post")
-        //         AQueue.cnt_post--;
-        //     else if (A.action_type == "comment")
-        //         AQueue.cnt_comment--;
-        //     else if (A.action_type == "like")
-        //         AQueue.cnt_like--;
-        //     else
-        //     {
-        //         perror("action_error: No Such Action Exists.\n");
-        //         exit(0);
-        //     }
-        //     // cout << AQueue.cnt_post << " " << AQueue.cnt_comment << " " << AQueue.cnt_like << endl;
-        //     // Push the Action to the Wall of the User
-        //     Node n = graph[A.user_id];
-        //     // Push the Action to the Feed of the User's Neighbours
-        //     for (auto it : n.neighbours)
-        //     {
-        //         Node n1 = graph[it.first];
-        //         A.add_Reader(it.first);
-        //         n1.AddFeedAction(A);
-        //         std::ofstream outfile(output_file, std::ios::app);
-        //         if (!outfile.is_open())
-        //         {
-        //             cerr << "Unable to open "
-        //                  << output_file << endl;
-        //             exit(EXIT_FAILURE);
-        //         }
-        //         cout << "Pushing to " << A.reader_id << " "
-        //              << "from " << A.user_id << endl;
-        //         outfile.close();
-        //         // graph[it.first] = n1;
-        //         // mp1[it.first] = 1;
-        //         // pthread_cond_signal(&condFeed);
-        //     }
-            if (sleep_flag)
+            cout << AQueue.actl.size() << endl;
+            // LOCK(mutex);
+            Action A = AQueue.pop();
+            if (A.action_type == "post")
+                AQueue.cnt_post--;
+            else if (A.action_type == "comment")
+                AQueue.cnt_comment--;
+            else if (A.action_type == "like")
+                AQueue.cnt_like--;
+            else
             {
-                while(sleep_flag)
-                {
-
-                }
+                perror("action_error: No Such Action Exists.\n");
+                exit(0);
             }
+            // cout << AQueue.cnt_post << " " << AQueue.cnt_comment << " " << AQueue.cnt_like << endl;
+            // Push the Action to the Wall of the User
+            Node n = graph[A.user_id];
+            // Push the Action to the Feed of the User's Neighbours
+            for (auto it : n.neighbours)
+            {
+                A.add_Reader(it.first);
+                graph[it.first].AddFeedAction(A);
+                // std::ofstream outfile(output_file, std::ios::app);
+                // if (!outfile.is_open())
+                // {
+                //     cerr << "Unable to open "
+                //          << output_file << endl;
+                //     exit(EXIT_FAILURE);
+                // }
+                cout << "Pushing to " << A.reader_id << " "
+                     << "from " << A.user_id << endl;
+                // if(outfile.is_open())
+                //     outfile.close();
+                mp1[it.first] = 1;
+            }
+            cout << AQueue.actl.size() << endl;
+            // if (sleep_flag)
+            // {
+            //     while(sleep_flag && !message.empty())
+            //     {
+
+            //     }
+            // }
             i++;
         }
-        UNLOCK(mutex);
+        pthread_cond_broadcast(&condWall);
+        pthread_cond_broadcast(&condFeed);
+        // UNLOCK(mutex);
+        // UNLOCK(mutex);
     }
     pthread_exit(NULL);
 }
@@ -411,23 +438,20 @@ void *pushUpdate(void *arg)
 // }
 signed main()
 {
-    std::ofstream file(output_file);
-    if (!file.is_open())
+    std::ofstream file_clear(output_file);
+    if (!file_clear.is_open())
     {
         cerr << "Unable to open "
              << output_file << endl;
         exit(EXIT_FAILURE);
     }
-    file.close();
+    if (file_clear.is_open())
+        file_clear.close();
     test.clear();
     graph.clear();
     mp.clear();
     mp1.clear();
     void *status;
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-
-    ::pthread_mutex_init(&mutex, NULL);
     // Starting Time of Execution
     auto start = chrono::high_resolution_clock::now();
     // Open the CSV file for reading
@@ -474,7 +498,8 @@ signed main()
         test[id1].insert(id2);
         test[id2].insert(id1);
     }
-    infile.close();
+    if (infile.is_open())
+        infile.close();
 #ifdef DEBUG_LOAD
     std::ofstream file("degree.txt", std::ios::app);
     if (!file)
@@ -487,7 +512,8 @@ signed main()
     {
         file << it.first << ": " << it.second.degree << endl;
     }
-    file.close();
+    if (file.is_open())
+        file.close();
     std::ofstream file1("output_graph.txt", std::ios::app);
     if (!file1)
     {
@@ -504,7 +530,8 @@ signed main()
         }
         file1 << endl;
     }
-    file1.close();
+    if (file1.is_open())
+        file1.close();
     std::ofstream file2("output_test.txt", std::ios::app);
     if (!file2)
     {
@@ -521,14 +548,14 @@ signed main()
         }
         file2 << endl;
     }
-    file2.close();
+    if (file2.is_open())
+        file2.close();
 #endif
     AQueue.init();
     // UserSimulator Thread
     pthread_t user_simulator[USER_SIMULATOR];
     ThreadArgs thread_args;
     thread_args.start_time = start;
-    thread_args.mutex = mutex;
     printf("In main: Creating UserSimulator Thread\n");
     int ret = 0;
     // mtx.lock();
@@ -586,7 +613,9 @@ signed main()
     cout << ans << " " << AQueue.actl.size() << endl;
 #endif
     pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&cond);
+    pthread_cond_destroy(&condWall);
+    pthread_cond_destroy(&condFeed);
+    pthread_cond_destroy(&condSleeep);
     cout << cnt << endl;
     pthread_exit(NULL);
 }

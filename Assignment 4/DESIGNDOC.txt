@@ -535,3 +535,70 @@ void *readPost(void *arg)
 
 ********************************************************************************************************************************************************************************************************************************************************************
 ********************************************************************************************************************************************************************************************************************************************************************
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+implementation of the priority map
+********************************************************************************************************************************************************************************************************************************************************************
+// Compute the priority map
+map<int, map<int, int>> priority_map;
+for (auto const& node : graph) {
+    map<int, int> neighbor_counts;
+    for (auto const& neighbor_id : node.second.neighbours) {
+        for (auto const& neighbor_of_neighbor_id : graph[neighbor_id.first].neighbours) {
+            if (neighbor_of_neighbor_id.first != node.first) {
+                neighbor_counts[neighbor_of_neighbor_id.first]++;
+            }
+        }
+    }
+    priority_map[node.first] = neighbor_counts;
+}
+********************************************************************************************************************************************************************************************************************************************************************
+try this readPost function for the above computation
+********************************************************************************************************************************************************************************************************************************************************************
+void *readPost(void *arg) {
+    ThreadArgs *thread_args = (ThreadArgs *) arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    bool chronological_order = thread_args->order == "chronological";
+
+    while (1) {
+        LOCK(mutex);
+        while (FQueue.feeds.empty()) {
+            pthread_cond_wait(&condFirst, &mutex);
+        }
+        while (!FQueue.feeds.empty()) {
+            Feed f = FQueue.feeds.front();
+            FQueue.feeds.pop_front();
+
+            int reader_id = f.reader_id;
+            Node n = graph[reader_id];
+            Feed reader_feed = n.Feed;
+            deque<Action> actions = reader_feed.actl;
+            sort(actions.begin(), actions.end(), [](const Action& a1, const Action& a2) {
+                if (a1.priority != a2.priority) {
+                    return a1.priority > a2.priority;
+                } else {
+                    return a1.timestamp < a2.timestamp;
+                }
+            });
+
+            for (auto const& a : actions) {
+                if (chronological_order) {
+                    if (a.timestamp >= start) {
+                        printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
+                        fflush(stdout);
+                    }
+                } else {
+                    if (a.priority >= thread_args->priority_threshold && a.timestamp >= start) {
+                        printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
+                        fflush(stdout);
+                    }
+                }
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
