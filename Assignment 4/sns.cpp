@@ -250,6 +250,7 @@ void *userSimulator(void *arg)
     }
     pthread_exit(NULL);
     outfile.close();
+    cout << "Exit" << endl;
 }
 
 void *pushUpdates(void *data)
@@ -391,7 +392,7 @@ signed main()
     ThreadArgs thread_args;
     thread_args.start_time = start;
     printf("In main: Creating UserSimulator Thread\n");
-    mtx.lock();
+    // mtx.lock();
     int ret = pthread_create(&user_simulator, NULL, userSimulator, (void *)&thread_args);
     if (ret != 0)
     {
@@ -401,7 +402,7 @@ signed main()
     pthread_join(user_simulator, NULL);
     pthread_cancel(user_simulator);
     pthread_join(user_simulator, NULL);
-    mtx.unlock();
+    // mtx.unlock();
 #ifdef DEBUG_SUM
     int ans = 0;
     for (auto it : mp)
@@ -409,25 +410,28 @@ signed main()
         cout << it.first << " " << graph[it.first].Feed.actl.size() << " " << graph[it.first].Wall.actl.size() << endl;
         ans += graph[it.first].Wall.actl.size();
     }
-    cout << ans << " " << AQueue.actl.size();
+    cout << ans << " " << AQueue.actl.size() << endl;
 #endif
+    
     // PushUpdate Threads
     pthread_t push_updates[25]; 
-    mtx.lock();
+    // mtx.lock();
     for (int i = 0; i < 25; i++)
     {
-        ret = pthread_create(&push_updates[i], NULL, pushUpdates, (void *)i);
+        cout << i << endl;
+        ret = pthread_create(&push_updates[i], NULL, pushUpdates, NULL);
         if (ret != 0)
         {
             printf("Error: pthread_create() failed\n");
             exit(EXIT_FAILURE);
         }
+        cout << "3" << endl;
     }
-    mtx.unlock();
-    // join all the threads
+    // mtx.unlock();
+    // join all the threads   
     for (int i = 0; i < 25; i++)
         pthread_join(push_updates[i], NULL);
     for(int i=0;i<25;i++)
-        pthread_join(push_updates[i], NULL);
+        pthread_cancel(push_updates[i]);
     pthread_exit(NULL);
 }
