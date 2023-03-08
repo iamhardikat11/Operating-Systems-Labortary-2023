@@ -57,11 +57,19 @@ void UNLOCK(pthread_mutex_t mutex)
         exit(1);
     }
 }
+
+// A Function to print the Time Elapsed
+void printTime(chrono::high_resolution_clock::time_point start, chrono::high_resolution_clock::time_point curr)
+{
+    cout << "  Time Elapsed:- " << (chrono::duration_cast<chrono::seconds>(curr - start).count()) << " seconds\n";
+}
+
 // Struct to hold the argument
 struct ThreadArgs
 {
     chrono::high_resolution_clock::time_point start_time;
     pthread_mutex_t mutex;
+    int thread_id;
 };
 
 typedef struct Action
@@ -165,7 +173,7 @@ typedef struct Node
         this->degree++;
         this->neighbours[neigh_id] = 1;
     }
-    int addWallQueue(string action_type)
+    int addWallQueue(string action_type, int order)
     {
         Action aq;
         int q = 0;
@@ -186,11 +194,11 @@ typedef struct Node
             perror("The Action is NOT a comment, post, or like\n");
             exit(1);
         }
-        aq.init(this->id, q, action_type, graph[this->id].order);
+        aq.init(this->id, q, action_type, order);
         this->Wall.actl.push_back(aq);
         return q;
     }
-    void addFeedQueue(int user_id, string action_type, int action_id)
+    void addFeedQueue(int user_id, string action_type, int action_id, int order)
     {
         Action aq;
         if (action_type != "post" && action_type != "comment" && action_type != "like")
@@ -204,7 +212,7 @@ typedef struct Node
             this->Feed.cnt_comment++;
         else
             this->Feed.cnt_like++;
-        aq.init(user_id, action_id, action_type, graph[this->id].order);
+        aq.init(user_id, action_id, action_type, order);
         aq.add_Reader(this->id);
         this->Feed.actl.push_back(aq);
     }
@@ -269,14 +277,36 @@ void precomutePriority()
     // Iterate over all edges to compute neighbor counts
     for (auto const &node : graph)
     {
-        for (auto const &neighbor : node.second.neighbours)
+        vector<pair<int, int>> sorted_neighbors(node.second.neighbours.begin(), node.second.neighbours.end());
+        sort(sorted_neighbors.begin(), sorted_neighbors.end());
+
+        for (auto const &neighbor : sorted_neighbors)
         {
-            for (auto const &neighbor_of_neighbor : graph[neighbor.first].neighbours)
+            vector<pair<int, int>> sorted_neighbors_of_neighbor(graph[neighbor.first].neighbours.begin(), graph[neighbor.first].neighbours.end());
+            sort(sorted_neighbors_of_neighbor.begin(), sorted_neighbors_of_neighbor.end());
+
+            auto it1 = sorted_neighbors_of_neighbor.begin();
+            auto it2 = sorted_neighbors.begin();
+
+            while (it1 != sorted_neighbors_of_neighbor.end() && it2 != sorted_neighbors.end())
             {
-                if (neighbor_of_neighbor.first != node.first)
+                if (it1->first == it2->first)
                 {
-                    auto &neighbor_counts = priority_map[node.first];
-                    neighbor_counts[neighbor_of_neighbor.first]++;
+                    if (it1->first != node.first)
+                    {
+                        auto &neighbor_counts = priority_map[node.first];
+                        neighbor_counts[it1->first]++;
+                    }
+                    it1++;
+                    it2++;
+                }
+                else if (it1->first < it2->first)
+                {
+                    it1++;
+                }
+                else
+                {
+                    it2++;
                 }
             }
         }
@@ -332,7 +362,7 @@ void *userSimulator(void *arg)
             {
                 Node n = graph[user_id];
                 string action_type = action[rand() % 3];
-                int action_id = n.addWallQueue(action_type);
+                int action_id = n.addWallQueue(action_type, n.order);
                 Action ac;
                 ac.init(user_id, action_id, action_type, n.order);
                 AQueue.addAction(ac);
@@ -344,6 +374,10 @@ void *userSimulator(void *arg)
             {
                 outfile << endl;
                 cout << endl;
+                // while (AQueue.actl.size() == QUEUE_SIZE)
+                // {
+                //     pthread_cond_wait(&condWall, &mutex);
+                // }
             }
         }
         if (outfile.is_open())
@@ -351,8 +385,8 @@ void *userSimulator(void *arg)
         sleep_flag = 1;
         pthread_cond_broadcast(&condWall);
         UNLOCK(mutex);
-        sleep(3);
-        // std::this_thread::sleep_for(std::chrono::minutes(2));
+        // sleep(3);
+        std::this_thread::sleep_for(std::chrono::minutes(2));
         sleep_flag = 0;
         pthread_cond_broadcast(&condSleeep);
         i++;
@@ -367,13 +401,11 @@ void *pushUpdate(void *arg)
     int i = 1;
     while (1)
     {
-        // LOCK(mutex);
         queue<pair<int, int>> message;
         std::ofstream outfile(output_file, std::ios::app);
         if (!outfile.is_open())
         {
-            cerr << "Unable to open "
-                 << output_file << endl;
+            cerr << "Unable to open " << output_file << endl;
             exit(EXIT_FAILURE);
         }
         outfile.close();
@@ -381,8 +413,6 @@ void *pushUpdate(void *arg)
             pthread_cond_wait(&condWall, &mutex);
         while (!AQueue.actl.empty())
         {
-            cout << AQueue.actl.size() << endl;
-            // LOCK(mutex);
             Action A = AQueue.pop();
             if (A.action_type == "post")
                 AQueue.cnt_post--;
@@ -395,8 +425,6 @@ void *pushUpdate(void *arg)
                 perror("action_error: No Such Action Exists.\n");
                 exit(0);
             }
-            // cout << AQueue.cnt_post << " " << AQueue.cnt_comment << " " << AQueue.cnt_like << endl;
-            // Push the Action to the Wall of the User
             Node n = graph[A.user_id];
             // Push the Action to the Feed of the User's Neighbours
             for (auto it : n.neighbours)
@@ -417,69 +445,68 @@ void *pushUpdate(void *arg)
                 if (outfile.is_open())
                     outfile.close();
                 mp1[it.first] = 1;
+                // FQueue.addAction(A);
             }
             i++;
         }
         pthread_cond_broadcast(&condWall);
         pthread_cond_broadcast(&condFeed);
-        // UNLOCK(mutex);
-        // UNLOCK(mutex);
     }
     pthread_exit(NULL);
 }
 
-// void *readPost(void *arg) {
-//     ThreadArgs *thread_args = (ThreadArgs *) arg;
-//     chrono::high_resolution_clock::time_point start = thread_args->start_time;
-//     pthread_mutex_t mutex = thread_args->mutex;
-
-//     while (1) {
-//         LOCK(mutex);
-//         while (FQueue.actl.empty()) {
-//             pthread_cond_wait(&condFeed, &mutex);
-//         }
-//         while (!FQueue.actl.empty()) {
-//             Action f = AQueue.pop();
-//             bool chronological_order = f.order;
-//             int reader_id = f.reader_id;
-//             int user_id = f.user_id;
-//             Node n = graph[reader_id];
-//             ActionQueue reader_feed = n.Feed;
-//             deque<Action> actions = reader_feed.actl;
-//             sort(actions.begin(), actions.end(), [](const Action& a1, const Action& a2) {
-//                 if (priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id]) {
-//                     return priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id];
-//                 } else {
-//                     return a1.timestamp < a2.timestamp;
-//                 }
-//             });
-
-//             for (auto const& a : actions) {
-//                 if (chronological_order) {
-//                     if (a.timestamp >= start) {
-//                         printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
-//                         fflush(stdout);
-//                     }
-//                 } else {
-//                     if (a.priority >= thread_args->priority_threshold && a.timestamp >= start) {
-//                         printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
-//                         fflush(stdout);
-//                     }
-//                 }
-//             }
-//         }
-//         pthread_cond_broadcast(&condFeed);
-//         UNLOCK(mutex);
-//     }
-//     pthread_exit(NULL);
-// }
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        //         LOCK(mutex);
+        while (FQueue.actl.empty())
+        {
+            pthread_cond_wait(&condFeed, &mutex);
+        }
+        //         while (!FQueue.actl.empty()) {
+        //             Action f = AQueue.pop();
+        //             bool chronological_order = f.order;
+        //             int reader_id = f.reader_id;
+        //             int user_id = f.user_id;
+        //             Node n = graph[reader_id];
+        //             ActionQueue reader_feed = n.Feed;
+        //             deque<Action> actions = reader_feed.actl;
+        //             sort(actions.begin(), actions.end(), [](const Action& a1, const Action& a2) {
+        //                 if (priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id]) {
+        //                     return priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id];
+        //                 } else {
+        //                     return a1.timestamp < a2.timestamp;
+        //                 }
+        //             });
+        //             for (auto const& a : actions) {
+        //                 if (chronological_order) {
+        //                     if (a.timestamp >= start) {
+        //                         printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
+        //                         fflush(stdout);
+        //                     }
+        //                 } else {
+        //                     if (a.priority >= thread_args->priority_threshold && a.timestamp >= start) {
+        //                         printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
+        //                         fflush(stdout);
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         pthread_cond_broadcast(&condFeed);
+        //         UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
 signed main()
 {
     std::ofstream file_clear(output_file);
     if (!file_clear.is_open())
     {
-        cerr << "Unable to open "
-             << output_file << endl;
+        cerr << "Unable to open " << output_file << endl;
         exit(EXIT_FAILURE);
     }
     if (file_clear.is_open())
@@ -499,10 +526,11 @@ signed main()
         cerr << "Unable to open " << filename << endl;
         exit(EXIT_FAILURE);
     }
-    cout << COLOR_BLUE << "----PUSH_UPDATE SYSTEM----" << COLOR_RESET << endl;
+    cout << COLOR_BLUE << "----PUSH UPDATE SYSTEM FOR SOCIAL MEDIA SYSTEM ----" << COLOR_RESET << endl;
     // Read the CSV file line by line
     string line;
     int i = 0, id1, id2;
+    cout << " -> Reading the CSV File for Input :::" << endl;
     while (getline(infile, line))
     {
         // Split the line by commas
@@ -514,32 +542,19 @@ signed main()
         sscanf(line.c_str(), "%d,%d", &id1, &id2);
         i++;
         // Add the ids to the vector
-        Node n1, n2;
         if (graph.count(id1) == 0)
-        {
-            n1.init(id1);
-            graph[id1] = n1;
-        }
-        else
-            n1 = graph[id1];
+            graph[id1].init(id1);
         if (graph.count(id2) == 0)
-        {
-            n2.init(id2);
-            graph[id2] = n2;
-        }
-        else
-            n2 = graph[id2];
-        n1.addEdge(id2);
-        graph[id1] = n1;
-        n2.addEdge(id1);
-        graph[id2] = n2;
+            graph[id2].init(id2);
+        graph[id1].addEdge(id2);
+        graph[id2].addEdge(id1);
         test[id1].insert(id2);
         test[id2].insert(id1);
     }
     if (infile.is_open())
         infile.close();
 #ifdef DEBUG_LOAD
-    std::ofstream file("degree.txt", std::ios::app);
+    std::ofstream file("degree.txt");
     if (!file)
     {
         cerr << "Unable to open "
@@ -552,7 +567,7 @@ signed main()
     }
     if (file.is_open())
         file.close();
-    std::ofstream file1("output_graph.txt", std::ios::app);
+    std::ofstream file1("output_graph.txt");
     if (!file1)
     {
         cerr << "Unable to open "
@@ -589,8 +604,10 @@ signed main()
     if (file2.is_open())
         file2.close();
 #endif
-    priority_map.clear();
-    precomutePriority();
+    cout << " -> Precomputing the Priority of the Nodes's Neighbours for Every Node :::" << endl;
+    // priority_map.clear();
+    // precomutePriority();
+    cout << " * Precomputation Done" << endl;
 #ifdef DEBUG_PRIORITY
     ofstream file("priority.txt");
     if (!file)
@@ -616,52 +633,73 @@ signed main()
     ThreadArgs thread_args;
     thread_args.start_time = start;
     printf("In main: Creating UserSimulator Thread\n");
+    // UserSimulator Thread
+    cout << " -> Creating UserSimulator Thread " << endl;
     int ret = 0;
-    // mtx.lock();
     for (int i = 0; i < USER_SIMULATOR; i++)
     {
+        thread_args.thread_id = i + 1;
         ret = pthread_create(&user_simulator[i], NULL, userSimulator, (void *)&thread_args);
         if (ret != 0)
         {
-            perror("Error: pthread_create() failed\n");
+            perror("Error: UserSimulator pthread_create() failed\n");
             exit(EXIT_FAILURE);
         }
     }
-
+    cout << " -> Creating PushUpdate Thread " << endl;
     // PushUpdate Threads
     pthread_t push_updates[PUSH_UPDATE];
-    // mtx.lock();
     for (int i = 0; i < PUSH_UPDATE; i++)
     {
+        thread_args.thread_id = i + 1;
         ret = pthread_create(&push_updates[i], NULL, pushUpdate, (void *)&thread_args);
         if (ret != 0)
         {
-            printf("Error: pthread_create() failed\n");
+            printf("Error: PUshUpdate pthread_create() failed\n");
             exit(EXIT_FAILURE);
         }
     }
-    int cnt = 0;
+    // ReadPost Threads
+    // pthread_t read_post[READ_POST];
+    // for (int i = 0; i < READ_POST; i++)
+    // {
+    //     thread_args.thread_id = i + 1;
+    //     ret = pthread_create(&read_post[i], NULL, readPost, (void *)&thread_args);
+    //     if (ret != 0)
+    //     {
+    //         printf("Error: ReadPost pthread_create() failed\n");
+    //         exit(EXIT_FAILURE);
+    //     }
+    // }
+    // join all the threads
     for (int i = 0; i < USER_SIMULATOR; i++)
     {
         ret = pthread_join(user_simulator[i], &status);
-        cnt++;
         if (ret != 0)
         {
             perror("Error: pthread_join() failed\n");
             exit(EXIT_FAILURE);
         }
     }
-    // join all the threads
     for (int i = 0; i < PUSH_UPDATE; i++)
     {
         ret = pthread_join(push_updates[i], &status);
-        cnt++;
         if (ret != 0)
         {
             perror("Error: pthread_join() failed\n");
             exit(EXIT_FAILURE);
         }
     }
+    // for (int i = 0; i < READ_POST; i++)
+    // {
+    //     ret = pthread_join(read_post[i], &status);
+    //     cnt++;
+    //     if (ret != 0)
+    //     {
+    //         perror("Error: pthread_join() failed\n");
+    //         exit(EXIT_FAILURE);
+    //     }
+    // }
 #ifdef DEBUG_SUM
     int ans = 0;
     for (auto it : mp)
@@ -675,6 +713,5 @@ signed main()
     pthread_cond_destroy(&condWall);
     pthread_cond_destroy(&condFeed);
     pthread_cond_destroy(&condSleeep);
-    cout << cnt << endl;
     pthread_exit(NULL);
 }
