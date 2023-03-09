@@ -142,8 +142,9 @@ typedef struct ActionQueue
     {
         if (this->actl.empty())
         {
-            perror("queue_error: Queue Empty\n");
-            exit(1);
+            Action ac;
+            ac.init(-1, -1, "Continue", 0);
+            return ac;
         }
         Action a = this->actl.front();
         this->actl.pop_front();
@@ -270,10 +271,7 @@ void precomutePriority()
 {
     // Initialize priority_map with an empty unordered_map for each node
     for (auto const &node : graph)
-    {
         priority_map[node.first] = unordered_map<int, int>();
-    }
-
     // Iterate over all edges to compute neighbor counts
     for (auto const &node : graph)
     {
@@ -411,6 +409,8 @@ void *pushUpdate(void *arg)
         outfile.close();
         while (AQueue.actl.empty())
             pthread_cond_wait(&condWall, &mutex);
+        while (FQueue.actl.size() == QUEUE_SIZE)
+            pthread_cond_wait(&condFeed, &mutex);
         while (!AQueue.actl.empty())
         {
             Action A = AQueue.pop();
@@ -442,10 +442,10 @@ void *pushUpdate(void *arg)
                      << "from " << A.user_id << endl;
                 outfile << "Pushing to " << A.reader_id << " "
                         << "from " << A.user_id << endl;
+                FQueue.addAction(A);
                 if (outfile.is_open())
                     outfile.close();
                 mp1[it.first] = 1;
-                // FQueue.addAction(A);
             }
             i++;
         }
@@ -460,45 +460,64 @@ void *readPost(void *arg)
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
     pthread_mutex_t mutex = thread_args->mutex;
-    // while (1)
-    // {
-    //     //         LOCK(mutex);
-    //     while (FQueue.actl.empty())
-    //     {
-    //         pthread_cond_wait(&condFeed, &mutex);
-    //     }
-        //         while (!FQueue.actl.empty()) {
-        //             Action f = AQueue.pop();
-        //             bool chronological_order = f.order;
-        //             int reader_id = f.reader_id;
-        //             int user_id = f.user_id;
-        //             Node n = graph[reader_id];
-        //             ActionQueue reader_feed = n.Feed;
-        //             deque<Action> actions = reader_feed.actl;
-        //             sort(actions.begin(), actions.end(), [](const Action& a1, const Action& a2) {
-        //                 if (priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id]) {
-        //                     return priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id];
-        //                 } else {
-        //                     return a1.timestamp < a2.timestamp;
-        //                 }
-        //             });
-        //             for (auto const& a : actions) {
-        //                 if (chronological_order) {
-        //                     if (a.timestamp >= start) {
-        //                         printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
-        //                         fflush(stdout);
-        //                     }
-        //                 } else {
-        //                     if (a.priority >= thread_args->priority_threshold && a.timestamp >= start) {
-        //                         printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
-        //                         fflush(stdout);
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         pthread_cond_broadcast(&condFeed);
+    while (1)
+    {
+        // LOCK(mutex);
+        while (FQueue.actl.empty())
+        {
+            pthread_cond_wait(&condFeed, &mutex);
+        }
+        while (!FQueue.actl.empty())
+        {
+            Action f = FQueue.pop();
+            if (f.user_id == -1 && f.action_id == -1 && f.action_type == "Continue" && f.order == 0)
+            {
+                continue;
+            }
+            bool chronological_order = f.order;
+            int reader_id = f.reader_id;
+            int user_id = f.user_id;
+            Node n = graph[reader_id];
+            deque<Action> actions = n.Feed.actl;
+            sort(actions.begin(), actions.end(), [](const Action &a1, const Action &a2)
+                 {
+                if (priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id]) {
+                    return priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id];
+                } else {
+                    return a1.timestamp < a2.timestamp;
+            } });
+            cout << "I read Action\n";
+            std::ofstream file(output_file, std::ios::app);
+            if (!file.is_open())
+            {
+                cerr << "Unable to open " << output_file << endl;
+                exit(EXIT_FAILURE);
+            }
+            file << "I read Action\n";
+            file.close();
+            // for (auto const &a : actions)
+            // {
+            //     if (chronological_order)
+            //     {
+            //         if (a.timestamp >= start)
+            //         {
+            //             printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
+            //             fflush(stdout);
+            //         }
+            //     }
+            //     else
+            //     {
+            //         if (a.priority >= thread_args->priority_threshold && a.timestamp >= start)
+            //         {
+            //             printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
+            //             fflush(stdout);
+            //         }
+            //     }
+            // }
+        }
+        pthread_cond_broadcast(&condFeed);
         //         UNLOCK(mutex);
-    // }
+    }
     pthread_exit(NULL);
 }
 signed main()
