@@ -460,13 +460,13 @@ void *readPost(void *arg)
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
     pthread_mutex_t mutex = thread_args->mutex;
-    while (1)
-    {
-        //         LOCK(mutex);
-        while (FQueue.actl.empty())
-        {
-            pthread_cond_wait(&condFeed, &mutex);
-        }
+    // while (1)
+    // {
+    //     //         LOCK(mutex);
+    //     while (FQueue.actl.empty())
+    //     {
+    //         pthread_cond_wait(&condFeed, &mutex);
+    //     }
         //         while (!FQueue.actl.empty()) {
         //             Action f = AQueue.pop();
         //             bool chronological_order = f.order;
@@ -498,7 +498,7 @@ void *readPost(void *arg)
         //         }
         //         pthread_cond_broadcast(&condFeed);
         //         UNLOCK(mutex);
-    }
+    // }
     pthread_exit(NULL);
 }
 signed main()
@@ -605,8 +605,8 @@ signed main()
         file2.close();
 #endif
     cout << " -> Precomputing the Priority of the Nodes's Neighbours for Every Node :::" << endl;
-    // priority_map.clear();
-    // precomutePriority();
+    priority_map.clear();
+    precomutePriority();
     cout << " * Precomputation Done" << endl;
 #ifdef DEBUG_PRIORITY
     ofstream file("priority.txt");
@@ -660,17 +660,17 @@ signed main()
         }
     }
     // ReadPost Threads
-    // pthread_t read_post[READ_POST];
-    // for (int i = 0; i < READ_POST; i++)
-    // {
-    //     thread_args.thread_id = i + 1;
-    //     ret = pthread_create(&read_post[i], NULL, readPost, (void *)&thread_args);
-    //     if (ret != 0)
-    //     {
-    //         printf("Error: ReadPost pthread_create() failed\n");
-    //         exit(EXIT_FAILURE);
-    //     }
-    // }
+    pthread_t read_post[READ_POST];
+    for (int i = 0; i < READ_POST; i++)
+    {
+        thread_args.thread_id = i + 1;
+        ret = pthread_create(&read_post[i], NULL, readPost, (void *)&thread_args);
+        if (ret != 0)
+        {
+            printf("Error: ReadPost pthread_create() failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
     // join all the threads
     for (int i = 0; i < USER_SIMULATOR; i++)
     {
@@ -690,16 +690,15 @@ signed main()
             exit(EXIT_FAILURE);
         }
     }
-    // for (int i = 0; i < READ_POST; i++)
-    // {
-    //     ret = pthread_join(read_post[i], &status);
-    //     cnt++;
-    //     if (ret != 0)
-    //     {
-    //         perror("Error: pthread_join() failed\n");
-    //         exit(EXIT_FAILURE);
-    //     }
-    // }
+    for (int i = 0; i < READ_POST; i++)
+    {
+        ret = pthread_join(read_post[i], &status);
+        if (ret != 0)
+        {
+            perror("Error: pthread_join() failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 #ifdef DEBUG_SUM
     int ans = 0;
     for (auto it : mp)
