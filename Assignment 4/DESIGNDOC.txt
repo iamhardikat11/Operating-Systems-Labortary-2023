@@ -41,3 +41,564 @@ Choose
 if size == 0
 LOCK Queue
 END: LOCK DESTROY
+
+
+
+Locks to be implemented in the userSimulator function
+In the userSimulation function, the following lines of code need to be enclosed in locks:
+
+Accessing and modifying the graph data structure
+Accessing and modifying the mp map
+Adding an Action to the AQueue data structure
+
+
+like this:
+
+// Create a mutex lock
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// ...
+
+void *userSimulator(void *arg)
+{
+    // ...
+    
+    // Acquire the lock before accessing/modifying the graph data structure
+    pthread_mutex_lock(&mutex);
+    
+    // Access and modify the graph data structure
+    // ...
+    
+    // Release the lock after modifying the graph data structure
+    pthread_mutex_unlock(&mutex);
+    
+    // ...
+    
+    // Acquire the lock before accessing/modifying the mp map
+    pthread_mutex_lock(&mutex);
+    
+    // Access and modify the mp map
+    // ...
+    
+    // Release the lock after modifying the mp map
+    pthread_mutex_unlock(&mutex);
+    
+    // ...
+    
+    // Acquire the lock before adding an Action to the AQueue data structure
+    pthread_mutex_lock(&mutex);
+    
+    // Add an Action to the AQueue data structure
+    // ...
+    
+    // Release the lock after adding the Action to the AQueue data structure
+    pthread_mutex_unlock(&mutex);
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+main function ke liye
+Based on the code provided, here are some suggestions for where to implement locks:
+
+When reading from the file: Since multiple threads will be accessing the same file, you should use a lock to ensure that only one thread reads from the file at a time. You can put a lock around the getline(infile, line) statement to achieve this.
+
+When updating the graph: Since multiple threads may be updating the same graph at the same time, you should use a lock to ensure that only one thread updates the graph at a time. You can put a lock around the code that updates the graph, specifically around the graph.count(id1) and graph.count(id2) statements.
+
+When accessing the test data structure: Since multiple threads may be accessing the same test data structure at the same time, you should use a lock to ensure that only one thread accesses the test data structure at a time. You can put a lock around the test[id1].insert(id2) and test[id2].insert(id1) statements.
+
+When creating UserSimulator Threads: Since multiple threads may be creating UserSimulator threads at the same time, you should use a lock to ensure that only one thread creates UserSimulator threads at a time. You can put a lock around the for loop that creates UserSimulator threads.
+
+When accessing the graph data structure for debugging purposes: Since multiple threads may be accessing the same graph data structure at the same time, you should use a lock to ensure that only one thread accesses the graph data structure at a time. You can put a lock around the code that writes to the output_graph.txt file and the degree.txt file.
+
+
+
+
+LOCK:-
+1. Lock only in userSimulator
+2. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+to store the priority for the readPost thread functionality, we can create a map of nodes to priority values. The priority value for each node will be calculated as follows:
+
+For each node, find the set of its neighbors.
+For each neighbor, find the set of its neighbors.
+Count the number of common nodes between the two sets of neighbors.
+Set the priority value for the node as the count of common nodes.
+Here's an algorithm in C++ that implements this:
+
+// Map of nodes to priority values
+
+map<int, int> nodePriority;
+
+// For each node in the graph
+for(auto node : graph) {
+    Node n = node.second; // implement Equal to Operator
+    int nodeId = node.second.user_id;
+    map<int,int> neighbors = node.second.getNeighbors();
+    int priority = 0;
+    
+    // For each neighbor of the node
+    for(auto& [neighborId, f] : neighbors) {
+        map<int,int> neighborNeighbors = graph[neighborId].getNeighbors();
+        
+        // Count the number of common nodes between the two sets of neighbors
+        int commonNeighbors = 0;
+        for(auto& [neighborNeighborId,g] : neighborNeighbors) {
+            if(neighbors.count(neighborNeighborId) > 0) {
+                commonNeighbors++;
+            }
+        }
+        
+        // Add the count of common nodes to the priority value
+        priority += commonNeighbors;
+    }
+    
+    // Set the priority value for the node
+    nodePriority[nodeId] = priority;
+}
+Once we have the priority values for each node, we can use them to order the actions in the readPost thread according to priority.
+
+
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+
+ we can implement a similar approach to read posts in chronological order. We can use a priority queue to store the posts in chronological order based on the timestamp, and then deque the posts from the priority queue.
+
+Here's an example implementation:
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+// Define a custom comparator to sort posts by timestamp
+struct PostComparator {
+    bool operator()(const Post& p1, const Post& p2) const {
+        return p1.timestamp > p2.timestamp;
+    }
+};
+
+// Create a priority queue to store posts in chronological order
+priority_queue<Post, vector<Post>, PostComparator> postQueue;
+
+// For each node in the graph
+for(auto& [nodeId, node] : graph) {
+    map<int, set<int>> posts = node.getPosts();
+
+    // For each post of the node
+    for(auto& [postId, post] : posts) {
+        postQueue.push(post);
+    }
+}
+
+// Deque posts from the priority queue in chronological order
+while(!postQueue.empty()) {
+    Post post = postQueue.top();
+    postQueue.pop();
+    int postId = post.post_id;
+    int userId = post.user_id;
+    int actionType = post.action_type;
+    int timestamp = post.timestamp;
+    string message = "I read action number " + to_string(postId) + " of type " + to_string(actionType) + " posted by user " + to_string(userId) + " at time " + to_string(timestamp);
+    logMessage(message);
+    cout << message << endl;
+}
+This implementation creates a priority queue of Post objects sorted by their timestamp field, and then dequeues the posts in chronological order by popping them from the priority queue. It also logs and prints a message for each post that is dequeued.
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+Implemetation using set for choronology:
+********************************************************************************************************************************************************************************************************************************************************************
+
+// For each node in the graph
+for(auto node : graph) {
+    Node n = node.second; // implement Equal to Operator
+    int nodeId = node.second.user_id;
+    set<int> neighbors = node.second.getNeighborIds();
+    int priority = 0;
+    
+    // For each neighbor of the node
+    for(auto neighborId : neighbors) {
+        set<int> neighborNeighbors = graph[neighborId].getNeighborIds();
+        
+        // Count the number of common nodes between the two sets of neighbors
+        int commonNeighbors = 0;
+        for(auto neighborNeighborId : neighborNeighbors) {
+            if(neighbors.count(neighborNeighborId) > 0) {
+                commonNeighbors++;
+            }
+        }
+        
+        // Add the count of common nodes to the priority value
+        priority += commonNeighbors;
+    }
+    
+    // Set the priority value for the node
+    nodePriority[nodeId] = priority;
+}
+********************************************************************************************************************************************************************************************************************************************************************
+
+1
+********************************************************************************************************************************************************************************************************************************************************************
+
+void* readPost(void* arg) {
+    ThreadArgs* thread_args = (ThreadArgs*)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    int node_type = thread_args->node_type;
+    int node_id = thread_args->node_id;
+    
+    while (1) {
+        LOCK(mutex);
+        while (!mp1[node_id]) { // Wait for feed to be updated
+            pthread_cond_wait(&condSecond, &mutex);
+        }
+        Node n = graph[node_id];
+        FeedQueue& feed = (node_type == PRIORITY) ? n.Feed.priority : n.Feed.chronological;
+        if (!feed.actl.empty()) {
+            Action A = feed.actl.front();
+            feed.actl.pop_front();
+            mp1[node_id] = 0;
+            UNLOCK(mutex);
+            cout << "I read action number " << A.action_id << " of type " << A.action_type 
+                << " posted by user " << A.user_id << " at time " << A.time << endl;
+            LOG("I read action number " + to_string(A.action_id) + " of type " + A.action_type 
+                + " posted by user " + to_string(A.user_id) + " at time " + to_string(A.time));
+        }
+        else {
+            UNLOCK(mutex);
+        }
+    }
+    pthread_exit(NULL);
+}
+
+********************************************************************************************************************************************************************************************************************************************************************
+********************************************************************************************************************************************************************************************************************************************************************
+
+Here is a possible implementation for the priority order in the pushUpdate thread:
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+2
+********************************************************************************************************************************************************************************************************************************************************************
+void *pushUpdate(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        LOCK(mutex);
+        while (AQueue.actl.empty())
+            pthread_cond_wait(&condFirst, &mutex);
+        while (!AQueue.actl.empty())
+        {
+            Action A = AQueue.actl.front();
+            AQueue.actl.pop_front();
+            if (A.action_type == "post")
+                AQueue.cnt_post--;
+            else if (A.action_type == "comment")
+                AQueue.cnt_comment--;
+            else
+                AQueue.cnt_like--;
+            // Push the Action to the Wall of the User
+            Node n = graph[A.user_id];
+            n.AddWallAction(A);
+            graph[A.user_id] = n;
+            // Push the Action to the Feed of the User's Neighbours
+            for (auto it : n.neighbours)
+            {
+                Node n1 = graph[it.first];
+                A.reader_id = it.first;
+                int priority = 0;
+                if (priority_map.count({A.user_id, it.first}))
+                    priority = priority_map[{A.user_id, it.first}];
+                A.priority = priority;
+                n1.AddFeedAction(A);
+                n1.Feed.actl.push_back(A);
+                graph[it.first] = n1;
+                mp1[it.first] = 1;
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+And here is a possible implementation for the priority order in the readPost thread:
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+3
+********************************************************************************************************************************************************************************************************************************************************************
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        LOCK(mutex);
+        while (readQueue.empty())
+            pthread_cond_wait(&condSecond, &mutex);
+        while (!readQueue.empty())
+        {
+            ReadAction RA = readQueue.top();
+            readQueue.pop();
+            int node_id = RA.node_id;
+            Node n = graph[node_id];
+            Feed F = n.Feed;
+            vector<Action> actl = F.actl;
+            int chronological = F.chronological;
+            int priority = F.priority;
+            int cnt = 0;
+            for (auto it : actl)
+            {
+                if (chronological && it.timestamp > RA.last_read_time)
+                {
+                    cnt++;
+                    cout << "I read action number " << cnt << " of type " << it.action_type << " posted by user " << it.user_id << " at time " << it.timestamp << endl;
+                    RA.last_read_time = it.timestamp;
+                }
+                else if (priority && it.priority > RA.last_priority && RA.common_neighbours.count(it.user_id))
+                {
+                    cnt++;
+                    cout << "I read action number " << cnt << " of type " << it.action_type << " posted by user " << it.user_id << " at time " << it.timestamp << endl;
+                    RA.last_priority = it.priority;
+                }
+            }
+            if (cnt > 0)
+            {
+                readQueue.push(RA);
+            }
+            else
+            {
+                n.Feed.actl.clear();
+                graph[node_id] = n;
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+Note that in the readPost thread, we use a priority queue to keep track of the last read
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+4
+********************************************************************************************************************************************************************************************************************************************************************
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    int node_type = thread_args->node_type;
+    int node_id = thread_args->node_id;
+    string node_type_str = (node_type == 0) ? "priority" : "chronological";
+    while (1)
+    {
+        LOCK(mutex);
+        while (!mp1[node_id])
+            pthread_cond_wait(&condFeed, &mutex);
+        vector<Action> &feed = graph[node_id].Feed.actl;
+        if (node_type == 0)
+        {
+            for (auto &a : feed)
+            {
+                int priority = mp2[node_id][a.user_id];
+                a.priority = priority;
+            }
+            sort(feed.begin(), feed.end(), [](Action &a1, Action &a2) {
+                return a1.priority > a2.priority;
+            });
+        }
+        else
+        {
+            sort(feed.begin(), feed.end(), [](Action &a1, Action &a2) {
+                return a1.timestamp < a2.timestamp;
+            });
+        }
+        while (!feed.empty())
+        {
+            Action A = feed.back();
+            feed.pop_back();
+            string message = "I read action number " + to_string(A.action_id) + " of type " + A.action_type + " posted by user " + to_string(A.user_id) + " at time " + to_string(A.timestamp) + "\n";
+            writeToLog(message, node_id);
+            cout << message;
+        }
+        mp2[node_id].clear();
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+5
+********************************************************************************************************************************************************************************************************************************************************************
+
+
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    int user_id = thread_args->user_id;
+    int node_type = thread_args->node_type;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    pthread_cond_t *cond = &thread_args->cond;
+    unordered_set<int> &mp1 = thread_args->mp1;
+    int cnt = 0;
+    while (1)
+    {
+        LOCK(mutex);
+        while (!mp1.count(user_id))
+            pthread_cond_wait(cond, &mutex);
+        Node n = graph[user_id];
+        while (!n.Feed.actl.empty())
+        {
+            vector<Action> actions;
+            actions.reserve(n.Feed.actl.size());
+            while (!n.Feed.actl.empty())
+            {
+                actions.push_back(n.Feed.actl.front());
+                n.Feed.actl.pop_front();
+            }
+            UNLOCK(mutex);
+            if (node_type == CHRONOLOGICAL)
+            {
+                sort(actions.begin(), actions.end(), [](const Action &a, const Action &b) {
+                    return a.timestamp < b.timestamp;
+                });
+            }
+            else if (node_type == PRIORITY)
+            {
+                for (auto &action : actions)
+                {
+                    Node poster = graph[action.user_id];
+                    action.priority = poster.common_neighbours[user_id];
+                }
+                sort(actions.begin(), actions.end(), [](const Action &a, const Action &b) {
+                    return a.priority > b.priority;
+                });
+            }
+            LOCK(mutex);
+            for (auto &action : actions)
+            {
+                cout << "I read action number " << action.action_id << " of type " << action.action_type
+                     << " posted by user " << action.user_id << " at time " << action.timestamp << endl;
+                fprintf(fp, "I read action number %d of type %s posted by user %d at time %ld\n", action.action_id,
+                        action.action_type.c_str(), action.user_id, action.timestamp);
+                cnt++;
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
+
+********************************************************************************************************************************************************************************************************************************************************************
+********************************************************************************************************************************************************************************************************************************************************************
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+implementation of the priority map
+********************************************************************************************************************************************************************************************************************************************************************
+// Compute the priority map
+map<int, map<int, int>> priority_map;
+for (auto const& node : graph) {
+    map<int, int> neighbor_counts;
+    for (auto const& neighbor_id : node.second.neighbours) {
+        for (auto const& neighbor_of_neighbor_id : graph[neighbor_id.first].neighbours) {
+            if (neighbor_of_neighbor_id.first != node.first) {
+                neighbor_counts[neighbor_of_neighbor_id.first]++;
+            }
+        }
+    }
+    priority_map[node.first] = neighbor_counts;
+}
+********************************************************************************************************************************************************************************************************************************************************************
+try this readPost function for the above computation
+********************************************************************************************************************************************************************************************************************************************************************
+void *readPost(void *arg) {
+    ThreadArgs *thread_args = (ThreadArgs *) arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    bool chronological_order = thread_args->order == "chronological";
+
+    while (1) {
+        LOCK(mutex);
+        while (FQueue.feeds.empty()) {
+            pthread_cond_wait(&condFirst, &mutex);
+        }
+        while (!FQueue.feeds.empty()) {
+            Feed f = FQueue.feeds.front();
+            FQueue.feeds.pop_front();
+
+            int reader_id = f.reader_id;
+            Node n = graph[reader_id];
+            Feed reader_feed = n.Feed;
+            deque<Action> actions = reader_feed.actl;
+            sort(actions.begin(), actions.end(), [](const Action& a1, const Action& a2) {
+                if (a1.priority != a2.priority) {
+                    return a1.priority > a2.priority;
+                } else {
+                    return a1.timestamp < a2.timestamp;
+                }
+            });
+
+            for (auto const& a : actions) {
+                if (chronological_order) {
+                    if (a.timestamp >= start) {
+                        printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
+                        fflush(stdout);
+                    }
+                } else {
+                    if (a.priority >= thread_args->priority_threshold && a.timestamp >= start) {
+                        printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
+                        fflush(stdout);
+                    }
+                }
+            }
+        }
+        UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
