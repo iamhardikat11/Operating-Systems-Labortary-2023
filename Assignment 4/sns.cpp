@@ -372,10 +372,6 @@ void *userSimulator(void *arg)
             {
                 outfile << endl;
                 cout << endl;
-                // while (AQueue.actl.size() == QUEUE_SIZE)
-                // {
-                //     pthread_cond_wait(&condWall, &mutex);
-                // }
             }
         }
         if (outfile.is_open())
@@ -400,7 +396,7 @@ void *pushUpdate(void *arg)
     while (1)
     {
         queue<pair<int, int>> message;
-        // LOCK(mutex);
+        LOCK(mutex);
         std::ofstream outfile(output_file, std::ios::app);
         if (!outfile.is_open())
         {
@@ -410,8 +406,8 @@ void *pushUpdate(void *arg)
         outfile.close();
         while (AQueue.actl.empty())
             pthread_cond_wait(&condWall, &mutex);
-        // while (FQueue.actl.size() == QUEUE_SIZE)
-        //     pthread_cond_wait(&condFeed, &mutex);
+        while (FQueue.actl.size() == QUEUE_SIZE)
+            pthread_cond_wait(&condFeed, &mutex);
         while (!AQueue.actl.empty())
         {
             Action A = AQueue.pop();
@@ -449,8 +445,9 @@ void *pushUpdate(void *arg)
             }
             i++;
         }
-        pthread_cond_broadcast(&condFeed);
         pthread_cond_broadcast(&condWall);
+        pthread_cond_broadcast(&condFeed);
+        UNLOCK(mutex);
         std::ofstream outfile1(output_file, std::ios::app);
         if (!outfile1.is_open())
         {
@@ -460,9 +457,7 @@ void *pushUpdate(void *arg)
         outfile1 << "Hello3" << endl;
         if (outfile1.is_open())
             outfile1.close();
-        pthread_cond_broadcast(&condWall);
         cout << "Hello3" << endl;
-        // UNLOCK(mutex);
     }
     pthread_exit(NULL);
 }
@@ -509,36 +504,24 @@ void *readPost(void *arg)
             //         return a1.timestamp < a2.timestamp;
             // } });
             // }
-            cout << "Hello" << endl;
-            cout << "I read Action\n";
-            file << "I read Action\n";
-            cout << "Hello1" << endl;
-            if (file.is_open())
+            file << "Hello" << endl;
+            if(file.is_open()) file.close();
+            for (auto const &action : actions)
+            {
+                cout << "User " << action.user_id << " " << action.action_type << " " << action.action_id << " at " << ctime(&action.timestamp);
+                std::ofstream file(output_file, std::ios::app);
+                if (!file.is_open())
+                {
+                    cerr << "Unable to open " << output_file << endl;
+                    exit(EXIT_FAILURE);
+                }
+                file << "User " << action.user_id << " " << action.action_type << " " << action.action_id << " at " << ctime(&action.timestamp);
                 file.close();
-            cout << "Hello2" << endl;
-            // for (auto const &a : actions)
-            // {
-            //     if (chronological_order)
-            //     {
-            //         if (a.timestamp >= start)
-            //         {
-            //             printf("I read action number %d of type %s posted by user %d at time %ld\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count());
-            //             fflush(stdout);
-            //         }
-            //     }
-            //     else
-            //     {
-            //         if (a.priority >= thread_args->priority_threshold && a.timestamp >= start)
-            //         {
-            //             printf("I read action number %d of type %s posted by user %d at time %ld with priority %d\n", a.id, a.action_type.c_str(), a.user_id, a.timestamp.time_since_epoch().count(), a.priority);
-            //             fflush(stdout);
-            //         }
-            //     }
-            // }
+            }
+            cout << endl;
         }
         cout << "Exit" << endl;
-        
-        // pthread_cond_broadcast(&condFeed);
+        pthread_cond_broadcast(&condFeed);
         // UNLOCK(mutex);
     }
     pthread_exit(NULL);
