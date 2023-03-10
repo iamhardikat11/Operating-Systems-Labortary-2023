@@ -602,3 +602,91 @@ void *readPost(void *arg) {
     }
     pthread_exit(NULL);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************
+
+
+
+
+
+
+
+
+void *readPost(void *arg)
+{
+    ThreadArgs *thread_args = (ThreadArgs *)arg;
+    chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    pthread_mutex_t mutex = thread_args->mutex;
+    while (1)
+    {
+        // LOCK(mutex);
+        while (FQueue.actl.empty())
+        {
+            pthread_cond_wait(&condFeed, &mutex);
+        }
+        while (!FQueue.actl.empty())
+        {
+            Action f = FQueue.pop();
+            if (f.user_id == -1 && f.action_id == -1 && f.action_type == "Continue" && f.order == 0)
+            {
+                continue;
+            }
+            bool chronological_order = f.order;
+            int reader_id = f.reader_id;
+            int user_id = f.user_id;
+            Node n = graph[reader_id];
+            deque<Action> actions = n.Feed.actl;
+            sort(actions.begin(), actions.end(), [](const Action &a1, const Action &a2)
+                 {
+                if (priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id]) {
+                    return priority_map[a1.user_id][a1.reader_id] != priority_map[a2.user_id][a2.reader_id];
+                } else {
+                    return a1.timestamp < a2.timestamp;
+            } });
+            cout << "I read Action\n";
+            std::ofstream file(output_file, std::ios::app);
+            if (!file.is_open())
+            {
+                cerr << "Unable to open " << output_file << endl;
+                exit(EXIT_FAILURE);
+            }
+            file << "I read Action\n";
+            file.close();
+            // for (auto const &action : actions)
+            // {
+            //     cout << "User " << action.user_id << " " << action.action_type << " " << action.action_id << " at " << ctime(&action.timestamp);
+            //     std::ofstream file(output_file, std::ios::app);
+            //     if (!file.is_open())
+            //     {
+            //         cerr << "Unable to open " << output_file << endl;
+            //         exit(EXIT_FAILURE);
+            //     }
+            //     file << "User " << action.user_id << " " << action.action_type << " " << action.action_id << " at " << ctime(&action.timestamp);
+            //     file.close();
+            // }
+            // cout << endl;
+        }
+        pthread_cond_broadcast(&condFeed);
+        //         UNLOCK(mutex);
+    }
+    pthread_exit(NULL);
+}
