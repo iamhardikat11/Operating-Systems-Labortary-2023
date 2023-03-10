@@ -393,7 +393,7 @@ void *userSimulator(void *arg)
         // pthread_cond_broadcast(&condWall);
         // UNLOCK(mutex);
         // sleep(20);
-        std::this_thread::sleep_for(std::chrono::minutes(2));
+        std::this_thread::sleep_for(std::chrono::seconds(40));
         // sleep_flag = 0;
         // pthread_cond_broadcast(&condSleeep);
         i++;
