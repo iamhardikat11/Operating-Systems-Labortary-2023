@@ -23,6 +23,7 @@ using namespace std;
 #define COLOR_GREEN "\033[1;32m"
 #define COLOR_BLUE "\033[1;34m"
 #define COLOR_RESET "\033[0m"
+#define NUM_NODES 37700
 
 string filename = "musae_git_edges.csv";
 string output_file = "sns.log";
@@ -35,6 +36,7 @@ pthread_mutex_t actionQueueMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t postQueueMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t actionQueueNotEmpty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t postQueueNotEmpty = PTHREAD_COND_INITIALIZER;
+vector<pthread_mutex_t> feedQueueLock(NUM_NODES, PTHREAD_MUTEX_INITIALIZER);
 
 // Returns a random number between low and high
 int rand(int low, int high)
@@ -102,7 +104,6 @@ typedef struct Action
     }
     Action &operator=(const Action &other)
     {
-        if (this != &other)
         { // check for self-assignment
 
             this->user_id = other.user_id;
@@ -405,7 +406,6 @@ void *pushUpdate(void *arg)
 {
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
-    
     int i = 1;
     while (1)
     {
@@ -437,11 +437,10 @@ void *pushUpdate(void *arg)
                 perror("action_error: No Such Action Exists.\n");
                 exit(0);
             }
-            Node n = graph[A.user_id];
             // Push the Action to the Feed of the User's Neighbours
-            for (auto it : n.neighbours)
+            for (auto it : graph[A.user_id].neighbours)
             {
-                pthread_mutex_lock(&postQueueMutex);
+                pthread_mutex_lock(&feedQueueLock[it.first]);
                 A.add_Reader(it.first);
                 graph[it.first].AddFeedAction(A);
                 std::ofstream outfile(output_file, std::ios::app);
@@ -458,7 +457,7 @@ void *pushUpdate(void *arg)
                     outfile.close();
                 mp1[it.first] = 1;
                 pthread_cond_broadcast(&postQueueNotEmpty);
-                pthread_mutex_unlock(&postQueueMutex);
+                pthread_mutex_unlock(&feedQueueLock[it.first]);
             }
             i++;
         }
@@ -484,14 +483,15 @@ void *readPost(void *arg)
     pthread_mutex_t mutex = thread_args->mutex;
     while (1)
     {
-        // LOCK(mutex);
-        pthread_mutex_lock(&postQueueMutex);
+        LOCK(postQueueMutex);
         while (FQueue.actl.empty())
         {
             pthread_cond_wait(&postQueueNotEmpty, &postQueueMutex);
         }
+        UNLOCK(postQueueMutex);
         while (!FQueue.actl.empty())
         {
+            pthread_mutex_lock(&postQueueMutex);
             std::ofstream file(output_file, std::ios::app);
             if (!file.is_open())
             {
@@ -499,14 +499,14 @@ void *readPost(void *arg)
                 exit(EXIT_FAILURE);
             }
             Action f = FQueue.pop();
-            if (f.user_id == -1 || f.action_id == -1 || f.action_type == "Continue" || f.order == 0 || f.reader_id == -1)
-            {
-                break;
-            }
+            file << f.user_id << endl;
             bool chronological_order = f.order;
             int user_id = f.user_id;
             Node n = graph[f.reader_id];
-            static deque<Action> actions = n.Feed.actl;
+            deque<Action> actions = n.Feed.actl;
+            pthread_cond_broadcast(&postQueueNotEmpty);
+            pthread_mutex_unlock(&postQueueMutex);
+            pthread_mutex_lock(&feedQueueLock[f.reader_id]);
             // if (actions.size() == 0)
             //     break;
             // else if (actions.size() >= 2)
@@ -519,9 +519,8 @@ void *readPost(void *arg)
             //         return a1.timestamp < a2.timestamp;
             // } });
             // }
-            // file << "Hello" << endl;
             if(file.is_open()) file.close();
-            for (auto const &action : actions)
+            for (auto action : actions)
             {
                 cout << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id  << " at time " << ctime(&action.timestamp);
                 std::ofstream file(output_file, std::ios::app);
@@ -535,8 +534,9 @@ void *readPost(void *arg)
                     file.close();
             }
             cout << endl;
+            pthread_mutex_unlock(&feedQueueLock[f.reader_id]);
         }
-        pthread_mutex_unlock(&postQueueMutex);
+        
         // cout << "Exit" << endl;
         // pthread_cond_broadcast(&condFeed);
         // UNLOCK(mutex);
