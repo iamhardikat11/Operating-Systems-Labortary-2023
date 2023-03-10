@@ -181,14 +181,17 @@ typedef struct Node
         if (action_type == "post")
         {
             q = Wall.cnt_post + 1;
+            Wall.cnt_post++;
         }
         else if (action_type == "comment")
         {
             q = Wall.cnt_comment + 1;
+            Wall.cnt_comment++;
         }
         else if (action_type == "like")
         {
             q = Wall.cnt_like + 1;
+            Wall.cnt_like++;
         }
         else
         {
@@ -346,11 +349,7 @@ void *userSimulator(void *arg)
         auto diff = chrono::duration_cast<chrono::seconds>(curr - start);
         printf("Nodes Selected: The following randomly selected Users will Create Actions.\n");
         outfile << "Nodes Selected: The following randomly selected Users will Create actions.\n";
-        LOCK(mutex);
-        while (AQueue.actl.size() == QUEUE_SIZE)
-        {
-            pthread_cond_wait(&condWall, &mutex);
-        }
+
         for (int i = 0; i < 100; i++)
         {
             int user_id = (rand() % (NUM_NODE));
@@ -361,10 +360,15 @@ void *userSimulator(void *arg)
                 Node n = graph[user_id];
                 string action_type = action[rand() % 3];
                 int action_id = n.addWallQueue(action_type, n.order);
+                LOCK(mutex);
                 Action ac;
                 ac.init(user_id, action_id, action_type, n.order);
                 AQueue.addAction(ac);
                 graph[user_id] = n;
+            }
+            while (AQueue.actl.size() == QUEUE_SIZE)
+            {
+                pthread_cond_wait(&condWall, &mutex);
             }
             cout << user_id << " ";
             outfile << user_id << " ";
@@ -379,7 +383,7 @@ void *userSimulator(void *arg)
         sleep_flag = 1;
         pthread_cond_broadcast(&condWall);
         UNLOCK(mutex);
-        // sleep(3);
+        // sleep(20);
         std::this_thread::sleep_for(std::chrono::minutes(2));
         sleep_flag = 0;
         pthread_cond_broadcast(&condSleeep);
@@ -437,7 +441,8 @@ void *pushUpdate(void *arg)
                 }
                 cout << "Pushing to " << A.reader_id << " "
                      << "from " << A.user_id << endl;
-                outfile << "Pushing to " << A.reader_id << " " << "from " << A.user_id << endl;
+                outfile << "Pushing to " << A.reader_id << " "
+                        << "from " << A.user_id << endl;
                 FQueue.addAction(A);
                 if (outfile.is_open())
                     outfile.close();
@@ -445,8 +450,8 @@ void *pushUpdate(void *arg)
             }
             i++;
         }
-        pthread_cond_broadcast(&condWall);
         pthread_cond_broadcast(&condFeed);
+        pthread_cond_broadcast(&condWall);
         UNLOCK(mutex);
         std::ofstream outfile1(output_file, std::ios::app);
         if (!outfile1.is_open())
@@ -469,7 +474,7 @@ void *readPost(void *arg)
     pthread_mutex_t mutex = thread_args->mutex;
     while (1)
     {
-        // LOCK(mutex);
+        LOCK(mutex);
         while (FQueue.actl.empty())
         {
             pthread_cond_wait(&condFeed, &mutex);
@@ -483,14 +488,14 @@ void *readPost(void *arg)
                 exit(EXIT_FAILURE);
             }
             Action f = FQueue.pop();
-            if (f.user_id == -1 && f.action_id == -1 && f.action_type == "Continue" && f.order == 0)
+            UNLOCK(mutex);
+            if (f.user_id == -1 || f.action_id == -1 || f.action_type == "Continue" || f.order == 0 || f.reader_id == -1)
             {
                 break;
             }
             bool chronological_order = f.order;
-            int reader_id = f.reader_id;
             int user_id = f.user_id;
-            Node n = graph[reader_id];
+            Node n = graph[f.reader_id];
             deque<Action> actions = n.Feed.actl;
             // if (actions.size() == 0)
             //     break;
@@ -505,18 +510,20 @@ void *readPost(void *arg)
             // } });
             // }
             file << "Hello" << endl;
-            if(file.is_open()) file.close();
+            if (file.is_open())
+                file.close();
             for (auto const &action : actions)
             {
-                cout << "User " << action.user_id << " " << action.action_type << " " << action.action_id << " at " << ctime(&action.timestamp);
+                cout << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id << " at time " << ctime(&action.timestamp);
                 std::ofstream file(output_file, std::ios::app);
                 if (!file.is_open())
                 {
                     cerr << "Unable to open " << output_file << endl;
                     exit(EXIT_FAILURE);
                 }
-                file << "User " << action.user_id << " " << action.action_type << " " << action.action_id << " at " << ctime(&action.timestamp);
-                file.close();
+                file << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id << " at time " << ctime(&action.timestamp);
+                if (file.is_open())
+                    file.close();
             }
             cout << endl;
         }
