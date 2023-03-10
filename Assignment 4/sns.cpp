@@ -349,7 +349,11 @@ void *userSimulator(void *arg)
         auto diff = chrono::duration_cast<chrono::seconds>(curr - start);
         printf("Nodes Selected: The following randomly selected Users will Create Actions.\n");
         outfile << "Nodes Selected: The following randomly selected Users will Create actions.\n";
-
+        LOCK(mutex);
+        while (AQueue.actl.size() == QUEUE_SIZE)
+        {
+            pthread_cond_wait(&condWall, &mutex);
+        }
         for (int i = 0; i < 100; i++)
         {
             int user_id = (rand() % (NUM_NODE));
@@ -360,15 +364,10 @@ void *userSimulator(void *arg)
                 Node n = graph[user_id];
                 string action_type = action[rand() % 3];
                 int action_id = n.addWallQueue(action_type, n.order);
-                LOCK(mutex);
                 Action ac;
                 ac.init(user_id, action_id, action_type, n.order);
                 AQueue.addAction(ac);
                 graph[user_id] = n;
-            }
-            while (AQueue.actl.size() == QUEUE_SIZE)
-            {
-                pthread_cond_wait(&condWall, &mutex);
             }
             cout << user_id << " ";
             outfile << user_id << " ";
@@ -441,8 +440,7 @@ void *pushUpdate(void *arg)
                 }
                 cout << "Pushing to " << A.reader_id << " "
                      << "from " << A.user_id << endl;
-                outfile << "Pushing to " << A.reader_id << " "
-                        << "from " << A.user_id << endl;
+                outfile << "Pushing to " << A.reader_id << " " << "from " << A.user_id << endl;
                 FQueue.addAction(A);
                 if (outfile.is_open())
                     outfile.close();
@@ -474,7 +472,7 @@ void *readPost(void *arg)
     pthread_mutex_t mutex = thread_args->mutex;
     while (1)
     {
-        LOCK(mutex);
+        // LOCK(mutex);
         while (FQueue.actl.empty())
         {
             pthread_cond_wait(&condFeed, &mutex);
@@ -488,7 +486,6 @@ void *readPost(void *arg)
                 exit(EXIT_FAILURE);
             }
             Action f = FQueue.pop();
-            UNLOCK(mutex);
             if (f.user_id == -1 || f.action_id == -1 || f.action_type == "Continue" || f.order == 0 || f.reader_id == -1)
             {
                 break;
@@ -496,7 +493,7 @@ void *readPost(void *arg)
             bool chronological_order = f.order;
             int user_id = f.user_id;
             Node n = graph[f.reader_id];
-            deque<Action> actions = n.Feed.actl;
+            static deque<Action> actions = n.Feed.actl;
             // if (actions.size() == 0)
             //     break;
             // else if (actions.size() >= 2)
@@ -510,19 +507,18 @@ void *readPost(void *arg)
             // } });
             // }
             file << "Hello" << endl;
-            if (file.is_open())
-                file.close();
+            if(file.is_open()) file.close();
             for (auto const &action : actions)
             {
-                cout << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id << " at time " << ctime(&action.timestamp);
+                cout << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id  << " at time " << ctime(&action.timestamp);
                 std::ofstream file(output_file, std::ios::app);
                 if (!file.is_open())
                 {
                     cerr << "Unable to open " << output_file << endl;
                     exit(EXIT_FAILURE);
                 }
-                file << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id << " at time " << ctime(&action.timestamp);
-                if (file.is_open())
+                file << "I read action number " << action.action_id << " of type " << action.action_type << " posted by " << action.user_id  << " at time " << ctime(&action.timestamp);
+                if(file.is_open())
                     file.close();
             }
             cout << endl;
