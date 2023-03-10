@@ -1,62 +1,104 @@
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <pthread.h>
-// using namespace std;
-// typedef struct
-// {
-//         int *a;
-//         int length;
-//         int sum;
-// } MyData;
+#include <iostream>
+#include <queue>
+#include <pthread.h>
+#include <unistd.h>
 
-// #define N 5
-// #define L 20
+using namespace std;
 
-// MyData mData;
-// pthread_t myThread[N];
-// pthread_mutex_t mutex;
+// Global Variables
+pthread_mutex_t actionQueueMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t postQueueMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t actionQueueNotEmpty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t postQueueNotEmpty = PTHREAD_COND_INITIALIZER;
+queue<string> actionQueue;
+queue<string> postQueue;
 
-// void *threadWork(void *arg)
-// {
-//         /* Define and use local variables for convenience */
-//         long offset = (long)arg;
-//         int sum = 0;
-//         int start = offset * mData.length;
-//         int end = start + mData.length;
+// User Simulator Thread
+void* userSimulator(void* arg) {
+    while (true) {
+        // create a new action and push it to the action queue
+        string action = "new action";
+        pthread_mutex_lock(&actionQueueMutex);
+        actionQueue.push(action);
+        cout << "User Simulator: " << action << " added to action queue" << endl;
+        pthread_cond_signal(&actionQueueNotEmpty);
+        pthread_mutex_unlock(&actionQueueMutex);
+        // wait for some time before creating the next action
+        sleep(1);
+    }
+    return NULL;
+}
 
-//         /* each thread calculates its sum */
-//         for (int i = start; i < end ; i++)  sum += mData.a[i];
+// Push Update Threads
+void* pushUpdate(void* arg) {
+    int threadId = *(int*)arg;
+    while (true) {
+        // pop an action from the action queue and add it to the post queue and the neighbor of the node
+        pthread_mutex_lock(&actionQueueMutex);
+        while (actionQueue.empty()) {
+            pthread_cond_wait(&actionQueueNotEmpty, &actionQueueMutex);
+        }
+        string action = actionQueue.front();
+        actionQueue.pop();
+        pthread_mutex_unlock(&actionQueueMutex);
+        // add the action to the post queue
+        pthread_mutex_lock(&postQueueMutex);
+        postQueue.push("post from thread " + to_string(threadId) + ": " + action);
+        cout << "Push Update Thread " << threadId << ": " << action << " added to post queue" << endl;
+        pthread_cond_signal(&postQueueNotEmpty);
+        pthread_mutex_unlock(&postQueueMutex);
+    }
+    return NULL;
+}
 
-//         /* mutex lock/unlock */
-//         pthread_mutex_lock(&mutex);
-//         mData.sum += sum;
-//         pthread_mutex_unlock(&mutex);
+// Read Post Threads
+void* readPost(void* arg) {
+    int threadId = *(int*)arg;
+    while (true) {
+        // pop a post from the post queue and print it
+        pthread_mutex_lock(&postQueueMutex);
+        while (postQueue.empty()) {
+            pthread_cond_wait(&postQueueNotEmpty, &postQueueMutex);
+        }
+        string post = postQueue.front();
+        postQueue.pop();
+        pthread_mutex_unlock(&postQueueMutex);
+        // print the post
+        cout << "Read Post Thread " << threadId << ": " << post << endl;
+    }
+    return NULL;
+}
 
-//         pthread_exit((void*) 0);
-// }
+// Main Function
+int main() {
+    // create user simulator thread
+    pthread_t userSimulatorThread;
+    pthread_create(&userSimulatorThread, NULL, userSimulator, NULL);
 
-// int main ()
-// {
-//         void *status;
+    // create push update threads
+    const int NUM_THREADS = 25;
+    pthread_t pushUpdateThreads[NUM_THREADS];
+    int threadIds[NUM_THREADS];
+    for (int i = 0; i < NUM_THREADS; i++) {
+        threadIds[i] = i;
+        pthread_create(&pushUpdateThreads[i], NULL, pushUpdate, &threadIds[i]);
+    }
 
-//         /* fill the structure */
-//         int *a = (int*) malloc (N*L*sizeof(int));
-//         for (int i = 0; i < N*L; i++) a[i] = i + 1;
-//         mData.length = L;
-//         mData.a = a;
-//         mData.sum = 0;
-
-//         pthread_mutex_init(&mutex, NULL);
-
-//         /* Each thread has its own  set of data to work on. */
-//         for(long i=0; i < N; i++)
-//                 pthread_create(&myThread[i], NULL, threadWork, (void *)i);
-
-//         /* Wait on child threads */
-//         for(int i=0; i < N; i++) pthread_join(myThread[i], &status);
-
-//         /* Results and cleanup */
-//         printf ("Sum = %d \n", mData.sum);
-//         free (a);
-//         pthread_mutex_destroy(&mutex); pthread_exit(NULL);
-// }
+    // create read post threads
+    const int NUM_READ_THREADS = 10;
+    pthread_t readPostThreads[NUM_READ_THREADS];
+    int readThreadIds[NUM_READ_THREADS];
+    for (int i = 0; i < NUM_READ_THREADS; i++) {
+        readThreadIds[i] = i;
+        pthread_create(&readPostThreads[i], NULL, readPost, &readThreadIds[i]);
+    }
+    pthread_join(userSimulatorThread, NULL);
+    // wait for threads to
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(pushUpdateThreads[i], NULL);
+    }
+    for (int i = 0; i < NUM_READ_THREADS; i++) {
+        pthread_join(readPostThreads[i], NULL);
+    }
+    pthread_exit(NULL);
+}

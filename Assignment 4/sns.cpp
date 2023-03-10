@@ -27,9 +27,15 @@ using namespace std;
 string filename = "musae_git_edges.csv";
 string output_file = "sns.log";
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t condWall = PTHREAD_COND_INITIALIZER;
-pthread_cond_t condFeed = PTHREAD_COND_INITIALIZER;
-pthread_cond_t condSleeep = PTHREAD_COND_INITIALIZER;
+// pthread_cond_t condWall = PTHREAD_COND_INITIALIZER;
+// pthread_cond_t condFeed = PTHREAD_COND_INITIALIZER;
+// pthread_cond_t condSleeep = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t actionQueueMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t postQueueMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t actionQueueNotEmpty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t postQueueNotEmpty = PTHREAD_COND_INITIALIZER;
+
 // Returns a random number between low and high
 int rand(int low, int high)
 {
@@ -349,11 +355,11 @@ void *userSimulator(void *arg)
         auto diff = chrono::duration_cast<chrono::seconds>(curr - start);
         printf("Nodes Selected: The following randomly selected Users will Create Actions.\n");
         outfile << "Nodes Selected: The following randomly selected Users will Create actions.\n";
-        LOCK(mutex);
-        while (AQueue.actl.size() == QUEUE_SIZE)
-        {
-            pthread_cond_wait(&condWall, &mutex);
-        }
+        // LOCK(mutex);
+        // while (AQueue.actl.size() == QUEUE_SIZE)
+        // {
+        //     pthread_cond_wait(&condWall, &mutex);
+        // }
         for (int i = 0; i < 100; i++)
         {
             int user_id = (rand() % (NUM_NODE));
@@ -363,29 +369,33 @@ void *userSimulator(void *arg)
             {
                 Node n = graph[user_id];
                 string action_type = action[rand() % 3];
+                pthread_mutex_lock(&actionQueueMutex);
                 int action_id = n.addWallQueue(action_type, n.order);
                 Action ac;
                 ac.init(user_id, action_id, action_type, n.order);
                 AQueue.addAction(ac);
                 graph[user_id] = n;
+                pthread_mutex_unlock(&actionQueueMutex);
             }
             cout << user_id << " ";
             outfile << user_id << " ";
+            
             if ((i + 1) % 25 == 0)
             {
                 outfile << endl;
                 cout << endl;
             }
         }
+        pthread_cond_broadcast(&actionQueueNotEmpty);
         if (outfile.is_open())
             outfile.close();
         sleep_flag = 1;
-        pthread_cond_broadcast(&condWall);
-        UNLOCK(mutex);
+        // pthread_cond_broadcast(&condWall);
+        // UNLOCK(mutex);
         // sleep(20);
         std::this_thread::sleep_for(std::chrono::minutes(2));
-        sleep_flag = 0;
-        pthread_cond_broadcast(&condSleeep);
+        // sleep_flag = 0;
+        // pthread_cond_broadcast(&condSleeep);
         i++;
     }
     pthread_exit(NULL);
@@ -399,7 +409,7 @@ void *pushUpdate(void *arg)
     int i = 1;
     while (1)
     {
-        LOCK(mutex);
+        // LOCK(mutex);
         std::ofstream outfile(output_file, std::ios::app);
         if (!outfile.is_open())
         {
@@ -407,13 +417,15 @@ void *pushUpdate(void *arg)
             exit(EXIT_FAILURE);
         }
         outfile.close();
+        pthread_mutex_lock(&actionQueueMutex);
         while (AQueue.actl.empty())
-            pthread_cond_wait(&condWall, &mutex);
-        while (FQueue.actl.size() == QUEUE_SIZE)
-            pthread_cond_wait(&condFeed, &mutex);
+            pthread_cond_wait(&actionQueueNotEmpty, &actionQueueMutex);
+        // while (FQueue.actl.size() == QUEUE_SIZE)
+        //     pthread_cond_wait(&condFeed, &mutex);
         while (!AQueue.actl.empty())
         {
             Action A = AQueue.pop();
+            pthread_mutex_unlock(&actionQueueMutex);
             if (A.action_type == "post")
                 AQueue.cnt_post--;
             else if (A.action_type == "comment")
@@ -425,11 +437,11 @@ void *pushUpdate(void *arg)
                 perror("action_error: No Such Action Exists.\n");
                 exit(0);
             }
-            cout << "Wait" << endl;
             Node n = graph[A.user_id];
             // Push the Action to the Feed of the User's Neighbours
             for (auto it : n.neighbours)
             {
+                pthread_mutex_lock(&postQueueMutex);
                 A.add_Reader(it.first);
                 graph[it.first].AddFeedAction(A);
                 std::ofstream outfile(output_file, std::ios::app);
@@ -445,22 +457,22 @@ void *pushUpdate(void *arg)
                 if (outfile.is_open())
                     outfile.close();
                 mp1[it.first] = 1;
+                pthread_cond_broadcast(&postQueueNotEmpty);
+                pthread_mutex_unlock(&postQueueMutex);
             }
             i++;
         }
-        pthread_cond_broadcast(&condFeed);
-        pthread_cond_broadcast(&condWall);
-        UNLOCK(mutex);
+        // pthread_cond_broadcast(&condFeed);
+        // pthread_cond_broadcast(&condWall);
+        // UNLOCK(mutex);
         std::ofstream outfile1(output_file, std::ios::app);
         if (!outfile1.is_open())
         {
             cerr << "Unable to open " << output_file << endl;
             exit(EXIT_FAILURE);
         }
-        outfile1 << "Hello3" << endl;
         if (outfile1.is_open())
             outfile1.close();
-        cout << "Hello3" << endl;
     }
     pthread_exit(NULL);
 }
@@ -473,9 +485,10 @@ void *readPost(void *arg)
     while (1)
     {
         // LOCK(mutex);
+        pthread_mutex_lock(&postQueueMutex);
         while (FQueue.actl.empty())
         {
-            pthread_cond_wait(&condFeed, &mutex);
+            pthread_cond_wait(&postQueueNotEmpty, &postQueueMutex);
         }
         while (!FQueue.actl.empty())
         {
@@ -506,7 +519,7 @@ void *readPost(void *arg)
             //         return a1.timestamp < a2.timestamp;
             // } });
             // }
-            file << "Hello" << endl;
+            // file << "Hello" << endl;
             if(file.is_open()) file.close();
             for (auto const &action : actions)
             {
@@ -523,8 +536,9 @@ void *readPost(void *arg)
             }
             cout << endl;
         }
-        cout << "Exit" << endl;
-        pthread_cond_broadcast(&condFeed);
+        pthread_mutex_unlock(&postQueueMutex);
+        // cout << "Exit" << endl;
+        // pthread_cond_broadcast(&condFeed);
         // UNLOCK(mutex);
     }
     pthread_exit(NULL);
@@ -736,9 +750,9 @@ signed main()
     }
     cout << ans << " " << AQueue.actl.size() << endl;
 #endif
-    pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&condWall);
-    pthread_cond_destroy(&condFeed);
-    pthread_cond_destroy(&condSleeep);
+    // pthread_mutex_destroy(&mutex);
+    // pthread_cond_destroy(&condWall);
+    // pthread_cond_destroy(&condFeed);
+    // pthread_cond_destroy(&condSleeep);
     pthread_exit(NULL);
 }
