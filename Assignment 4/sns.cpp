@@ -395,10 +395,10 @@ void *pushUpdate(void *arg)
 {
     ThreadArgs *thread_args = (ThreadArgs *)arg;
     chrono::high_resolution_clock::time_point start = thread_args->start_time;
+    
     int i = 1;
     while (1)
     {
-        queue<pair<int, int>> message;
         LOCK(mutex);
         std::ofstream outfile(output_file, std::ios::app);
         if (!outfile.is_open())
