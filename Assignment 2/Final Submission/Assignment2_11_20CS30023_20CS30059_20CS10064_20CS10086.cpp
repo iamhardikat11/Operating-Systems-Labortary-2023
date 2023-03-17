@@ -125,6 +125,19 @@ map<string, string> getProcessDetails(int pid)
 
 // Function to traverse the process tree
 // string
+// This code defines a recursive function named traverseProcessTree which recursively traverses the process tree and prints details about each process.
+
+// The function takes four arguments:
+
+// pid: the process ID of the current process being analyzed
+// indent: an integer representing the number of spaces to use for indentation when printing details
+// suggest: a boolean indicating whether the function should check for suspicious processes
+// depth: an integer indicating the depth of the current process in the process tree
+// Inside the function, the getProcessDetails function is called to retrieve details about the current process. The function then prints the process ID and name using the cout function.
+
+// If the suggest flag is set to true, the function checks whether the current process is suspicious by checking the time spent by the process and the number of child processes it has. If the process has been running for more than 10 seconds, or if it has between 5 and 10 child processes, it is considered suspicious and a message is printed indicating this.
+
+// Finally, the function recursively calls itself with the parent process ID to traverse the entire process tree. The recursion continues until the parent process ID is less than or equal to 0, indicating that the root process has been reached.
 void traverseProcessTree(int pid, int indent, bool suggest, int depth)
 {
   // Read the details of the process
@@ -171,6 +184,15 @@ void traverseProcessTree(int pid, int indent, bool suggest, int depth)
   }
 }
 
+// This code defines a function named expandWildcards that takes two parameters: a constant reference to a std::string object named arg and a reference to a std::vector object that holds strings named args.
+
+// The function uses the glob function to expand any wildcard characters in the arg string, such as * or ?, and returns a list of matching file paths. The glob_t data structure is used to hold the matching file paths.
+
+// The memset function is used to initialize the globBuffer data structure to 0. The glob function is then called with three arguments: the arg string converted to a C-style string using the c_str() member function, the GLOB_TILDE flag to expand tilde characters, and NULL to indicate that no callback function is used.
+
+// If the glob function returns 0, indicating success, the function iterates through the resulting gl_pathv array and adds each path to the args vector using the push_back function.
+
+// Finally, the globfree function is called to free the memory used by the globBuffer data structure.
 void expandWildcards(const std::string &arg, std::vector<std::string> &args)
 {
   glob_t globBuffer;
@@ -414,6 +436,12 @@ char **splitCommand(char *cmd, int &ipFile, int &opFile)
     }
   }
 
+/*
+dup2() is a system call in Unix-like operating systems that allows you to duplicate a file descriptor. It is short for "duplicate to", and the function takes two file descriptor arguments: oldfd and newfd.
+
+The dup2() function duplicates the file descriptor oldfd to the file descriptor newfd, closing the file descriptor newfd first if necessary. This allows you to redirect input and output streams to different files or devices, and to control which file descriptors are used for input and output.
+
+dup2() is commonly used in Unix shell scripts to redirect input and output streams, as well as in C and C++ programming for low-level file handling.*/
   if (ipFile != STD_INPUT)
     dup2(ipFile, STD_INPUT);
   if (opFile != STD_OUTPUT)
@@ -425,6 +453,7 @@ char **splitCommand(char *cmd, int &ipFile, int &opFile)
   return cmds;
 }
 
+// Remove the back and last white spaces 
 void trim(string &s)
 {
   while (s.length() && s.back() == ' ')
@@ -434,38 +463,6 @@ void trim(string &s)
     i++;
   s = s.substr(i);
 }
-
-// bool isChar(char ch)
-// {
-//   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
-// }
-// int isNumeric(string st)
-// {
-//   bool flag_start = isChar(st[0]);
-//   bool flag1 = false;
-//   bool flag_num = false;
-//   bool flag_char = false;
-//   int num = 0;
-//   for(char ch: st)
-//   {
-//     if(ch >= '0' && ch=='9')
-//     {
-//       flag_num = true;
-//       continue;
-//     }
-//     else if(ch>='a' && ch<='z' || (ch>='A' && ch<='Z'))
-//     {
-//       flag_char = true;
-//     }
-//     else if(ch == ' ')
-//     {
-//       flag1 = true;  // Space is present
-//     }
-//   }
-//   // exit code is 2 (alphanumeric arguement)
-//   if(flag_num && !flag1) return 1;
-//   else if(flag_start && flag_char) return
-// }
 
 /**
  * @brief Function to execute piped or unpiped commands by tokenising the command
@@ -477,6 +474,11 @@ void trim(string &s)
  * @param isBackGrnd Flag to signify whether the processes are to be run in the background or not.
  *                  If yes then parent process does not wait for child to complete.
  */
+
+// This is a C function called executeCommand that is designed to execute a shell command specified as a string. The function takes two arguments: cmd (a pointer to the command string) and isBackGrnd (an integer flag that indicates whether the command should be executed in the background).
+// The function first initializes some variables, including ipFile (input file descriptor), opFile (output file descriptor), pipe_cnt (a count of the number of pipes in the command), and pipes (an array of pipe file descriptors). It then uses a loop to count the number of pipes in the command and create the necessary number of pipe file descriptors.
+// Next, the function uses strtok to split the command string into individual commands (if the command contains pipes). It then creates a child process for each command using fork(), and sets up the necessary file descriptors for input and output redirection. Each child process then executes the corresponding command using execvp(), passing in the command and any necessary arguments as an array of strings. If execvp() fails, an error message is printed and the child process exits.
+// Finally, the function waits for each child process to complete (if isBackGrnd is false) using waitpid(). If any child process exits or is interrupted by a signal, the function exits. If isBackGrnd is true, the function returns immediately without waiting for the child processes to complete.
 void executeCommand(char *cmd, int isBackGrnd)
 {
   int ipFile = STD_INPUT, opFile = STD_OUTPUT;
@@ -591,18 +593,37 @@ void executeCommand(char *cmd, int isBackGrnd)
     } while (true);
   }
 }
-struct Data
-{
-  string COMMAND;
-  string PID;
-  string USER;
-  string FD;
-  string TYPE;
-  string DEVICE;
-  string SIZE_OFF;
-  string NODE;
-  string NAME;
-};
+
+// This is a C++ function named parseFile that takes a file name and two vectors (pids and pid_lock) as input parameters.
+// The purpose of the function is to read the contents of a file and extract some specific information from each line of the file. The file is assumed to have a header line, which is skipped by the function.
+// The function starts by opening the file using an input file stream (ifstream) and initializing some variables (line, lineNum). Then it reads the file line by line using the getline function from the file stream.
+// For each line, the function skips the first line (header) and then splits the line into tokens using a space (' ') as a delimiter. The tokens are stored in a vector named total.
+// The function then iterates over each token in total and prints it to the console. If the third token contains the letter 'W', it means that the corresponding process is locked, and the function adds the second token (process ID) to the pid_lock vector.
+// Finally, the function prints the size of the pid_lock vector to the console.
+// Note that the function does not return anything, but it modifies the pids and pid_lock vectors passed as reference parameters.
+
+// COMMAND     PID      USER   FD   TYPE DEVICE SIZE/OFF    NODE NAME
+// bash      14735 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14754 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14756 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// chrome_cr 14773 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14798 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14815 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14826 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14851 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14869 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14880 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14886 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14913 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14936 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// code      14937 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// cpptools  14969 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// bash      15148 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// lsof      15676 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+// lsof      15677 parallels  cwd    DIR    8,2     4096 3543603 /home/parallels/Downloads/Operating-Systems_Labortary-2023/Assignment 2/Final Submission
+
+
+// delep function's parsefile function is actually used for the parsing the tmpfile.csv to idenfify the current processes with file open and file lock
 
 void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid_lock)
 {
@@ -643,61 +664,13 @@ void parseFile(const string &fileName, vector<string> &pids, vector<string> &pid
   // return pids;
 }
 
-// void delep(char *cmd)
-// {
-//   vector<string> data_open, data_lock;
-//   char *ch = (char *)malloc((CMD_LEN + 1000) * sizeof(char));
-//   char *ch1 = (char *)malloc(100 * sizeof(char));
-//   pid_t pid = fork();
-//   if (pid == 0)
-//   {
-//     memset(ch, '\0', (CMD_LEN + 1000));
-//     memset(ch1, '\0', (100));
-//     strcpy(ch1, "lsof ");
-//     char *ch2 = (char *)malloc(100 * sizeof(char));
-//     memset(ch2, '\0', (100));
-//     strcpy(ch2, " > tmpfile.csv");
-//     strcat(ch, ch1);
-//     strcat(ch, cmd);
-//     strcat(ch, ch2);
-//     executeCommand(ch, 0);
-//     parseFile("tmpfile.csv", data_open, data_lock);
-//     // exit(0);
-//     memset(ch2, '\0', (100));
-//     strcpy(ch2,"exit");
-//     executeCommand(ch2,0);
-//     // executeCommand(ch2,1);
-//   }
-// else
-// {
-//     int status;
-//     waitpid(pid, &status, 0);
-//     fprintf(stdout, "PID's that have the file open\n\n");
-//     for (auto pid_open : data_open)
-//       cout << pid_open << "   ";
-//     cout << endl;
-//     fprintf(stdout, "PID's that have the file lock\n\n");
-//     for (auto pid_lock : data_lock)
-//       cout << pid_lock << "   ";
-//     cout << endl;
-//     fprintf(stdout, "\n[?] Enter YES or NO to Kill the Processes:- ");
-//     string t;
-//     cin >> t;
-//     if (t.compare("YES") == 0)
-//     {
-//       for (auto pid : data_open)
-//         kill(stoi(pid), SIGKILL);
-//       memset(ch, '\0', (CMD_LEN + 1000));
-//       memset(ch1, '\0', (100));
-//       strcpy(ch1, "rm ");
-//       strcat(ch, ch1);
-//       strcat(ch, cmd);
-//       executeCommand(ch, 0);
-//     }
-//     cout << endl;
-//     free(ch);
-//   // }
-// }
+// This code defines a function named get_arg0 that takes a single parameter: a pointer to a C-style string cmd. The function returns a pointer to a pointer to a C-style string.
+// The function is used to parse the command line arguments passed to a program, and return the first argument as a separate string.
+// The function first creates a copy of the cmd string in a local variable cmd_copy. Then, it uses the strtok function to tokenize the cmd string on whitespace characters (i.e., space, tab, and newline) to count the number of arguments.
+// The function then allocates memory for an array of pointers to C-style strings, with a size of cnt + 1, where cnt is the number of arguments counted earlier. The +1 is for the null terminator, which is added to the end of the array to mark the end of the list of arguments.
+// The function then tokenizes the cmd_copy string again to copy each argument into the array of C-style strings. It uses calloc to allocate memory for each C-style string, and then uses strcpy to copy the argument string into the newly allocated memory.
+// Finally, the function sets the last element of the array to NULL to mark the end of the list of arguments, and returns the pointer to the array of C-style strings.
+// Note that the function has a limitation in that it assumes that the maximum length of the cmd string is 1000 characters. It also does not handle quoted or escaped arguments.
 char **get_arg0(char *cmd)
 {
   char cmd_copy[1000] = {0};
@@ -724,10 +697,22 @@ char **get_arg0(char *cmd)
   arg[i] = NULL;
   return arg;
 }
-// void runExtCmd0(char *usr_cmd, char *file)
-// {
+// This code defines a function delep that takes a char* parameter cmd.
+// Inside the function, it declares two vector<string> variables data_open and data_lock, and two char* variables ch and ch1, and a pid_t variable pid.
 
-// }
+// Then it forks the process and checks whether the process is a child or a parent using the pid variable. If pid is equal to 0, the code is executing in the child process.
+
+// In the child process, the function first allocates memory for ch and ch1 variables using malloc. Then it copies the string "lsof " to ch1 variable and the cmd parameter to ch variable. After that, it concatenates ch1 and ch variables using strcat and stores the result in ch.
+
+// The function then allocates memory for ch2 variable using malloc and initializes it to "tmpfile.csv". After that, it uses get_arg0 function to get the arguments of the ch command and opens a file descriptor for the tmpfile.csv file using open.
+
+// Then it redirects the standard output to the file descriptor of the tmpfile.csv file using dup2. Finally, it executes the ch command using execvp.
+
+// In the parent process, the function waits for the child process to finish using waitpid and then calls the parseFile function to parse the tmpfile.csv file and populate the data_open and data_lock vectors.
+
+// Then it prints the contents of the data_open and data_lock vectors to the standard output using cout. After that, it prompts the user to enter "YES" or "NO" to kill the processes that have the file open and delete the file. If the user enters "YES", the function uses kill to kill each process in the data_open vector and remove to delete the file.
+
+// Finally, the function frees the memory allocated for ch.
 void delep(char *cmd)
 {
   vector<string> data_open, data_lock;
@@ -998,41 +983,6 @@ int main()
       shellHistory.updateFile();
       break;
     }
-    // if(strlen(cmd)>=5 && cmd[0]=='e' && cmd[1]=='x' && cmd[2]=='i' && cmd[3]=='t')
-    // {
-    //   string st = "";
-    //   if(cmd[4]!=' ') {
-    //     fprintf(stdout,"\nbash: %s: INVALID COMMAND\n", cmd);
-    //     continue;
-    //   }
-    //   for(int i=5;i<strlen(cmd);i++)
-    //     st.push_back((char)cmd[i]);
-    //   trim(st);
-    //   if(st.size() == 0)
-    //   {
-    //     printf("\n");
-    //     shellHistory.updateFile();
-    //     break;
-    //   }
-    //   shellHistory.updateFile();
-    //   // if(isNumeric(st))
-    //   // {
-
-    //   //   cout << "[" << st << "]" << endl;
-    //   // }
-    //   // else
-    //   // {
-
-    //   // }
-    //   // With just numeric
-    //   // The terminal process "/usr/bin/bash" terminated with exit code: 123.
-    //   // The terminal process "/usr/bin/bash" terminated with exit code: 2.
-    //   // exit 123 409 [Number with spaces]
-    //   //exit
-    //   //bash: exit: too many arguments
-    //   // first is a number;
-    //   break;
-    // }
     if (strcmp("history", cmd) == 0)
     {
       // run special command history
@@ -1183,7 +1133,6 @@ int main()
     // sb command starts
     if (cmd[0] == 's' && cmd[1] == 'b')
     {
-
       int pos = strcspn(cmd, " ");
       if (pos == strlen(cmd))
       {

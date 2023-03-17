@@ -646,10 +646,7 @@ signed main()
     if (file2.is_open())
         file2.close();
 #endif
-    cout << " -> Precomputing the Priority of the Nodes's Neighbours for Every Node :::" << endl;
-    // priority_map.clear();
-    // precomutePriority();
-    cout << " * Precomputation Done" << endl;
+    
 #ifdef DEBUG_PRIORITY
     ofstream file("priority.txt");
     if (!file)
