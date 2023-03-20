@@ -1,0 +1,7 @@
+1. seperate the code into three dif files
+● Create three programs (in C or CPP), one for the main thread, 
+one for the guest, and one for the cleaning staff.
+ Also create a Makefile that will compile all programs.
+● Include a short report DESIGNDOC, as a pdf file. 
+it should describe what is your design for the three threads, 
+what data structures did you use and what semaphores did you use on them.
