@@ -212,14 +212,6 @@ int main()
     cleaner_pre.resize(X);
     for (int i = 0; i < N; i++)
         cleaner_pre[i % X].push_back(i);
-    for(auto it: cleaner_pre)
-    {
-        for(auto x: it)
-        {
-            cout << x << " ";
-        }
-        cout << endl;
-    }
     std::vector<std::thread> guest_threads;
     for (int i = 0; i < Y; i++)
     {
