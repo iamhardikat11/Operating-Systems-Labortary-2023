@@ -6,4 +6,5 @@ one for the guest, and one for the cleaning staff.
 it should describe what is your design for the three threads, 
 what data structures did you use and what semaphores did you use on them.
 
-Make the duration right and 
+Make the duration right and plan of evicition and handle that and make the time of cleaning proportional to the time needed.
+Make DESIGNDOC quick.
