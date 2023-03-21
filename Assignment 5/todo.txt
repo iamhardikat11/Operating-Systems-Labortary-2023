@@ -5,3 +5,5 @@ one for the guest, and one for the cleaning staff.
 ● Include a short report DESIGNDOC, as a pdf file. 
 it should describe what is your design for the three threads, 
 what data structures did you use and what semaphores did you use on them.
+
+Make the duration right and 
