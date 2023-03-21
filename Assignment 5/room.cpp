@@ -1,6 +1,16 @@
 #include "room.hpp"
 #include <thread>
 
+extern int X, Y, N;
+
+extern std::vector<Room> hotel;
+extern std::vector<int> guests_priority;
+extern std::vector<vector<int> > cleaner_pre;
+extern std::mutex mtx;
+extern std::condition_variable cv;
+extern std::vector<sem_t> cleaning_semaphores;
+extern std::vector<bool> cleaning_in_progress;
+
 int allocate_room(int guest_id)
 {
     int idx = -1;
@@ -54,7 +64,7 @@ bool is_cleaning_needed()
 
 void clean_rooms(int thread_idx, vector<int> rooms)
 {
-    for (int i = 0; i < rooms.size(); ++i)
+    for (int i = 0; (size_t)i < rooms.size(); ++i)
     {
         if (hotel[rooms[i]].occupants >= 2)
         {

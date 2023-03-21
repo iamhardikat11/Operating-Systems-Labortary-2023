@@ -1,10 +1,17 @@
-#include "room.hpp"
 #include "guest.hpp"
 #include "cleaner.hpp"
 
 using namespace std;
 
-// extern int X, Y, N;
+int X, Y, N;
+
+std::vector<Room> hotel;
+std::vector<int> guests_priority;
+std::vector<vector<int> > cleaner_pre;
+std::mutex mtx;
+std::condition_variable cv;
+std::vector<sem_t> cleaning_semaphores;
+std::vector<bool> cleaning_in_progress;
 
 int main()
 {
