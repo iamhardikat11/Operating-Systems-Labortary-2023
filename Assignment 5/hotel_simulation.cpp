@@ -9,7 +9,9 @@
 #include <semaphore.h>
 #include <iomanip>
 using namespace std;
-
+// N <- Rooms
+// X <- Cleaning Staff
+// Y <- Guests
 struct Room
 {
     int priority;
@@ -60,9 +62,6 @@ int allocate_room(int guest_id)
         hotel[idx].occupants++;
         cout << "Guest " << guest_id << " with priority " << guests_priority[guest_id] << " is allocated room " << idx << endl;
     }
-    // if (idx != -1)
-    //     cout<<"Guest "<<guest_id<<" with priority " << guests_priority[guest_id] << " is allocated room "<<idx<<endl;
-
     return idx;
 }
 
@@ -87,7 +86,6 @@ void guest_thread(int guest_id)
 {
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(3));
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, []
                 {
@@ -97,6 +95,7 @@ void guest_thread(int guest_id)
                     }
                 }
             return true; });
+        std::this_thread::sleep_for(std::chrono::seconds(3));
         int room_idx = allocate_room(guest_id);
         if (room_idx != -1)
         {
@@ -109,7 +108,6 @@ void guest_thread(int guest_id)
                 hotel[room_idx].prev_guestid = -1;
             }
             release_room(room_idx);
-
             if (is_cleaning_needed())
             {
                 for (int i = 0; i < Y; ++i)
@@ -117,6 +115,7 @@ void guest_thread(int guest_id)
                     sem_post(&cleaning_semaphores[i]);
                 }
             }
+            lock.unlock();
         }
     }
 }
@@ -134,8 +133,6 @@ void clean_rooms(int thread_idx, vector<int> rooms)
             cout << "Room " << rooms[i] << " cleaning done" << endl;
         }
     }
-    
-    
 }
 int min(int a, int b)
 {
@@ -162,9 +159,9 @@ void cleaning_thread(int cleaner_id)
             cleaning_in_progress[cleaner_pre[cleaner_id][i]] = false;
         }
         bool all_cleaned = true;
-        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
+        for (int i = 0; i < N; ++i)
         {
-            if(hotel[cleaner_pre[cleaner_id][i]].occupants == 0)
+            if (hotel[i].occupants == 0)
             {
                 continue;
             }
@@ -176,12 +173,9 @@ void cleaning_thread(int cleaner_id)
         }
         if (all_cleaned)
         {
-            if (!is_cleaning_needed())
+            for (int i = 0; i < Y; i++)
             {
-                for (int i = 0; i < Y; i++)
-                {
-                    sem_post(&cleaning_semaphores[i]);
-                }
+                sem_post(&cleaning_semaphores[i]);
             }
             cv.notify_all();
         }
@@ -191,13 +185,11 @@ void cleaning_thread(int cleaner_id)
 int main()
 {
     std::srand(std::time(0));
-
     do
     {
         std::cout << "Enter values for X, Y, and N (Y > N > X > 1): ";
         std::cin >> X >> Y >> N;
     } while (!(Y > N && N > X && X > 1));
-
     hotel.resize(N);
     for (int i = 0; i < N; ++i)
     {
@@ -218,8 +210,16 @@ int main()
     }
     cleaning_in_progress.resize(Y, false);
     cleaner_pre.resize(X);
-    for(int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++)
         cleaner_pre[i % X].push_back(i);
+    for(auto it: cleaner_pre)
+    {
+        for(auto x: it)
+        {
+            cout << x << " ";
+        }
+        cout << endl;
+    }
     std::vector<std::thread> guest_threads;
     for (int i = 0; i < Y; i++)
     {
@@ -230,7 +230,6 @@ int main()
     {
         cleaner_threads.push_back(std::thread(cleaning_thread, i));
     }
-
     for (auto &t : guest_threads)
     {
         t.join();
