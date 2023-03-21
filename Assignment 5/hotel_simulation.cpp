@@ -86,6 +86,7 @@ void guest_thread(int guest_id)
 {
     while (true)
     {
+        std::this_thread::sleep_for(std::chrono::seconds(3));
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, []
                 {
@@ -95,7 +96,6 @@ void guest_thread(int guest_id)
                     }
                 }
             return true; });
-        std::this_thread::sleep_for(std::chrono::seconds(3));
         int room_idx = allocate_room(guest_id);
         if (room_idx != -1)
         {
@@ -115,7 +115,6 @@ void guest_thread(int guest_id)
                     sem_post(&cleaning_semaphores[i]);
                 }
             }
-            lock.unlock();
         }
     }
 }
@@ -147,7 +146,6 @@ void cleaning_thread(int cleaner_id)
             sem_wait(&cleaning_semaphores[cleaner_pre[cleaner_id][i]]);
         }
         std::unique_lock<std::mutex> lock(mtx);
-
         for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
         {
             if (hotel[cleaner_pre[cleaner_id][i]].occupants >= 2)
@@ -158,25 +156,8 @@ void cleaning_thread(int cleaner_id)
         {
             cleaning_in_progress[cleaner_pre[cleaner_id][i]] = false;
         }
-        bool all_cleaned = true;
-        for (int i = 0; i < N; ++i)
+        if (!is_cleaning_needed())
         {
-            if (hotel[i].occupants == 0)
-            {
-                continue;
-            }
-            else
-            {
-                all_cleaned = false;
-                break;
-            }
-        }
-        if (all_cleaned)
-        {
-            for (int i = 0; i < Y; i++)
-            {
-                sem_post(&cleaning_semaphores[i]);
-            }
             cv.notify_all();
         }
     }
