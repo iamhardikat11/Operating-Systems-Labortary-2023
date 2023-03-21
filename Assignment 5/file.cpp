@@ -110,15 +110,15 @@ void guest_thread(int guest_id)
     }
 }
 
-void clean_rooms(int cleaner_id, int start_idx, int end_idx)
+void clean_rooms(int cleaner_id, vector<int> rooms)
 {
-    for (int i = start_idx; i < end_idx; ++i)
+    for (int i = 0; i < rooms.size(); ++i)
     {
-        if (hotel[i].occupants >= 2)
+        if (hotel[rooms[i]].occupants >= 2)
         {
-            std::cout << "Cleaning " << i << std::endl;
-            hotel[i].occupants = 0;
-            hotel[i].last_cleaned = std::chrono::steady_clock::now();
+            std::cout << "Cleaning " << rooms[i] << std::endl;
+            hotel[rooms[i]].occupants = 0;
+            hotel[rooms[i]].last_cleaned = std::chrono::steady_clock::now();
             cout << "Exit" << endl;
         }
     }
@@ -129,29 +129,37 @@ int min(int a, int b)
 }
 void cleaning_thread(int cleaner_id)
 {
-    int group_size = std::floor((double)N / X);
-    int start_idx = cleaner_id * group_size;
-    int end_idx = min((cleaner_id + 1) * ceil((double)N / Y), N);
-    cout << cleaner_id << " " << start_idx << " " << end_idx << endl;
     while (true)
     {
-        for (int i = start_idx; i < end_idx; i++)
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); i++)
         {
-            sem_wait(&cleaning_semaphores[i]);
+            sem_wait(&cleaning_semaphores[cleaner_pre[cleaner_id][i]]);
         }
         std::unique_lock<std::mutex> lock(mtx);
 
-        for (int i = start_idx; i < end_idx; ++i)
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
         {
-            if (hotel[i].occupants >= 2)
-                cleaning_in_progress[i] = true;
+            if (hotel[cleaner_pre[cleaner_id][i]].occupants >= 2)
+                cleaning_in_progress[cleaner_pre[cleaner_id][i]] = true;
         }
-        clean_rooms(cleaner_id, start_idx, end_idx);
-        for (int i = start_idx; i < end_idx; ++i)
-            cleaning_in_progress[i] = false;
-        bool all_cleaned = std::all_of(hotel.begin() + start_idx, hotel.begin() + end_idx,
-                                       [](const Room &r)
-                                       { return r.occupants == 0; });
+        clean_rooms(cleaner_id, cleaner_pre[cleaner_id]);
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
+        {
+            cleaning_in_progress[cleaner_pre[cleaner_id][i]] = false;
+        }
+        bool all_cleaned = true;
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
+        {
+            if(hotel[cleaner_pre[cleaner_id][i]].occupants == 0)
+            {
+                continue;
+            }
+            else
+            {
+                all_cleaned = false;
+                break;
+            }
+        }
         if (all_cleaned)
         {
             if (!is_cleaning_needed())
