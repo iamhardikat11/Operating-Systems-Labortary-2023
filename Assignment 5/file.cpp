@@ -119,7 +119,6 @@ void clean_rooms(int cleaner_id, vector<int> rooms)
             std::cout << "Cleaning " << rooms[i] << std::endl;
             hotel[rooms[i]].occupants = 0;
             hotel[rooms[i]].last_cleaned = std::chrono::steady_clock::now();
-            cout << "Exit" << endl;
         }
     }
 }

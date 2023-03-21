@@ -21,10 +21,11 @@ struct Room
 int X, Y, N;
 std::vector<Room> hotel;
 std::vector<int> guests_priority;
+std::vector<vector<int>> cleaner_pre;
 std::mutex mtx;
 std::condition_variable cv;
-sem_t cleaning_semaphore;
-bool cleaning_in_progress = false;
+std::vector<sem_t> cleaning_semaphores;
+std::vector<bool> cleaning_in_progress;
 
 int allocate_room(int guest_id)
 {
@@ -86,14 +87,17 @@ void guest_thread(int guest_id)
 {
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(rand() % 11 + 10));
-
+        std::this_thread::sleep_for(std::chrono::seconds(3));
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, []
-                { return !cleaning_in_progress; });
-
+                {
+                for (int i = 0; i < Y; ++i) {
+                    if (cleaning_in_progress[i]) {
+                        return false;
+                    }
+                }
+            return true; });
         int room_idx = allocate_room(guest_id);
-
         if (room_idx != -1)
         {
             lock.unlock();
@@ -108,40 +112,79 @@ void guest_thread(int guest_id)
 
             if (is_cleaning_needed())
             {
-                sem_post(&cleaning_semaphore);
+                for (int i = 0; i < Y; ++i)
+                {
+                    sem_post(&cleaning_semaphores[i]);
+                }
             }
         }
     }
 }
 
-void clean_room(int room_idx)
+void clean_rooms(int thread_idx, vector<int> rooms)
 {
-    cout << "Room " << room_idx << " cleaning started" << endl;
-    std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - hotel[room_idx].last_cleaned));
-    hotel[room_idx].occupants = 0;
-    hotel[room_idx].last_cleaned = std::chrono::steady_clock::now();
-    cout << "Room " << room_idx << " cleaning done" << endl;
+    for (int i = 0; i < rooms.size(); ++i)
+    {
+        if (hotel[rooms[i]].occupants >= 2)
+        {
+            cout << "Room " << rooms[i] << " cleaning started" << endl;
+            hotel[rooms[i]].occupants = 0;
+            hotel[rooms[i]].last_cleaned = std::chrono::steady_clock::now();
+            std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - hotel[rooms[i]].last_cleaned));
+            cout << "Room " << rooms[i] << " cleaning done" << endl;
+        }
+    }
+    
+    
 }
-
+int min(int a, int b)
+{
+    return a > b ? b : a;
+}
 void cleaning_thread(int cleaner_id)
 {
     while (true)
     {
-        sem_wait(&cleaning_semaphore);
-
-        std::unique_lock<std::mutex> lock(mtx);
-        cleaning_in_progress = true;
-
-        for (int i = 0; i < N; ++i)
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); i++)
         {
-            if (hotel[i].occupants >= 2)
+            sem_wait(&cleaning_semaphores[cleaner_pre[cleaner_id][i]]);
+        }
+        std::unique_lock<std::mutex> lock(mtx);
+
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
+        {
+            if (hotel[cleaner_pre[cleaner_id][i]].occupants >= 2)
+                cleaning_in_progress[cleaner_pre[cleaner_id][i]] = true;
+        }
+        clean_rooms(cleaner_id, cleaner_pre[cleaner_id]);
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
+        {
+            cleaning_in_progress[cleaner_pre[cleaner_id][i]] = false;
+        }
+        bool all_cleaned = true;
+        for (int i = 0; i < cleaner_pre[cleaner_id].size(); ++i)
+        {
+            if(hotel[cleaner_pre[cleaner_id][i]].occupants == 0)
             {
-                clean_room(i);
+                continue;
+            }
+            else
+            {
+                all_cleaned = false;
+                break;
             }
         }
-
-        cleaning_in_progress = false;
-        cv.notify_all();
+        if (all_cleaned)
+        {
+            if (!is_cleaning_needed())
+            {
+                for (int i = 0; i < Y; i++)
+                {
+                    sem_post(&cleaning_semaphores[i]);
+                }
+            }
+            cv.notify_all();
+        }
     }
 }
 
@@ -163,21 +206,25 @@ int main()
         hotel[i].prev_guestid = -1;
         hotel[i].last_cleaned = std::chrono::steady_clock::now();
     }
-
     guests_priority.resize(Y);
     for (int i = 0; i < Y; ++i)
     {
         guests_priority[i] = rand() % Y + 1;
     }
-
-    sem_init(&cleaning_semaphore, 0, 0);
-
+    cleaning_semaphores.resize(Y);
+    for (int i = 0; i < Y; i++)
+    {
+        sem_init(&cleaning_semaphores[i], 0, 0);
+    }
+    cleaning_in_progress.resize(Y, false);
+    cleaner_pre.resize(X);
+    for(int i = 0; i < N; i++)
+        cleaner_pre[i % X].push_back(i);
     std::vector<std::thread> guest_threads;
     for (int i = 0; i < Y; i++)
     {
         guest_threads.push_back(std::thread(guest_thread, i));
     }
-
     std::vector<std::thread> cleaner_threads;
     for (int i = 0; i < X; i++)
     {
@@ -192,8 +239,9 @@ int main()
     {
         t.join();
     }
-
-    sem_destroy(&cleaning_semaphore);
-
+    for (int i = 0; i < Y; i++)
+    {
+        sem_destroy(&cleaning_semaphores[i]);
+    }
     return 0;
 }
