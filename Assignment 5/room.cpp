@@ -44,9 +44,6 @@ int allocate_room(int guest_id)
         hotel[idx].occupants++;
         cout << "Guest " << guest_id << " with priority " << guests_priority[guest_id] << " is allocated room " << idx << endl;
     }
-    // if (idx != -1)
-    //     cout<<"Guest "<<guest_id<<" with priority " << guests_priority[guest_id] << " is allocated room "<<idx<<endl;
-
     return idx;
 }
 
@@ -64,19 +61,17 @@ bool is_cleaning_needed()
 
 void clean_rooms(int thread_idx, vector<int> rooms)
 {
-    for (int i = 0; (size_t)i < rooms.size(); ++i)
+    for (int i = 0; i < rooms.size(); ++i)
     {
         if (hotel[rooms[i]].occupants >= 2)
         {
             cout << "Room " << rooms[i] << " cleaning started" << endl;
             hotel[rooms[i]].occupants = 0;
             hotel[rooms[i]].last_cleaned = std::chrono::steady_clock::now();
-            std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - hotel[rooms[i]].last_cleaned));
+            std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(hotel[rooms[i]].last_guest - hotel[rooms[i]].last_cleaned));
             cout << "Room " << rooms[i] << " cleaning done" << endl;
         }
     }
-    
-    
 }
 
 void release_room(int room_idx)

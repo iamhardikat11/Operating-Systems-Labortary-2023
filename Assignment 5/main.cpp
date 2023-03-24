@@ -4,10 +4,9 @@
 using namespace std;
 
 int X, Y, N;
-
 std::vector<Room> hotel;
 std::vector<int> guests_priority;
-std::vector<vector<int> > cleaner_pre;
+std::vector<vector<int>> cleaner_pre;
 std::mutex mtx;
 std::condition_variable cv;
 std::vector<sem_t> cleaning_semaphores;
@@ -16,13 +15,11 @@ std::vector<bool> cleaning_in_progress;
 int main()
 {
     std::srand(std::time(0));
-
     do
     {
         std::cout << "Enter values for X, Y, and N (Y > N > X > 1): ";
         std::cin >> X >> Y >> N;
     } while (!(Y > N && N > X && X > 1));
-
     hotel.resize(N);
     for (int i = 0; i < N; ++i)
     {
@@ -43,7 +40,7 @@ int main()
     }
     cleaning_in_progress.resize(Y, false);
     cleaner_pre.resize(X);
-    for(int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++)
         cleaner_pre[i % X].push_back(i);
     std::vector<std::thread> guest_threads;
     for (int i = 0; i < Y; i++)
@@ -55,7 +52,6 @@ int main()
     {
         cleaner_threads.push_back(std::thread(cleaning_thread, i));
     }
-
     for (auto &t : guest_threads)
     {
         t.join();
