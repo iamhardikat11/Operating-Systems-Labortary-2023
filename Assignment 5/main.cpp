@@ -1,3 +1,10 @@
+/*
+# To Compile:-
+# make
+# ./main
+# To Clean 
+# make clean
+*/
 #include "guest.hpp"
 #include "cleaner.hpp"
 
