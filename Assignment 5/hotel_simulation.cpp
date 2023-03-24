@@ -18,6 +18,7 @@ struct Room
     int occupants;
     int prev_guestid;
     std::chrono::steady_clock::time_point last_cleaned;
+    std::chrono::steady_clock::time_point last_guest;
 };
 
 int X, Y, N;
@@ -86,7 +87,7 @@ void guest_thread(int guest_id)
 {
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::seconds(rand() % 11 + 10));
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, []
                 {
@@ -105,6 +106,7 @@ void guest_thread(int guest_id)
             if (hotel[room_idx].prev_guestid == guest_id)
             {
                 cout << "Time out: Guest " << guest_id << " with priority " << guests_priority[guest_id] << " is leaving room " << room_idx << endl;
+		        hotel[room_idx].last_guest = std::chrono::steady_clock::now();
                 hotel[room_idx].prev_guestid = -1;
             }
             release_room(room_idx);
@@ -128,7 +130,7 @@ void clean_rooms(int thread_idx, vector<int> rooms)
             cout << "Room " << rooms[i] << " cleaning started" << endl;
             hotel[rooms[i]].occupants = 0;
             hotel[rooms[i]].last_cleaned = std::chrono::steady_clock::now();
-            std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - hotel[rooms[i]].last_cleaned));
+            std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(hotel[rooms[i]].last_guest - hotel[rooms[i]].last_cleaned));
             cout << "Room " << rooms[i] << " cleaning done" << endl;
         }
     }
