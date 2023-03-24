@@ -14,3 +14,374 @@ Room 0 cleaning started
 Room 0 cleaning done
 Room 6 cleaning started
 Room 6 cleaning done
+Time out: Guest 4 with priority 4 is leaving room 2
+Time out: Guest 8 with priority 7 is leaving room 0
+Time out: Guest 6 with priority 5 is leaving room 4
+Guest 1 with priority 1 is allocated room 0
+Time out: Guest 2 with priority 4 is leaving room 3
+Guest 0 with priority 10 is allocated room 2
+Time out: Guest 5 with priority 8 is leaving room 1
+Room 2 cleaning started
+Room 2 cleaning done
+Time out: Guest 9 with priority 4 is leaving room 5
+Guest 6 with priority 5 is allocated room 1
+Guest 4 with priority 4 is allocated room 3
+Guest 3 with priority 3 is allocated room 4
+Guest 8 with priority 7 is allocated room 5
+Guest 2 with priority 4 is allocated room 6
+If guest with lower priority removed: Guest 1 with priority 1 is leaving room 0
+Guest 7 with priority 2 is allocated room 0
+If guest with lower priority removed: Guest 2 with priority 4 is leaving room 6
+Guest 5 with priority 8 is allocated room 6
+Room 3 cleaning started
+Room 3 cleaning done
+Room 4 cleaning started
+Room 4 cleaning done
+Time out: Guest 0 with priority 10 is leaving room 2
+Room 0 cleaning started
+Room 0 cleaning done
+Room 5 cleaning started
+Room 5 cleaning done
+Room 1 cleaning started
+Room 1 cleaning done
+Room 6 cleaning started
+Room 6 cleaning done
+Time out: Guest 8 with priority 7 is leaving room 5
+Time out: Guest 5 with priority 8 is leaving room 6
+If guest with lower priority removed: Guest 7 with priority 2 is leaving room 0
+Guest 1 with priority 1 is allocated room 0
+Guest 9 with priority 4 is allocated room 2
+Time out: Guest 6 with priority 5 is leaving room 1
+Guest 5 with priority 8 is allocated room 1
+Guest 8 with priority 7 is allocated room 5
+Guest 0 with priority 10 is allocated room 6
+Time out: Guest 4 with priority 4 is leaving room 3
+Time out: Guest 3 with priority 3 is leaving room 4
+Guest 2 with priority 4 is allocated room 3
+If guest with lower priority removed: Guest 1 with priority 1 is leaving room 0
+Guest 6 with priority 5 is allocated room 0
+Time out: Guest 9 with priority 4 is leaving room 2
+Room 0 cleaning started
+Room 0 cleaning done
+Guest 4 with priority 4 is allocated room 2
+Time out: Guest 8 with priority 7 is leaving room 5
+Room 2 cleaning started
+Room 2 cleaning done
+If guest with lower priority removed: Guest 6 with priority 5 is leaving room 0
+Guest 3 with priority 3 is allocated room 0
+Guest 9 with priority 4 is allocated room 4
+Time out: Guest 0 with priority 10 is leaving room 6
+Time out: Guest 3 with priority 3 is leaving room 0
+Guest 7 with priority 2 is allocated room 0
+Guest 8 with priority 7 is allocated room 5
+Time out: Guest 5 with priority 8 is leaving room 1
+Room 0 cleaning started
+Room 0 cleaning done
+Room 5 cleaning started
+Room 5 cleaning done
+Time out: Guest 2 with priority 4 is leaving room 3
+Time out: Guest 4 with priority 4 is leaving room 2
+Guest 1 with priority 1 is allocated room 1
+Guest 3 with priority 3 is allocated room 2
+Guest 6 with priority 5 is allocated room 3
+Time out: Guest 7 with priority 2 is leaving room 0
+Room 1 cleaning started
+Room 1 cleaning done
+Room 3 cleaning started
+Room 3 cleaning done
+Guest 0 with priority 10 is allocated room 0
+Time out: Guest 9 with priority 4 is leaving room 4
+Guest 2 with priority 4 is allocated room 4
+Guest 5 with priority 8 is allocated room 6
+If guest with lower priority removed: Guest 1 with priority 1 is leaving room 1
+Guest 4 with priority 4 is allocated room 1
+Time out: Guest 8 with priority 7 is leaving room 5
+Room 4 cleaning started
+Room 4 cleaning done
+Room 6 cleaning started
+Room 6 cleaning done
+Time out: Guest 0 with priority 10 is leaving room 0
+Time out: Guest 3 with priority 3 is leaving room 2
+Time out: Guest 4 with priority 4 is leaving room 1
+Guest 9 with priority 4 is allocated room 0
+Room 0 cleaning started
+Room 0 cleaning done
+Time out: Guest 5 with priority 8 is leaving room 6
+Time out: Guest 2 with priority 4 is leaving room 4
+Time out: Guest 6 with priority 5 is leaving room 3
+Guest 7 with priority 2 is allocated room 1
+Guest 0 with priority 10 is allocated room 2
+Guest 8 with priority 7 is allocated room 3
+Guest 3 with priority 3 is allocated room 4
+Guest 6 with priority 5 is allocated room 5
+Time out: Guest 9 with priority 4 is leaving room 0
+Room 1 cleaning started
+Room 1 cleaning done
+Room 2 cleaning started
+Room 2 cleaning done
+Guest 1 with priority 1 is allocated room 0
+Guest 4 with priority 4 is allocated room 6
+If guest with lower priority removed: Guest 1 with priority 1 is leaving room 0
+Guest 5 with priority 8 is allocated room 0
+If guest with lower priority removed: Guest 7 with priority 2 is leaving room 1
+Guest 2 with priority 4 is allocated room 1
+Time out: Guest 6 with priority 5 is leaving room 5
+Room 0 cleaning started
+Room 0 cleaning done
+Time out: Guest 4 with priority 4 is leaving room 6
+Time out: Guest 3 with priority 3 is leaving room 4
+Time out: Guest 0 with priority 10 is leaving room 2
+If guest with lower priority removed: Guest 2 with priority 4 is leaving room 1
+Guest 9 with priority 4 is allocated room 1
+Time out: Guest 8 with priority 7 is leaving room 3
+Room 1 cleaning started
+Room 1 cleaning done
+Guest 6 with priority 5 is allocated room 2
+Time out: Guest 5 with priority 8 is leaving room 0
+Guest 4 with priority 4 is allocated room 0
+If guest with lower priority removed: Guest 4 with priority 4 is leaving room 0
+Guest 3 with priority 3 is allocated room 0
+If guest with lower priority removed: Guest 9 with priority 4 is leaving room 1
+Guest 0 with priority 10 is allocated room 1
+If guest with lower priority removed: Guest 0 with priority 10 is leaving room 1
+Guest 8 with priority 7 is allocated room 1
+Room 0 cleaning started
+Room 0 cleaning done
+Guest 7 with priority 2 is allocated room 3
+Room 1 cleaning started
+Room 1 cleaning done
+Room 3 cleaning started
+Room 3 cleaning done
+If guest with lower priority removed: Guest 3 with priority 3 is leaving room 0
+Guest 2 with priority 4 is allocated room 0
+Guest 5 with priority 8 is allocated room 4
+Time out: Guest 6 with priority 5 is leaving room 2
+Room 4 cleaning started
+Room 4 cleaning done
+Guest 1 with priority 1 is allocated room 2
+Guest 9 with priority 4 is allocated room 5
+Room 5 cleaning started
+Room 5 cleaning done
+Room 2 cleaning started
+Room 2 cleaning done
+Time out: Guest 8 with priority 7 is leaving room 1
+Time out: Guest 5 with priority 8 is leaving room 4
+If guest with lower priority removed: Guest 2 with priority 4 is leaving room 0
+Guest 4 with priority 4 is allocated room 0
+Room 0 cleaning started
+Room 0 cleaning done
+Time out: Guest 7 with priority 2 is leaving room 3
+If guest with lower priority removed: Guest 4 with priority 4 is leaving room 0
+Guest 6 with priority 5 is allocated room 0
+Guest 3 with priority 3 is allocated room 1
+Guest 0 with priority 10 is allocated room 3
+Time out: Guest 1 with priority 1 is leaving room 2
+Guest 2 with priority 4 is allocated room 2
+Guest 8 with priority 7 is allocated room 4
+Time out: Guest 3 with priority 3 is leaving room 1
+Guest 5 with priority 8 is allocated room 1
+Time out: Guest 6 with priority 5 is leaving room 0
+Room 1 cleaning started
+Room 1 cleaning done
+Guest 7 with priority 2 is allocated room 0
+Time out: Guest 9 with priority 4 is leaving room 5
+Room 0 cleaning started
+Room 0 cleaning done
+If guest with lower priority removed: Guest 7 with priority 2 is leaving room 0
+Guest 1 with priority 1 is allocated room 0
+Guest 4 with priority 4 is allocated room 5
+Guest 6 with priority 5 is allocated room 6
+If guest with lower priority removed: Guest 1 with priority 1 is leaving room 0
+Guest 3 with priority 3 is allocated room 0
+Room 0 cleaning started
+Room 0 cleaning done
+Room 6 cleaning started
+Room 6 cleaning done
+Time out: Guest 5 with priority 8 is leaving room 1
+Time out: Guest 0 with priority 10 is leaving room 3
+Time out: Guest 2 with priority 4 is leaving room 2
+If guest with lower priority removed: Guest 3 with priority 3 is leaving room 0
+Guest 9 with priority 4 is allocated room 0
+Time out: Guest 8 with priority 7 is leaving room 4
+Time out: Guest 4 with priority 4 is leaving room 5
+Guest 7 with priority 2 is allocated room 1
+Guest 0 with priority 10 is allocated room 2
+Guest 5 with priority 8 is allocated room 3
+Guest 2 with priority 4 is allocated room 4
+Room 2 cleaning started
+Room 2 cleaning done
+Room 3 cleaning started
+Room 3 cleaning done
+Room 4 cleaning started
+Room 4 cleaning done
+Time out: Guest 9 with priority 4 is leaving room 0
+Time out: Guest 6 with priority 5 is leaving room 6
+Guest 8 with priority 7 is allocated room 0
+Time out: Guest 5 with priority 8 is leaving room 3
+Room 0 cleaning started
+Room 0 cleaning done
+If guest with lower priority removed: Guest 8 with priority 7 is leaving room 0
+Guest 4 with priority 4 is allocated room 0
+Time out: Guest 0 with priority 10 is leaving room 2
+Time out: Guest 7 with priority 2 is leaving room 1
+Time out: Guest 2 with priority 4 is leaving room 4
+Guest 1 with priority 1 is allocated room 1
+Guest 5 with priority 8 is allocated room 2
+Guest 9 with priority 4 is allocated room 3
+Guest 6 with priority 5 is allocated room 4
+Guest 3 with priority 3 is allocated room 5
+Time out: Guest 4 with priority 4 is leaving room 0
+Room 5 cleaning started
+Room 5 cleaning done
+Room 1 cleaning started
+Room 1 cleaning done
+Guest 0 with priority 10 is allocated room 0
+Guest 7 with priority 2 is allocated room 6
+Time out: Guest 6 with priority 5 is leaving room 4
+Room 0 cleaning started
+Room 0 cleaning done
+Guest 2 with priority 4 is allocated room 4
+Time out: Guest 3 with priority 3 is leaving room 5
+Room 4 cleaning started
+Room 4 cleaning done
+Guest 4 with priority 4 is allocated room 5
+Time out: Guest 5 with priority 8 is leaving room 2
+Guest 8 with priority 7 is allocated room 2
+Time out: Guest 9 with priority 4 is leaving room 3
+Room 2 cleaning started
+Room 2 cleaning done
+Time out: Guest 0 with priority 10 is leaving room 0
+Time out: Guest 4 with priority 4 is leaving room 5
+Guest 6 with priority 5 is allocated room 0
+Time out: Guest 1 with priority 1 is leaving room 1
+Guest 3 with priority 3 is allocated room 1
+Guest 5 with priority 8 is allocated room 3
+Time out: Guest 7 with priority 2 is leaving room 6
+Room 3 cleaning started
+Room 3 cleaning done
+Guest 4 with priority 4 is allocated room 5
+Guest 9 with priority 4 is allocated room 6
+Time out: Guest 2 with priority 4 is leaving room 4
+Room 5 cleaning started
+Room 5 cleaning done
+Room 6 cleaning started
+Room 6 cleaning done
+Time out: Guest 8 with priority 7 is leaving room 2
+Time out: Guest 6 with priority 5 is leaving room 0
+Time out: Guest 3 with priority 3 is leaving room 1
+Guest 0 with priority 10 is allocated room 0
+Guest 1 with priority 1 is allocated room 1
+Guest 7 with priority 2 is allocated room 2
+Guest 8 with priority 7 is allocated room 4
+If guest with lower priority removed: Guest 7 with priority 2 is leaving room 2
+Guest 2 with priority 4 is allocated room 2
+Time out: Guest 5 with priority 8 is leaving room 3
+Room 0 cleaning started
+Room 0 cleaning done
+Room 1 cleaning started
+Room 1 cleaning done
+Room 2 cleaning started
+Room 2 cleaning done
+Time out: Guest 1 with priority 1 is leaving room 1
+Time out: Guest 4 with priority 4 is leaving room 5
+Guest 6 with priority 5 is allocated room 1
+Guest 3 with priority 3 is allocated room 3
+Time out: Guest 8 with priority 7 is leaving room 4
+Time out: Guest 0 with priority 10 is leaving room 0
+Guest 1 with priority 1 is allocated room 0
+If guest with lower priority removed: Guest 2 with priority 4 is leaving room 2
+Guest 5 with priority 8 is allocated room 2
+Time out: Guest 9 with priority 4 is leaving room 6
+Guest 4 with priority 4 is allocated room 4
+Guest 8 with priority 7 is allocated room 5
+Room 4 cleaning started
+Room 4 cleaning done
+If guest with lower priority removed: Guest 5 with priority 8 is leaving room 2
+Guest 0 with priority 10 is allocated room 2
+Time out: Guest 3 with priority 3 is leaving room 3
+Room 2 cleaning started
+Room 2 cleaning done
+Time out: Guest 6 with priority 5 is leaving room 1
+Guest 9 with priority 4 is allocated room 1
+Time out: Guest 1 with priority 1 is leaving room 0
+Room 1 cleaning started
+Room 1 cleaning done
+Guest 7 with priority 2 is allocated room 0
+Room 0 cleaning started
+Room 0 cleaning done
+If guest with lower priority removed: Guest 0 with priority 10 is leaving room 2
+Guest 2 with priority 4 is allocated room 2
+Time out: Guest 4 with priority 4 is leaving room 4
+Guest 3 with priority 3 is allocated room 3
+Time out: Guest 8 with priority 7 is leaving room 5
+Room 3 cleaning started
+Room 3 cleaning done
+Guest 1 with priority 1 is allocated room 4
+Guest 6 with priority 5 is allocated room 5
+Room 5 cleaning started
+Room 5 cleaning done
+If guest with lower priority removed: Guest 2 with priority 4 is leaving room 2
+Guest 5 with priority 8 is allocated room 2
+Time out: Guest 9 with priority 4 is leaving room 1
+Room 2 cleaning started
+Room 2 cleaning done
+Guest 4 with priority 4 is allocated room 1
+Time out: Guest 7 with priority 2 is leaving room 0
+Guest 8 with priority 7 is allocated room 0
+Time out: Guest 6 with priority 5 is leaving room 5
+Time out: Guest 1 with priority 1 is leaving room 4
+If guest with lower priority removed: Guest 5 with priority 8 is leaving room 2
+Guest 0 with priority 10 is allocated room 2
+Time out: Guest 3 with priority 3 is leaving room 3
+Time out: Guest 4 with priority 4 is leaving room 1
+Guest 9 with priority 4 is allocated room 1
+Guest 7 with priority 2 is allocated room 3
+Time out: Guest 8 with priority 7 is leaving room 0
+Room 1 cleaning started
+Room 1 cleaning done
+Guest 6 with priority 5 is allocated room 0
+If guest with lower priority removed: Guest 0 with priority 10 is leaving room 2
+Guest 2 with priority 4 is allocated room 2
+Guest 1 with priority 1 is allocated room 4
+Guest 4 with priority 4 is allocated room 5
+Time out: Guest 7 with priority 2 is leaving room 3
+Room 0 cleaning started
+Room 0 cleaning done
+Room 2 cleaning started
+Room 2 cleaning done
+Room 4 cleaning started
+Room 4 cleaning done
+Guest 3 with priority 3 is allocated room 3
+Time out: Guest 9 with priority 4 is leaving room 1
+Room 3 cleaning started
+Room 3 cleaning done
+Guest 8 with priority 7 is allocated room 1
+If guest with lower priority removed: Guest 2 with priority 4 is leaving room 2
+Guest 5 with priority 8 is allocated room 2
+Time out: Guest 1 with priority 1 is leaving room 4
+If guest with lower priority removed: Guest 5 with priority 8 is leaving room 2
+Guest 7 with priority 2 is allocated room 2
+Time out: Guest 6 with priority 5 is leaving room 0
+Room 2 cleaning started
+Room 2 cleaning done
+Guest 9 with priority 4 is allocated room 0
+Guest 2 with priority 4 is allocated room 4
+Time out: Guest 4 with priority 4 is leaving room 5
+Guest 1 with priority 1 is allocated room 5
+Guest 6 with priority 5 is allocated room 6
+If guest with lower priority removed: Guest 7 with priority 2 is leaving room 2
+Guest 0 with priority 10 is allocated room 2
+Room 5 cleaning started
+Room 5 cleaning done
+Time out: Guest 3 with priority 3 is leaving room 3
+Time out: Guest 8 with priority 7 is leaving room 1
+Time out: Guest 6 with priority 5 is leaving room 6
+Guest 4 with priority 4 is allocated room 1
+If guest with lower priority removed: Guest 0 with priority 10 is leaving room 2
+Guest 3 with priority 3 is allocated room 2
+Time out: Guest 9 with priority 4 is leaving room 0
+Room 1 cleaning started
+Room 1 cleaning done
+Room 2 cleaning started
+Room 2 cleaning done
+Guest 5 with priority 8 is allocated room 0
