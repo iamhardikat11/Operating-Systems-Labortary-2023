@@ -1,8 +1,8 @@
-libmemlab.a: memlab.o
-	ar -rcs libmemlab.a memlab.o
+libgoodmalloc.a: goodmalloc.o
+	ar -rcs libgoodmalloc.a goodmalloc.o
 
-memlab.o: memlab.h memlab.cpp
-	g++ -c memlab.cpp
+goodmalloc.o: goodmalloc.h goodmalloc.cpp
+	g++ -c goodmalloc.cpp
 
 clean:
 	rm -f *.o *.a
