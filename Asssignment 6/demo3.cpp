@@ -1,4 +1,6 @@
 #include"memlab.h"
+#include <iostream>
+using namespace std;
 
 void rec(int locI){
     functionStart();

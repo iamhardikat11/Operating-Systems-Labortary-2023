@@ -3,4 +3,4 @@ lib:
 exec:
 	make -f Makefile.exec
 clean:
-	rm -rf memlab.o libmemlab.a demo1 demo2
+	rm -rf memlab.o libmemlab.a demo1 demo2 demo3

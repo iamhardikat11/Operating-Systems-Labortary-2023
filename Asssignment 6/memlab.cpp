@@ -5,9 +5,9 @@ Data *data_;
 int gc, no_gc;
 FILE *f1, *f2;
 
-int isValid(int type, string name)
+int isValid(int type, char* name)
 {
-  return ((type == INT || type == CHAR || type == MEDIUM_INT || type == BOOLEAN) && name.length() < VAR_NAME_SIZE);
+  return ((type == INT || type == CHAR || type == MEDIUM_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
 }
 
 int getSizeFromType(int type, int arrlen)
@@ -75,6 +75,10 @@ int getSize(Stack *s)
   return s->topIndex + 1;
 }
 
+void init(char *n)
+{
+  n = (char *)malloc(STR_SIZE*sizeof(char));
+}
 void createMem()
 {
   printf("Memory Created\n");
@@ -93,9 +97,9 @@ void createMem()
   data_->maxMemIndex = -1;
 }
 
-int createVar(string name, int type)
+int createVar(char *name, int type)
 {
-  printf("Creating Variable of name: %s and type %s\n", name.c_str(), getTypeString(type).c_str());
+  printf("Creating Variable of name: %s and type %s\n", name, getTypeString(type));
   if (data_->localAddress / 4 >= NUM_VARIABLES)
   {
     fprintf(stderr, "Variable count limit reached. Exitting.\n");
@@ -122,27 +126,33 @@ int createVar(string name, int type)
   push(&data_->variableStack, &data_->variableList[temp / 4]);
   return temp;
 }
-
+int max(int a, int b)
+{
+  return a > b ? a : b;
+}
 bool typeCheck(int localAddress, int type)
 {
   return (data_->variableList[localAddress / 4].type == type);
 }
 
-string getTypeString(int type)
+char* getTypeString(int type)
 {
+  char* ans;
+  init(ans);
   if (type == INT)
-    return "INT";
+    ans = "INT";
   else if (type == BOOLEAN)
-    return "BOOLEAN";
+    ans = "BOOLEAN";
   else if (type == CHAR)
-    return "CHAR";
+    ans = "CHAR";
   else
-    return "MEDIUM_INT";
+    ans = "MEDIUM_INT";
+  return ans;
 }
 
 void assignVar(int localAddress, int value)
 {
-  printf("Assigning integer value to variable %s\n", data_->variableList[localAddress].name.c_str());
+  printf("Assigning integer value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, INT))
   {
     fprintf(stderr, "ERROR: Type Mismatch\n");
@@ -157,7 +167,7 @@ void assignVar(int localAddress, int value)
 
 void assignVar(int localAddress, char value)
 {
-  printf("Assigning char value to variable %s\n", data_->variableList[localAddress].name.c_str());
+  printf("Assigning char value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, CHAR))
   {
     fprintf(stderr, "ERROR: Type Mismatch\n");
@@ -172,7 +182,7 @@ void assignVar(int localAddress, char value)
 
 void assignVar(int localAddress, bool value)
 {
-  printf("Assigning boolean value to variable %s\n", data_->variableList[localAddress].name.c_str());
+  printf("Assigning boolean value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, BOOLEAN))
   {
     fprintf(stderr, "ERROR: Type Mismatch\n");
@@ -186,7 +196,7 @@ void assignVar(int localAddress, bool value)
 
 void assignVar(int localAddress, mediumInt value)
 {
-  printf("Assigning medium int value to variable %s\n", data_->variableList[localAddress].name.c_str());
+  printf("Assigning medium int value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, MEDIUM_INT))
   {
     fprintf(stderr, "ERROR: Type Mismatch\n");
@@ -264,9 +274,9 @@ mediumInt getValueVarMedInt(int localAddr)
   return mediumInt(*physicalAddress);
 }
 
-int createArr(string name, int type, int arrLen)
+int createArr(char *name, int type, int arrLen)
 {
-  printf("Creating Array of name: %s and type %s and length %d\n", name.c_str(), getTypeString(type).c_str(), arrLen);
+  printf("Creating Array of name: %s and type %s and length %d\n", name, getTypeString(type), arrLen);
   if (data_->localAddress / 4 >= NUM_VARIABLES)
   {
     fprintf(stderr, "Variable count limit reached. Exitting.\n");
@@ -489,7 +499,7 @@ void freeElem(int locAddr)
 {
   int len = data_->variableList[locAddr / 4].size;
   int index = data_->pageTable[locAddr / 4] - memory_;
-  printf("Freeing variable %s\n", data_->variableList[locAddr / 4].name.c_str());
+  printf("Freeing variable %s\n", data_->variableList[locAddr / 4].name);
   gc -= data_->variableList[locAddr / 4].size;
   for (int i = 0; i < len; i++)
   {
@@ -530,7 +540,7 @@ void endScope()
   Variable *curr = top(&data_->variableStack);
   while (curr != NULL && !isEmpty(&data_->variableStack))
   {
-    printf("Marking variable %s for detection\n", curr->name.c_str());
+    printf("Marking variable %s for detection\n", curr->name);
     curr->isTobeCleaned = 1;
     curr->type = -1;
     pop(&data_->variableStack);

@@ -1,17 +1,20 @@
 #ifndef __MEMLAB_H__
 #define __MEMLAB_H__
 
+#include <string.h> 
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <iostream>
+#include <math.h>
+// #include <iostream>
 using namespace std;
 
 #define MEM_SIZE 250000000
 #define VAR_NAME_SIZE 10
 #define STACK_SIZE 100
 #define NUM_VARIABLES 100
+#define STR_SIZE 250
 
 #define INT 0
 #define CHAR 1
@@ -19,14 +22,14 @@ using namespace std;
 #define BOOLEAN 3
 
 int getSizeFromType(int type, int arrlen);
-int isValid(int type, string name);
-
+int isValid(int type, char *name);
+int max(int a, int b);
 typedef struct Variable
 {
-  string name;
+  char *name;
   int type, size, localAddress, arrLen, isTobeCleaned;
-  Variable() : type(-1), size(0) {}
-  Variable(string name, int type, int localAddr, int arrLen = 1) : name(name), type(type), isTobeCleaned(0), arrLen(arrLen), localAddress(localAddr), size(getSizeFromType(type, arrLen))
+  Variable() : type(-1), size(0), name((char *)malloc(STR_SIZE)) {}
+  Variable(char *name, int type, int localAddr, int arrLen = 1) : name(name), type(type), isTobeCleaned(0), arrLen(arrLen), localAddress(localAddr), size(getSizeFromType(type, arrLen))
   {
     if (!isValid(type, name))
     {
@@ -79,14 +82,13 @@ typedef struct
   pthread_t ptid;
 } Data;
 
-// int getSizeFromType(int type, int arrlen);
-// int isValid(int type, string name);
+void init(char *);
 extern int *memory_;
 extern Data *data_;
 void createMem();
-int createVar(string name, int type);
+int createVar(char *name, int type);
 bool typeCheck(int localAddress, int type);
-string getTypeString(int type);
+char* getTypeString(int type);
 void assignVar(int localAddress, int value);
 void assignVar(int localAddress, char value);
 void assignVar(int localAddress, bool value);
@@ -97,7 +99,7 @@ int getValueVarInt(int localAddr);
 char getValueVarChar(int localAddr);
 bool getValueVarBool(int localAddr);
 mediumInt getValueVarMedInt(int localAddr);
-int createArr(string name, int type, int arrLen);
+int createArr(char *name, int type, int arrLen);
 void assignArr(int localAddr, int index, int value);
 void assignArr(int localAddr, int index, char value);
 void assignArr(int localAddr, int index, bool value);
