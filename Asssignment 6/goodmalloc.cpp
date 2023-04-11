@@ -3,7 +3,6 @@
 int *memory_;
 Data *data_;
 int gc, no_gc;
-FILE *f1, *f2;
 
 int isValid(int type, char *name)
 {
@@ -36,6 +35,69 @@ int toInt(mediumInt *m)
   return val;
 }
 
+void pushList(struct Node** head_ref, int new_data)
+{
+    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+    new_node->data = new_data;
+    new_node->next = (*head_ref);
+    new_node->prev = NULL;
+    if ((*head_ref) != NULL)
+        (*head_ref)->prev = new_node;
+    (*head_ref) = new_node;
+}
+  
+void insertAfter(struct Node* prev_node, int new_data)
+{
+    if (prev_node == NULL) {
+        printf("the given previous node cannot be NULL");
+        return;
+    }
+    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+    new_node->data = new_data;
+    new_node->next = prev_node->next;
+    prev_node->next = new_node;
+    new_node->prev = prev_node;
+    if (new_node->next != NULL)
+        new_node->next->prev = new_node;
+}
+
+void append(struct Node** head_ref, int new_data)
+{
+    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+    struct Node* last = *head_ref; /* used in step 5*/
+    new_node->data = new_data;
+    new_node->next = NULL;
+    if (*head_ref == NULL) {
+        new_node->prev = NULL;
+        *head_ref = new_node;
+        return;
+    }
+    while (last->next != NULL)
+        last = last->next;
+    last->next = new_node;
+    new_node->prev = last;  
+    return;
+}
+
+// This function prints contents of linked list starting
+// from the given node
+void printList(struct Node* node)
+{
+    struct Node* last;
+    printf("\nTraversal in forward direction \n");
+    while (node != NULL) {
+        printf("%d ", node->data);
+        last = node;
+        node = node->next;
+    }
+  
+    printf("\nTraversal in reverse direction \n");
+    while (last != NULL) {
+        printf("%d ", last->data);
+        last = last->prev;
+    }
+}
+
 Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
 {
   if (!isValid(type, name))
@@ -44,7 +106,7 @@ Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
     exit(1);
   }
   Variable *a = (Variable *)malloc(sizeof(Variable));
-  strcpy(a->name, name);
+  a->name = name;
   a->type = type;
   a->isTobeCleaned = 0;
   a->arrLen = arrLen;
@@ -116,8 +178,8 @@ void createMem()
   printf("Memory Created\n");
   gc = 0;
   no_gc = 0;
-  f1 = fopen("gc.txt", "w");
-  f2 = fopen("no_gc.txt", "w");
+  // f1 = fopen("gc.txt", "w");
+  // f2 = fopen("no_gc.txt", "w");
   memory_ = (int *)malloc(MEM_SIZE + sizeof(Data));
   data_ = (Data *)(memory_ + MEM_SIZE / 4);
   pthread_mutex_init(&data_->lock, NULL);
@@ -172,13 +234,13 @@ char *getTypeString(int type)
   char *ans;
   init(ans);
   if (type == INT)
-    strcpy(ans, "INT");
+    ans = "INT";
   else if (type == BOOLEAN)
-    strcpy(ans, "BOOLEAN");
+    ans = "BOOLEAN";
   else if (type == CHAR)
-    strcpy(ans, "CHAR");
+    ans = "CHAR";
   else
-    strcpy(ans, "MEDIUM_INT");
+    ans = "MEDIUM_INT";
   return ans;
 }
 

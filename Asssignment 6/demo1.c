@@ -1,4 +1,4 @@
-#include "memlab.h"
+#include "goodmalloc.h"
 
 void function1(int locX,int locY){
     functionStart();

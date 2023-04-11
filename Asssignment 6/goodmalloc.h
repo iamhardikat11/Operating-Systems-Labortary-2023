@@ -25,6 +25,16 @@ int getSizeFromType(int type, int arrlen);
 int isValid(int type, char *name);
 int max(int a, int b);
 
+typedef struct Node {
+    int data;
+    struct Node* next;
+    struct Node* prev;
+}Node;
+
+void pushList(struct Node** head_ref, int new_data);
+void insertAfterList(struct Node* prev_node, int new_data);
+void appendList(struct Node** head_ref, int new_data);
+void printList(struct Node* node);
 typedef struct _Variable
 {
   char *name;
