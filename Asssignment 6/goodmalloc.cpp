@@ -229,13 +229,13 @@ char *getTypeString(int type)
   char *ans;
   init(ans);
   if (type == INT)
-    ans = "INT";
+    strcpy(ans, "INT");
   else if (type == BOOLEAN)
-    ans = "BOOLEAN";
+    strcpy(ans, "BOOLEAN");
   else if (type == CHAR)
-    ans = "CHAR";
+    strcpy(ans, "CHAR");
   else
-    ans = "MEDIUM_INT";
+    strcpy(ans, "MEDIUM_INT");
   return ans;
 }
 
@@ -249,7 +249,7 @@ void assignVal(int localAddress, void *data, int type)
   }
   if (type == INT)
   {
-    int value = *(int*)data;
+    int value = *(int *)data;
     pthread_mutex_lock(&data_->lock);
     int *physicalAddress = data_->pageTable[localAddress / 4];
     *physicalAddress = value;
@@ -280,61 +280,6 @@ void assignVal(int localAddress, void *data, int type)
     pthread_mutex_unlock(&data_->lock);
   }
 }
-// void assignValInt(int localAddress, int value)
-// {
-//   printf("Assigning integer value to variable %s\n", data_->variableList[localAddress].name);
-//   if (!typeCheck(localAddress, INT))
-//   {
-//     fprintf(stderr, "ERROR: Type Mismatch\n");
-//     exit(1);
-//   }
-//   pthread_mutex_lock(&data_->lock);
-//   int *physicalAddress = data_->pageTable[localAddress / 4];
-//   *physicalAddress = value;
-//   pthread_mutex_unlock(&data_->lock);
-// }
-
-// void assignValChar(int localAddress, char value)
-// {
-//   printf("Assigning char value to variable %s\n", data_->variableList[localAddress].name);
-//   if (!typeCheck(localAddress, CHAR))
-//   {
-//     fprintf(stderr, "ERROR: Type Mismatch\n");
-//     exit(1);
-//   }
-//   pthread_mutex_lock(&data_->lock);
-//   int *physicalAddress = data_->pageTable[localAddress / 4];
-//   *physicalAddress = value;
-//   pthread_mutex_unlock(&data_->lock);
-// }
-
-// void assignValBool(int localAddress, bool value)
-// {
-//   printf("Assigning boolean value to variable %s\n", data_->variableList[localAddress].name);
-//   if (!typeCheck(localAddress, BOOLEAN))
-//   {
-//     fprintf(stderr, "ERROR: Type Mismatch\n");
-//     exit(1);
-//   }
-//   pthread_mutex_lock(&data_->lock);
-//   int *physicalAddress = data_->pageTable[localAddress / 4];
-//   *physicalAddress = value;
-//   pthread_mutex_unlock(&data_->lock);
-// }
-
-// void assignValMedium(int localAddress, mediumInt value)
-// {
-//   printf("Assigning medium int value to variable %s\n", data_->variableList[localAddress].name);
-//   if (!typeCheck(localAddress, MEDIUM_INT))
-//   {
-//     fprintf(stderr, "ERROR: Type Mismatch\n");
-//     exit(1);
-//   }
-//   pthread_mutex_lock(&data_->lock);
-//   int *physicalAddress = data_->pageTable[localAddress / 4];
-//   *physicalAddress = toInt(&value);
-//   pthread_mutex_unlock(&data_->lock);
-// }
 
 void addToVal(int localAddress, int value)
 {
