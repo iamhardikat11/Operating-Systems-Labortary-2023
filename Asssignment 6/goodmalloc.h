@@ -31,10 +31,10 @@ typedef struct Node {
     struct Node* prev;
 }Node;
 
-void pushList(struct Node** head_ref, int new_data);
-void insertAfterList(struct Node* prev_node, int new_data);
-void appendList(struct Node** head_ref, int new_data);
-void printList(struct Node* node);
+void pushList(Node** head_ref, int new_data);
+void insertAfterList(Node* prev_node, int new_data);
+void appendList(Node** head_ref, int new_data);
+void printList(Node* node);
 typedef struct _Variable
 {
   char *name;
@@ -43,6 +43,7 @@ typedef struct _Variable
 
 Variable *CreateVariable( char *name, int type, int localAddr, int arrLen);
 
+// Medium Int's Implementation
 typedef struct mediumInt
 {
   unsigned char value[3];
@@ -50,7 +51,9 @@ typedef struct mediumInt
 
 mediumInt CreateMediumInt(int val);
 int toInt(mediumInt *mi);
+//
 
+// Stack's Implementation
 typedef struct _Stack
 {
   Variable *stck[STACK_SIZE];
@@ -64,6 +67,7 @@ Variable *top(Stack *s);
 bool isEmpty(Stack *s);
 int getSize(Stack *s);
 
+//
 typedef struct
 {
   int *pageTable[NUM_VARIABLES];
@@ -76,34 +80,44 @@ typedef struct
   pthread_t ptid;
 } Data;
 
+/*
+  Important Functions
+*/
+void createMem();
+int createVar(char *name, int type);
+void assignVal(int localAddress, void* value, int type);
+
+
+
+// Utiliy Functions
 void init(char *);
 extern int *memory_;
 extern Data *data_;
-void createMem();
-int createVar(char *name, int type);
+
 bool typeCheck(int localAddress, int type);
 char* getTypeString(int type);
-void assignVarInt(int localAddress, int value);
-void assignVarChar(int localAddress, char value);
-void assignVarBool(int localAddress, bool value);
-void assignVarMedium(int localAddress, mediumInt value);
-void addToVar(int localAddress, int value);
-void multToVar(int localAddress, int value);
+
+// void assignValInt(int localAddress, int value);
+// void assignValChar(int localAddress, char value);
+// void assignValBool(int localAddress, bool value);
+// void assignValMedium(int localAddress, mediumInt value);
+void addToVal(int localAddress, int value);
+void multToVal(int localAddress, int value);
 int getValueVarInt(int localAddr);
 char getValueVarChar(int localAddr);
 bool getValueVarBool(int localAddr);
 mediumInt getValueVarMedInt(int localAddr);
-int createArr(char *name, int type, int arrLen);
-void assignArrInt(int localAddr, int index, int value);
-void assignArrChar(int localAddr, int index, char value);
-void assignArrBool(int localAddr, int index, bool value);
-void assignArrMedium(int localAddr, int index, mediumInt value);
-int getValueArrInt(int localAddr, int index);
-char getValueArrChar(int localAddr, int index);
-bool getValueArrBool(int localAddr, int index);
-mediumInt getValueArrMedInt(int localAddr, int index);
-void addToArr(int localAddress, int index, int value);
-void multToArr(int localAddress, int index, int value);
+// int createArr(char *name, int type, int arrLen);
+// void assignArrInt(int localAddr, int index, int value);
+// void assignArrChar(int localAddr, int index, char value);
+// void assignArrBool(int localAddr, int index, bool value);
+// void assignArrMedium(int localAddr, int index, mediumInt value);
+// int getValueArrInt(int localAddr, int index);
+// char getValueArrChar(int localAddr, int index);
+// bool getValueArrBool(int localAddr, int index);
+// mediumInt getValueArrMedInt(int localAddr, int index);
+// void addToArr(int localAddress, int index, int value);
+// void multToArr(int localAddress, int index, int value);
 void freeElem(int locAddr);
 void functionStart();
 void endScope();

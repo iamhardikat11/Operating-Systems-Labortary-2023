@@ -1,4 +1,4 @@
-#include"memlab.h"
+#include "goodmalloc.h"
 
 void rec(int locI){
     functionStart();
@@ -9,18 +9,18 @@ void rec(int locI){
     }else{
         int loc = createVar("Val",INT);
         printf(".........Printing value of argument now %d\n", getValueVarInt(locI));
-        assignVarInt(loc,getValueVarInt(locI));
-        addToVar(loc,-1);
+        int ans = getValueVarInt(locI);
+        assignVal(loc,&ans,INT);
+        addToVal(loc,-1);
         rec(loc);
     }
-
     endScope();
 }
 
 int main(){
     createMem();
     int loc = createVar("Val",INT);
-    assignVarInt(loc,5);
+    assignVal(loc,&loc,INT);
     rec(loc);
     endScope();
 }
