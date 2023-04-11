@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-// #include <iostream>
-using namespace std;
+#include <stdbool.h>
+#include <assert.h>
 
 #define MEM_SIZE 250000000
 #define VAR_NAME_SIZE 10
@@ -24,40 +24,24 @@ using namespace std;
 int getSizeFromType(int type, int arrlen);
 int isValid(int type, char *name);
 int max(int a, int b);
-typedef struct Variable
+
+typedef struct _Variable
 {
   char *name;
   int type, size, localAddress, arrLen, isTobeCleaned;
-  Variable() : type(-1), size(0), name((char *)malloc(STR_SIZE)) {}
-  Variable(char *name, int type, int localAddr, int arrLen = 1) : name(name), type(type), isTobeCleaned(0), arrLen(arrLen), localAddress(localAddr), size(getSizeFromType(type, arrLen))
-  {
-    if (!isValid(type, name))
-    {
-      fprintf(stderr, "Invalid Variable\n");
-      exit(1);
-    }
-  }
 } Variable;
+
+Variable *CreateVariable(char *name, int type, int localAddr, int arrLen);
 
 typedef struct mediumInt
 {
   unsigned char value[3];
-  mediumInt(int val)
-  {
-    if (val >= (1 << 23) || (val < -(1 << 23)))
-    {
-      fprintf(stderr, "Overflow in Medium Int\n");
-      exit(1);
-    }
-    value[0] = (val >> 16) & 0xFF;
-    value[1] = (val >> 8) & 0xFF;
-    value[2] = val & 0xFF;
-  }
 } mediumInt;
 
+mediumInt CreateMediumInt(int val);
 int toInt(mediumInt *mi);
 
-typedef struct Stack
+typedef struct _Stack
 {
   Variable *stck[STACK_SIZE];
   int topIndex;
@@ -89,10 +73,10 @@ void createMem();
 int createVar(char *name, int type);
 bool typeCheck(int localAddress, int type);
 char* getTypeString(int type);
-void assignVar(int localAddress, int value);
-void assignVar(int localAddress, char value);
-void assignVar(int localAddress, bool value);
-void assignVar(int localAddress, mediumInt value);
+void assignVarInt(int localAddress, int value);
+void assignVarChar(int localAddress, char value);
+void assignVarBool(int localAddress, bool value);
+void assignVarMedium(int localAddress, mediumInt value);
 void addToVar(int localAddress, int value);
 void multToVar(int localAddress, int value);
 int getValueVarInt(int localAddr);
@@ -100,10 +84,10 @@ char getValueVarChar(int localAddr);
 bool getValueVarBool(int localAddr);
 mediumInt getValueVarMedInt(int localAddr);
 int createArr(char *name, int type, int arrLen);
-void assignArr(int localAddr, int index, int value);
-void assignArr(int localAddr, int index, char value);
-void assignArr(int localAddr, int index, bool value);
-void assignArr(int localAddr, int index, mediumInt value);
+void assignArrInt(int localAddr, int index, int value);
+void assignArrChar(int localAddr, int index, char value);
+void assignArrBool(int localAddr, int index, bool value);
+void assignArrMedium(int localAddr, int index, mediumInt value);
 int getValueArrInt(int localAddr, int index);
 char getValueArrChar(int localAddr, int index);
 bool getValueArrBool(int localAddr, int index);

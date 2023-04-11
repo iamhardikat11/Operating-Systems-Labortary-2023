@@ -1,6 +1,4 @@
 #include "memlab.h"
-#include <iostream>
-using namespace std;
 
 void function1(int locX,int locY){
     functionStart();
@@ -8,7 +6,7 @@ void function1(int locX,int locY){
     int loc=createArr("Arr",INT,500000);
 
     for(int i=0;i<50000;i++){
-        assignArr(loc,i,rand()%100000);
+        assignArrInt(loc,i,rand()%100000);
     }
 
     endScope();
@@ -20,7 +18,7 @@ void function2(int locX,int locY){
     int loc=createArr("Arr",CHAR,50000);
 
     for(int i=0;i<50000;i++){
-        assignArr(loc,i,(char)('a'+rand()%25));
+        assignArrChar(loc,i,(char)('a'+rand()%25));
     }
 
     endScope();
@@ -32,7 +30,7 @@ void function3(int locX,int locY){
     int loc=createArr("Arr",BOOLEAN,50000);
 
     for(int i=0;i<50000;i++){
-        assignArr(loc,i,(bool)(rand()%2));
+        assignArrBool(loc,i,(bool)(rand()%2));
     }
 
     endScope();
@@ -44,7 +42,7 @@ void function4(int locX,int locY){
     int loc=createArr("Arr",MEDIUM_INT,50000);
 
     for(int i=0;i<50000;i++){
-        assignArr(loc,i,mediumInt(rand()%100000));
+        assignArrMedium(loc,i,CreateMediumInt(rand()%100000));
     }
 
     endScope();

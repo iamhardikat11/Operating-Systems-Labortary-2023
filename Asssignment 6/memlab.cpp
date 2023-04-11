@@ -5,7 +5,7 @@ Data *data_;
 int gc, no_gc;
 FILE *f1, *f2;
 
-int isValid(int type, char* name)
+int isValid(int type, char *name)
 {
   return ((type == INT || type == CHAR || type == MEDIUM_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
 }
@@ -30,9 +30,50 @@ int getSizeFromType(int type, int arrlen)
 int toInt(mediumInt *m)
 {
   int val = 0;
-  if (!(m->value[0] >> 7 == 0)) val |= (((1 << 8) - 1) << 24);
+  if (!(m->value[0] >> 7 == 0))
+    val |= (((1 << 8) - 1) << 24);
   val |= m->value[2] | (m->value[1] << 8) | (m->value[0] << 16);
   return val;
+}
+
+// Variable *CreateVariable()
+// {
+//   Variable *a = (Variable *)malloc(sizeof(Variable));
+//   a->type = -1;
+//   a->size = 0;
+//   a->name = (char *)malloc(STR_SIZE);
+//   return a;
+// }
+
+Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
+{
+  if (!isValid(type, name))
+  {
+    fprintf(stderr, "Invalid Variable\n");
+    exit(1);
+  }
+  Variable *a = (Variable *)malloc(sizeof(Variable));
+  a->name = name;
+  a->type = type;
+  a->isTobeCleaned = 0;
+  a->arrLen = arrLen;
+  a->localAddress = localAddr;
+  a->size = getSizeFromType(type, arrLen);
+  return a;
+}
+
+mediumInt CreateMediumInt(int val)
+{
+  if (val >= (1 << 23) || (val < -(1 << 23)))
+  {
+    fprintf(stderr, "Overflow in Medium Int\n");
+    exit(1);
+  }
+  mediumInt mi;
+  mi.value[0] = (val >> 16) & 0xFF;
+  mi.value[1] = (val >> 8) & 0xFF;
+  mi.value[2] = val & 0xFF;
+  return mi;
 }
 
 Stack *createStack()
@@ -77,7 +118,7 @@ int getSize(Stack *s)
 
 void init(char *n)
 {
-  n = (char *)malloc(STR_SIZE*sizeof(char));
+  n = (char *)malloc(STR_SIZE * sizeof(char));
 }
 void createMem()
 {
@@ -105,10 +146,10 @@ int createVar(char *name, int type)
     fprintf(stderr, "Variable count limit reached. Exitting.\n");
     exit(1);
   }
-  Variable var = Variable(name, type, data_->localAddress);
-  data_->variableList[data_->localAddress / 4] = var;
-  no_gc += var.size;
-  gc += var.size;
+  Variable *var = CreateVariable(name, type, data_->localAddress, 1);
+  data_->variableList[data_->localAddress / 4] = *var;
+  no_gc += var->size;
+  gc += var->size;
   pthread_mutex_lock(&data_->lock);
   for (int i = 0; i < MEM_SIZE / 4; i++)
   {
@@ -135,9 +176,9 @@ bool typeCheck(int localAddress, int type)
   return (data_->variableList[localAddress / 4].type == type);
 }
 
-char* getTypeString(int type)
+char *getTypeString(int type)
 {
-  char* ans;
+  char *ans;
   init(ans);
   if (type == INT)
     ans = "INT";
@@ -150,7 +191,7 @@ char* getTypeString(int type)
   return ans;
 }
 
-void assignVar(int localAddress, int value)
+void assignVarInt(int localAddress, int value)
 {
   printf("Assigning integer value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, INT))
@@ -159,13 +200,12 @@ void assignVar(int localAddress, int value)
     exit(1);
   }
   pthread_mutex_lock(&data_->lock);
-
   int *physicalAddress = data_->pageTable[localAddress / 4];
   *physicalAddress = value;
   pthread_mutex_unlock(&data_->lock);
 }
 
-void assignVar(int localAddress, char value)
+void assignVarChar(int localAddress, char value)
 {
   printf("Assigning char value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, CHAR))
@@ -174,13 +214,12 @@ void assignVar(int localAddress, char value)
     exit(1);
   }
   pthread_mutex_lock(&data_->lock);
-
   int *physicalAddress = data_->pageTable[localAddress / 4];
   *physicalAddress = value;
   pthread_mutex_unlock(&data_->lock);
 }
 
-void assignVar(int localAddress, bool value)
+void assignVarBool(int localAddress, bool value)
 {
   printf("Assigning boolean value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, BOOLEAN))
@@ -194,7 +233,7 @@ void assignVar(int localAddress, bool value)
   pthread_mutex_unlock(&data_->lock);
 }
 
-void assignVar(int localAddress, mediumInt value)
+void assignVarMedium(int localAddress, mediumInt value)
 {
   printf("Assigning medium int value to variable %s\n", data_->variableList[localAddress].name);
   if (!typeCheck(localAddress, MEDIUM_INT))
@@ -271,7 +310,7 @@ mediumInt getValueVarMedInt(int localAddr)
     exit(1);
   }
   int *physicalAddress = data_->pageTable[localAddr / 4];
-  return mediumInt(*physicalAddress);
+  return CreateMediumInt(*physicalAddress);
 }
 
 int createArr(char *name, int type, int arrLen)
@@ -282,11 +321,11 @@ int createArr(char *name, int type, int arrLen)
     fprintf(stderr, "Variable count limit reached. Exitting.\n");
     exit(1);
   }
-  Variable var = Variable(name, type, data_->localAddress, arrLen);
-  data_->variableList[data_->localAddress / 4] = var;
-  no_gc += var.size;
-  gc += var.size;
-  int len = var.size;
+  Variable *var = CreateVariable(name, type, data_->localAddress, arrLen);
+  data_->variableList[data_->localAddress / 4] = *var;
+  no_gc += var->size;
+  gc += var->size;
+  int len = var->size;
   pthread_mutex_lock(&data_->lock);
   for (int i = 0; i < MEM_SIZE / 4; i++)
   {
@@ -325,7 +364,7 @@ int createArr(char *name, int type, int arrLen)
   return temp;
 }
 
-void assignArr(int localAddr, int index, int value)
+void assignArrInt(int localAddr, int index, int value)
 {
   if (!typeCheck(localAddr, INT))
   {
@@ -343,7 +382,7 @@ void assignArr(int localAddr, int index, int value)
   pthread_mutex_unlock(&data_->lock);
 }
 
-void assignArr(int localAddr, int index, char value)
+void assignArrChar(int localAddr, int index, char value)
 {
   if (!typeCheck(localAddr, CHAR))
   {
@@ -361,7 +400,7 @@ void assignArr(int localAddr, int index, char value)
   pthread_mutex_unlock(&data_->lock);
 }
 
-void assignArr(int localAddr, int index, bool value)
+void assignArrBool(int localAddr, int index, bool value)
 {
   if (!typeCheck(localAddr, BOOLEAN))
   {
@@ -379,7 +418,7 @@ void assignArr(int localAddr, int index, bool value)
   pthread_mutex_unlock(&data_->lock);
 }
 
-void assignArr(int localAddr, int index, mediumInt value)
+void assignArrMedium(int localAddr, int index, mediumInt value)
 {
   if (!typeCheck(localAddr, MEDIUM_INT))
   {
@@ -393,7 +432,7 @@ void assignArr(int localAddr, int index, mediumInt value)
     fprintf(stderr, "Assigning value at Invalid Index.\n");
     exit(1);
   }
-  physicalAddress[index] = toInt(&value);
+  physicalAddress[index] = value;
   pthread_mutex_unlock(&data_->lock);
 }
 
@@ -544,7 +583,7 @@ void endScope()
     curr->isTobeCleaned = 1;
     curr->type = -1;
     pop(&data_->variableStack);
-    curr =top(&data_->variableStack);
+    curr = top(&data_->variableStack);
   }
   if (curr == NULL)
     pop(&data_->variableStack);
@@ -552,7 +591,7 @@ void endScope()
     clean();
 }
 
-void *gc_run(void *)
+void *gc_run(void *p)
 {
   while (true)
   {
