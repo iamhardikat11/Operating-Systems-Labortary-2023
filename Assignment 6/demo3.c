@@ -2,17 +2,16 @@
 
 void rec(int locI){
     functionStart();
-
-    if(getValueVarInt(locI)==-1){
+    int ans = 0;
+    getVal(locI, INT, &ans);
+    if(ans ==-1){
         endScope();
         return;
     }else{
         int loc = createVar("Val",INT);
-        printf(".........Printing value of argument now %d\n", getValueVarInt(locI));
-        int ans = getValueVarInt(locI);
+        printf(".........Printing value of argument now %d\n", ans);
         assignVal(loc,&ans,INT);
         addToVal(loc,-1);
-        rec(loc);
     }
     endScope();
 }

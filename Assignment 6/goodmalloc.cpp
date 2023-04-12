@@ -35,6 +35,14 @@ int toInt(mediumInt *m)
   return val;
 }
 
+DDL* createList(char *name, int sz)
+{
+  DDL* l;
+  l->name = name;
+  l->sz = sz;
+  l->curr_sz = 0;
+}
+
 void pushList(Node **head_ref, int new_data)
 {
   Node *new_node = (Node *)malloc(sizeof(Node));
@@ -229,13 +237,13 @@ char *getTypeString(int type)
   char *ans;
   init(ans);
   if (type == INT)
-    strcpy(ans, "INT");
+    ans = "INT";
   else if (type == BOOLEAN)
-    strcpy(ans, "BOOLEAN");
+    ans = "BOOLEAN";
   else if (type == CHAR)
-    strcpy(ans, "CHAR");
+    ans = "CHAR";
   else
-    strcpy(ans, "MEDIUM_INT");
+    ans = "MEDIUM_INT";
   return ans;
 }
 
@@ -303,50 +311,57 @@ void multToVal(int localAddress, int value)
   *physicalAddress = (*physicalAddress) * value;
 }
 
-int getValueVarInt(int localAddr)
+void getVal(int localAddr, int type, void *data)
 {
-  if (!typeCheck(localAddr, INT))
+  if (!typeCheck(localAddr, type))
   {
     fprintf(stderr, "ERROR: Type Mismatch\n");
     exit(1);
   }
   int *physicalAddress = data_->pageTable[localAddr / 4];
-  return *physicalAddress;
+  data = &(*physicalAddress);
 }
 
-char getValueVarChar(int localAddr)
-{
-  if (!typeCheck(localAddr, CHAR))
-  {
-    fprintf(stderr, "ERROR: Type Mismatch\n");
-    exit(1);
-  }
-  int *physicalAddress = data_->pageTable[localAddr / 4];
-  return *physicalAddress;
-}
-
-bool getValueVarBool(int localAddr)
-{
-  if (!typeCheck(localAddr, BOOLEAN))
-  {
-    fprintf(stderr, "ERROR: Type Mismatch\n");
-    exit(1);
-  }
-  int *physicalAddress = data_->pageTable[localAddr / 4];
-  return *physicalAddress;
-}
-
-mediumInt getValueVarMedInt(int localAddr)
-{
-  if (!typeCheck(localAddr, MEDIUM_INT))
-  {
-    fprintf(stderr, "ERROR: Type Mismatch\n");
-    exit(1);
-  }
-  int *physicalAddress = data_->pageTable[localAddr / 4];
-  return CreateMediumInt(*physicalAddress);
-}
-
+// int getValueVarInt(int localAddr)
+// {
+//   if (!typeCheck(localAddr, INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return *physicalAddress;
+// }
+// char getValueVarChar(int localAddr)
+// {
+//   if (!typeCheck(localAddr, CHAR))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return *physicalAddress;
+// }
+// bool getValueVarBool(int localAddr)
+// {
+//   if (!typeCheck(localAddr, BOOLEAN))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return *physicalAddress;
+// }
+// mediumInt getValueVarMedInt(int localAddr)
+// {
+//   if (!typeCheck(localAddr, MEDIUM_INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return CreateMediumInt(*physicalAddress);
+// }
 // int createArr(char *name, int type, int arrLen)
 // {
 //   printf("Creating Array of name: %s and type %s and length %d\n", name, getTypeString(type), arrLen);
