@@ -1,0 +1,343 @@
+
+typedef struct Node {
+    int data;
+    struct Node* next;
+    struct Node* prev;
+}Node;
+
+typedef struct DLL {
+  char* name;
+  int sz;
+  int curr_sz;
+  Node** list;
+} DDL;
+typedef struct _Variable
+{
+  char *name;
+  int type, size, localAddress, arrLen, isTobeCleaned;
+} Variable;
+typedef struct _Stack
+{
+  Variable *stck[STACK_SIZE];
+  int topIndex;
+} Stack;
+
+typedef struct
+{
+  int *pageTable[NUM_VARIABLES];
+  int localAddress, maxMemIndex;
+  int actualAddressToLocalAdress[MEM_SIZE / 4];
+  Variable variableList[NUM_VARIABLES];
+  Stack variableStack;
+  pthread_mutex_t lock;
+  pthread_attr_t attr;
+  pthread_t ptid;
+} Data;
+
+
+// Important Data Structures
+extern int *memory_;
+extern Data *data_;
+
+int createArr(char *name, int type, int arrLen)
+{
+  printf("Creating Array of name: %s and type %s and length %d\n", name, getTypeString(type), arrLen);
+  if (data_->localAddress / 4 >= NUM_VARIABLES)
+  {
+    fprintf(stderr, "Variable count limit reached. Exitting.\n");
+    exit(1);
+  }
+  Variable *var = CreateVariable(name, type, data_->localAddress, arrLen);
+  data_->variableList[data_->localAddress / 4] = *var;
+  no_gc += var->size;
+  gc += var->size;
+  int len = var->size;
+  pthread_mutex_lock(&data_->lock);
+  for (int i = 0; i < MEM_SIZE / 4; i++)
+  {
+    int flag = 1;
+    for (int j = 0; j < len; j++)
+    {
+      if (j + i < MEM_SIZE / 4)
+      {
+        if (!(data_->actualAddressToLocalAdress[i + j] == -1))
+        {
+          flag = 0;
+          break;
+        }
+      }
+      else
+        break;
+    }
+    if (flag == 1)
+    {
+      for (int j = 0; j < len; j++)
+      {
+        if (j + i < MEM_SIZE / 4)
+        {
+          data_->maxMemIndex = max(data_->maxMemIndex, i + j);
+          data_->actualAddressToLocalAdress[j + i] = data_->localAddress;
+        }
+      }
+      data_->pageTable[data_->localAddress / 4] = memory_ + i;
+      break;
+    }
+  }
+  pthread_mutex_unlock(&data_->lock);
+  int temp = data_->localAddress;
+  data_->localAddress += 4;
+  push(&data_->variableStack, &data_->variableList[temp / 4]);
+  return temp;
+}
+
+
+// int getValueVarInt(int localAddr)
+// {
+//   if (!typeCheck(localAddr, INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return *physicalAddress;
+// }
+// char getValueVarChar(int localAddr)
+// {
+//   if (!typeCheck(localAddr, CHAR))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return *physicalAddress;
+// }
+// bool getValueVarBool(int localAddr)
+// {
+//   if (!typeCheck(localAddr, BOOLEAN))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return *physicalAddress;
+// }
+// mediumInt getValueVarMedInt(int localAddr)
+// {
+//   if (!typeCheck(localAddr, MEDIUM_INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   return CreateMediumInt(*physicalAddress);
+// }
+// int createArr(char *name, int type, int arrLen)
+// {
+//   printf("Creating Array of name: %s and type %s and length %d\n", name, getTypeString(type), arrLen);
+//   if (data_->localAddress / 4 >= NUM_VARIABLES)
+//   {
+//     fprintf(stderr, "Variable count limit reached. Exitting.\n");
+//     exit(1);
+//   }
+//   Variable *var = CreateVariable(name, type, data_->localAddress, arrLen);
+//   data_->variableList[data_->localAddress / 4] = *var;
+//   no_gc += var->size;
+//   gc += var->size;
+//   int len = var->size;
+//   pthread_mutex_lock(&data_->lock);
+//   for (int i = 0; i < MEM_SIZE / 4; i++)
+//   {
+//     int flag = 1;
+//     for (int j = 0; j < len; j++)
+//     {
+//       if (j + i < MEM_SIZE / 4)
+//       {
+//         if (!(data_->actualAddressToLocalAdress[i + j] == -1))
+//         {
+//           flag = 0;
+//           break;
+//         }
+//       }
+//       else
+//         break;
+//     }
+//     if (flag == 1)
+//     {
+//       for (int j = 0; j < len; j++)
+//       {
+//         if (j + i < MEM_SIZE / 4)
+//         {
+//           data_->maxMemIndex = max(data_->maxMemIndex, i + j);
+//           data_->actualAddressToLocalAdress[j + i] = data_->localAddress;
+//         }
+//       }
+//       data_->pageTable[data_->localAddress / 4] = memory_ + i;
+//       break;
+//     }
+//   }
+//   pthread_mutex_unlock(&data_->lock);
+//   int temp = data_->localAddress;
+//   data_->localAddress += 4;
+//   push(&data_->variableStack, &data_->variableList[temp / 4]);
+//   return temp;
+// }
+// void assignArrInt(int localAddr, int index, int value)
+// {
+//   if (!typeCheck(localAddr, INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   pthread_mutex_lock(&data_->lock);
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Assigning value at Invalid Index.\n");
+//     exit(1);
+//   }
+//   physicalAddress[index] = value;
+//   pthread_mutex_unlock(&data_->lock);
+// }
+// void assignArrChar(int localAddr, int index, char value)
+// {
+//   if (!typeCheck(localAddr, CHAR))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   pthread_mutex_lock(&data_->lock);
+//   char *physicalAddress = (char *)data_->pageTable[localAddr / 4];
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Assigning value at Invalid Index.\n");
+//     exit(1);
+//   }
+//   physicalAddress[index] = value;
+//   pthread_mutex_unlock(&data_->lock);
+// }
+// void assignArrBool(int localAddr, int index, bool value)
+// {
+//   if (!typeCheck(localAddr, BOOLEAN))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   pthread_mutex_lock(&data_->lock);
+//   bool *physicalAddress = (bool *)data_->pageTable[localAddr / 4];
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Assigning value at Invalid Index.\n");
+//     exit(1);
+//   }
+//   physicalAddress[index] = value;
+//   pthread_mutex_unlock(&data_->lock);
+// }
+// void assignArrMedium(int localAddr, int index, mediumInt value)
+// {
+//   if (!typeCheck(localAddr, MEDIUM_INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   pthread_mutex_lock(&data_->lock);
+//   mediumInt *physicalAddress = (mediumInt *)data_->pageTable[localAddr / 4];
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Assigning value at Invalid Index.\n");
+//     exit(1);
+//   }
+//   physicalAddress[index] = value;
+//   pthread_mutex_unlock(&data_->lock);
+// }
+// int getValueArrInt(int localAddr, int index)
+// {
+//   if (!typeCheck(localAddr, INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Accessing invalid index\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddr / 4];
+//   int val = physicalAddress[index];
+//   return val;
+// }
+// char getValueArrChar(int localAddr, int index)
+// {
+//   if (!typeCheck(localAddr, CHAR))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Accessing invalid index\n");
+//     exit(1);
+//   }
+//   char *physicalAddress = (char *)data_->pageTable[localAddr / 4];
+//   char val = physicalAddress[index];
+//   return val;
+// }
+// bool getValueArrBool(int localAddr, int index)
+// {
+//   if (!typeCheck(localAddr, BOOLEAN))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Accessing invalid index\n");
+//     exit(1);
+//   }
+//   bool *physicalAddress = (bool *)data_->pageTable[localAddr / 4];
+//   return physicalAddress[index];
+// }
+// mediumInt getValueArrMedInt(int localAddr, int index)
+// {
+//   if (!typeCheck(localAddr, MEDIUM_INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   if (index < 0 || index >= data_->variableList[localAddr / 4].arrLen)
+//   {
+//     fprintf(stderr, "Accessing invalid index\n");
+//     exit(1);
+//   }
+//   mediumInt *physicalAddress = (mediumInt *)data_->pageTable[localAddr / 4];
+//   return physicalAddress[index];
+// }
+// void addToArr(int localAddress, int index, int value)
+// {
+//   if (!typeCheck(localAddress, INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   if (index < 0 || index >= data_->variableList[localAddress / 4].arrLen)
+//   {
+//     fprintf(stderr, "Accessing invalid index\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddress / 4];
+//   physicalAddress[index] = physicalAddress[index] + value;
+// }
+// void multToArr(int localAddress, int index, int value)
+// {
+//   if (!typeCheck(localAddress, INT))
+//   {
+//     fprintf(stderr, "ERROR: Type Mismatch\n");
+//     exit(1);
+//   }
+//   if (index < 0 || index >= data_->variableList[localAddress / 4].arrLen)
+//   {
+//     fprintf(stderr, "Accessing invalid index\n");
+//     exit(1);
+//   }
+//   int *physicalAddress = data_->pageTable[localAddress / 4];
+//   physicalAddress[index] = physicalAddress[index] * value;
+// }

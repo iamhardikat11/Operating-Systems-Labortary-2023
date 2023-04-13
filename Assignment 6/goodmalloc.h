@@ -79,12 +79,9 @@ extern Data *data_;
   Important Functions
 */
 void createMem();
-DDL* createList(char *name, int sz);
+int createList(char *name, int type, int sz);
 void assignVal(int localAddress, void* value, int type);
 void freeElem(int locAddr);
-
-
-
 
 // Utiliy Functions
 void pushList(Node** head_ref, int new_data);
