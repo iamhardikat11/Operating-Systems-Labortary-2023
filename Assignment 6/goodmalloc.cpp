@@ -314,38 +314,161 @@ void getVal(int localAddr, int type, void *data)
   data = &(*physicalAddress);
 }
 
-Node* createNode(int data) {
-  Node* newNode = (Node*)malloc(sizeof(Node));
+Node *split(Node *head);
+
+// Function to merge two linked lists
+Node *merge(Node *first, Node *second)
+{
+  // If first linked list is empty
+  if (!first)
+    return second;
+
+  // If second linked list is empty
+  if (!second)
+    return first;
+
+  // Pick the smaller value
+  if (first->data < second->data)
+  {
+    first->next = merge(first->next, second);
+    first->next->prev = first;
+    first->prev = NULL;
+    return first;
+  }
+  else
+  {
+    second->next = merge(first, second->next);
+    second->next->prev = second;
+    second->prev = NULL;
+    return second;
+  }
+}
+
+// Function to do merge sort
+Node *mergeSort(Node *head)
+{
+  if (!head || !head->next)
+    return head;
+  Node *second = split(head);
+
+  // Recur for left and right halves
+  head = mergeSort(head);
+  second = mergeSort(second);
+
+  // Merge the two sorted halves
+  return merge(head, second);
+}
+
+// A utility function to insert a new node at the
+// beginning of doubly linked list
+void insertAll(Node **head, int sz)
+{
+  // for (int i = 0; i < sz; i++)
+  // {
+  //   Node *temp = (Node *)malloc(sizeof(Node));
+  //   temp->data = rand() % LIMIT + 1;
+  //   temp->next = temp->prev = NULL;
+  //   if (!(*head))
+  //     (*head) = temp;
+  //   else
+  //   {
+  //     temp->next = *head;
+  //     (*head)->prev = temp;
+  //     (*head) = temp;
+  //   }
+  // }
+}
+
+// A utility function to print a doubly linked list in
+// both forward and backward directions
+void print(Node *head)
+{
+  Node *temp = head;
+  printf("Forward Traversal using next pointer\n");
+  while (head)
+  {
+    printf("%d ", head->data);
+    temp = head;
+    head = head->next;
+  }
+  printf("\nBackward Traversal using prev pointer\n");
+  while (temp)
+  {
+    printf("%d ", temp->data);
+    temp = temp->prev;
+  }
+}
+
+// Utility function to swap two integers
+void swap(int *A, int *B)
+{
+  int temp = *A;
+  *A = *B;
+  *B = temp;
+}
+
+// Split a doubly linked list (DLL) into 2 DLLs of half sizes
+Node *split(Node *head)
+{
+  Node *fast = head, *slow = head;
+  while (fast->next && fast->next->next)
+  {
+    fast = fast->next->next;
+    slow = slow->next;
+  }
+  Node *temp = slow->next;
+  slow->next = NULL;
+  return temp;
+}
+
+Node *createNode(int data)
+{
+  Node *newNode = (Node *)malloc(sizeof(Node));
   newNode->data = data;
   newNode->next = NULL;
   newNode->prev = NULL;
   return newNode;
 }
 
-int createList(char* name, int type, int sz) {
+int createList(char *name, int type, int sz)
+{
   printf("Creating List of name: %s and type %s and length %d\n", name, getTypeString(type), sz);
-  DLL* dll = (DLL*)malloc(sizeof(DLL));
+  DLL *dll = (DLL *)malloc(sizeof(DLL));
   dll->name = name;
   dll->sz = sz;
   dll->curr_sz = 0;
-  dll->list = (Node**)malloc(sz * sizeof(Node*));
+  dll->list = (Node **)malloc(sz * sizeof(Node *));
 
-  for (int i = 0; i < sz; i++) {
-    dll->list[i] = NULL;
+  for (int i = 0; i < sz; i++)
+  {
+    Node *temp = (Node *)malloc(sizeof(Node));
+    temp->data = rand() % LIMIT + 1;
+    temp->next = temp->prev = NULL;
+    if (!(*dll->list))
+      (*dll->list) = temp;
+    else
+    {
+      temp->next = *dll->list;
+      (*dll->list)->prev = temp;
+      (*dll->list) = temp;
+    }
   }
-
   // Add the newly created DLL to the Data variable
-  Variable* var = CreateVariable(name, type, data_->localAddress, sz);
+  Variable *var = CreateVariable(name, type, data_->localAddress, sz);
   data_->variableList[data_->localAddress / 4] = *var;
   no_gc += var->size;
   gc += var->size;
   int len = var->size;
   pthread_mutex_lock(&data_->lock);
-  for (int i = 0; i < MEM_SIZE / 4; i++) {
+  for (int i = 0; i < MEM_SIZE / 4; i++)
+  {
     int flag = 1;
-    for (int j = 0; j < len; j++) {
-      if (j + i < MEM_SIZE / 4) {
-        if (!(data_->actualAddressToLocalAdress[i + j] == -1)) {
+    for (int j = 0; j < len; j++)
+    {
+      if (j + i < MEM_SIZE / 4)
+      {
+        if (!(data_->actualAddressToLocalAdress[i + j] == -1))
+        {
           flag = 0;
           break;
         }
@@ -353,9 +476,12 @@ int createList(char* name, int type, int sz) {
       else
         break;
     }
-    if (flag == 1) {
-      for (int j = 0; j < len; j++) {
-        if (j + i < MEM_SIZE / 4) {
+    if (flag == 1)
+    {
+      for (int j = 0; j < len; j++)
+      {
+        if (j + i < MEM_SIZE / 4)
+        {
           data_->maxMemIndex = max(data_->maxMemIndex, i + j);
           data_->actualAddressToLocalAdress[j + i] = data_->localAddress;
         }

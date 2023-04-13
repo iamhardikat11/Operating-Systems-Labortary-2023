@@ -15,6 +15,8 @@
 #define STACK_SIZE 100
 #define NUM_VARIABLES 100
 #define STR_SIZE 250
+#define LIMIT 100000
+
 
 #define INT 0
 #define CHAR 1
