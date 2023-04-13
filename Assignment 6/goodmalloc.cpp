@@ -6,7 +6,7 @@ int gc, no_gc;
 
 int isValid(int type, char *name)
 {
-  return ((type == INT || type == CHAR || type == MEDIUM_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
+  return ((type == INT || type == CHAR || type == LL_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
 }
 
 int getSizeFromType(int type, int arrlen)
@@ -17,8 +17,8 @@ int getSizeFromType(int type, int arrlen)
     return (4 * arrlen + 3) / 4;
   case CHAR:
     return (1 * arrlen + 3) / 4;
-  case MEDIUM_INT:
-    return (3 * arrlen + 3) / 4;
+  case LL_INT:
+    return (4 * arrlen + 3) / 4;
   case BOOLEAN:
     return (1 * arrlen + 3) / 4;
   default:
@@ -26,14 +26,14 @@ int getSizeFromType(int type, int arrlen)
   }
 }
 
-int toInt(mediumInt *m)
-{
-  int val = 0;
-  if (!(m->value[0] >> 7 == 0))
-    val |= (((1 << 8) - 1) << 24);
-  val |= m->value[2] | (m->value[1] << 8) | (m->value[0] << 16);
-  return val;
-}
+// int toInt(mediumInt *m)
+// {
+//   int val = 0;
+//   if (!(m->value[0] >> 7 == 0))
+//     val |= (((1 << 8) - 1) << 24);
+//   val |= m->value[2] | (m->value[1] << 8) | (m->value[0] << 16);
+//   return val;
+// }
 
 // void pushList(Node **head_ref, int new_data)
 // {
@@ -82,18 +82,18 @@ int toInt(mediumInt *m)
 // }
 
 // This function prints contents of linked list starting from the given node
-void printList(Node *node)
-{
-  Node *last;
-  printf("\nTraversal in forward direction \n");
-  while (node != NULL)
-  {
-    printf("%d ", node->data);
-    last = node;
-    node = node->next;
-  }
-  printf("\n");
-}
+// void printList(Node *node)
+// {
+//   Node *last;
+//   printf("\nTraversal in forward direction \n");
+//   while (node != NULL)
+//   {
+//     printf("%d ", node->data);
+//     last = node;
+//     node = node->next;
+//   }
+//   printf("\n");
+// }
 
 Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
 {
@@ -112,19 +112,19 @@ Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
   return a;
 }
 
-mediumInt CreateMediumInt(int val)
-{
-  if (val >= (1 << 23) || (val < -(1 << 23)))
-  {
-    fprintf(stderr, "Overflow in Medium Int\n");
-    exit(1);
-  }
-  mediumInt mi;
-  mi.value[0] = (val >> 16) & 0xFF;
-  mi.value[1] = (val >> 8) & 0xFF;
-  mi.value[2] = val & 0xFF;
-  return mi;
-}
+// mediumInt CreateMediumInt(int val)
+// {
+//   if (val >= (1 << 23) || (val < -(1 << 23)))
+//   {
+//     fprintf(stderr, "Overflow in Medium Int\n");
+//     exit(1);
+//   }
+//   mediumInt mi;
+//   mi.value[0] = (val >> 16) & 0xFF;
+//   mi.value[1] = (val >> 8) & 0xFF;
+//   mi.value[2] = val & 0xFF;
+//   return mi;
+// }
 
 Stack *createStack()
 {
@@ -273,11 +273,12 @@ void assignVal(int localAddress, void *data, int type)
   }
   else
   {
-    mediumInt value = *(mediumInt *)data;
-    pthread_mutex_lock(&data_->lock);
-    int *physicalAddress = data_->pageTable[localAddress / 4];
-    *physicalAddress = toInt(&value);
-    pthread_mutex_unlock(&data_->lock);
+    ;
+    // mediumInt value = *(mediumInt *)data;
+    // pthread_mutex_lock(&data_->lock);
+    // int *physicalAddress = data_->pageTable[localAddress / 4];
+    // *physicalAddress = toInt(&value);
+    // pthread_mutex_unlock(&data_->lock);
   }
 }
 
@@ -381,7 +382,7 @@ Node *mergeSort(Node *head)
 
 // A utility function to print a doubly linked list in
 // both forward and backward directions
-void print(Node *head, char* out)
+void printList(Node *head, char* out)
 {
   FILE* fp = fopen(out, "w");
   Node *temp = head;
@@ -446,6 +447,7 @@ int createList(char *name, int type, int sz)
     Node *temp = (Node *)malloc(sizeof(Node));
     temp->data = rand() % LIMIT + 1;
     temp->next = temp->prev = NULL;
+    dll->curr_sz++;
     if (!(dll->list))
       (dll->list) = temp;
     else
@@ -493,9 +495,11 @@ int createList(char *name, int type, int sz)
     }
   }
   pthread_mutex_unlock(&data_->lock);
+  printList(((DDL *)data_->pageTable[data_->localAddress/4])->list, "output_test.txt");
   int temp = data_->localAddress;
   data_->localAddress += 4;
   push(&data_->variableStack, &data_->variableList[temp / 4]);
+  printList(dll->list, "output.txt");
   return temp;
 }
 

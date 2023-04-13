@@ -84,13 +84,13 @@ int main(){
     locY=createVar("Y8",BOOLEAN);
     // function3(locX,locY);
 
-    locX=createVar("X9",MEDIUM_INT);
-    locY=createVar("Y9",MEDIUM_INT);
-    // function4(locX,locY);
+    // locX=createVar("X9",MEDIUM_INT);
+    // locY=createVar("Y9",MEDIUM_INT);
+    // // function4(locX,locY);
 
-    locX=createVar("X10",MEDIUM_INT);
-    locY=createVar("Y10",MEDIUM_INT);
-    // function4(locX,locY);
+    // locX=createVar("X10",MEDIUM_INT);
+    // locY=createVar("Y10",MEDIUM_INT);
+    // // function4(locX,locY);
 
     endScope();
 

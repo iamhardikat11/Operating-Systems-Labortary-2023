@@ -1,0 +1,3 @@
+Forward Traversal using next pointer
+
+Backward Traversal using prev pointer

@@ -20,7 +20,7 @@
 
 #define INT 0
 #define CHAR 1
-#define MEDIUM_INT 2
+#define LL_INT 2
 #define BOOLEAN 3
 
 int getSizeFromType(int type, int arrlen);
@@ -48,10 +48,10 @@ typedef struct _Variable
 
 
 // Medium Int's Implementation
-typedef struct mediumInt
-{
-  unsigned char value[3];
-} mediumInt;
+// typedef struct mediumInt
+// {
+//   unsigned char value[3];
+// } mediumInt;
 
 // Stack's Implementation
 typedef struct _Stack
@@ -86,15 +86,13 @@ void assignVal(int localAddress, void* value, int type);
 void freeElem(int locAddr);
 
 // Utiliy Functions
-void pushList(Node** head_ref, int new_data);
-void insertAfterList(Node* prev_node, int new_data);
-void appendList(Node** head_ref, int new_data);
-void printList(Node* node);
+void printList(Node *head, char* out);
+Node *mergeSort(Node *head);
 
 Variable *CreateVariable( char *name, int type, int localAddr, int arrLen);
 
-mediumInt CreateMediumInt(int val);
-int toInt(mediumInt *mi);
+// mediumInt CreateMediumInt(int val);
+// int toInt(mediumInt *mi);
 
 Stack *createStack();
 void push(Stack *s, Variable *x);
