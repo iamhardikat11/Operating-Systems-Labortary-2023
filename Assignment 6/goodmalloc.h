@@ -37,7 +37,7 @@ typedef struct DLL {
   char* name;
   int sz;
   int curr_sz;
-  Node** list;
+  Node* list;
 } DDL;
 
 typedef struct _Variable

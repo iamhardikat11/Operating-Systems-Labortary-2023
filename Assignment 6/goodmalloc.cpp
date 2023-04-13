@@ -35,51 +35,51 @@ int toInt(mediumInt *m)
   return val;
 }
 
-void pushList(Node **head_ref, int new_data)
-{
-  Node *new_node = (Node *)malloc(sizeof(Node));
-  new_node->data = new_data;
-  new_node->next = (*head_ref);
-  new_node->prev = NULL;
-  if ((*head_ref) != NULL)
-    (*head_ref)->prev = new_node;
-  (*head_ref) = new_node;
-}
+// void pushList(Node **head_ref, int new_data)
+// {
+//   Node *new_node = (Node *)malloc(sizeof(Node));
+//   new_node->data = new_data;
+//   new_node->next = (*head_ref);
+//   new_node->prev = NULL;
+//   if ((*head_ref) != NULL)
+//     (*head_ref)->prev = new_node;
+//   (*head_ref) = new_node;
+// }
 
-void insertAfterList(Node *prev_node, int new_data)
-{
-  if (prev_node == NULL)
-  {
-    printf("the given previous node cannot be NULL");
-    return;
-  }
-  Node *new_node = (Node *)malloc(sizeof(Node));
-  new_node->data = new_data;
-  new_node->next = prev_node->next;
-  prev_node->next = new_node;
-  new_node->prev = prev_node;
-  if (new_node->next != NULL)
-    new_node->next->prev = new_node;
-}
+// void insertAfterList(Node *prev_node, int new_data)
+// {
+//   if (prev_node == NULL)
+//   {
+//     printf("the given previous node cannot be NULL");
+//     return;
+//   }
+//   Node *new_node = (Node *)malloc(sizeof(Node));
+//   new_node->data = new_data;
+//   new_node->next = prev_node->next;
+//   prev_node->next = new_node;
+//   new_node->prev = prev_node;
+//   if (new_node->next != NULL)
+//     new_node->next->prev = new_node;
+// }
 
-void appendList(Node **head_ref, int new_data)
-{
-  Node *new_node = (Node *)malloc(sizeof(Node));
-  Node *last = *head_ref; /* used in step 5*/
-  new_node->data = new_data;
-  new_node->next = NULL;
-  if (*head_ref == NULL)
-  {
-    new_node->prev = NULL;
-    *head_ref = new_node;
-    return;
-  }
-  while (last->next != NULL)
-    last = last->next;
-  last->next = new_node;
-  new_node->prev = last;
-  return;
-}
+// void appendList(Node **head_ref, int new_data)
+// {
+//   Node *new_node = (Node *)malloc(sizeof(Node));
+//   Node *last = *head_ref; /* used in step 5*/
+//   new_node->data = new_data;
+//   new_node->next = NULL;
+//   if (*head_ref == NULL)
+//   {
+//     new_node->prev = NULL;
+//     *head_ref = new_node;
+//     return;
+//   }
+//   while (last->next != NULL)
+//     last = last->next;
+//   last->next = new_node;
+//   new_node->prev = last;
+//   return;
+// }
 
 // This function prints contents of linked list starting from the given node
 void printList(Node *node)
@@ -361,42 +361,44 @@ Node *mergeSort(Node *head)
 
 // A utility function to insert a new node at the
 // beginning of doubly linked list
-void insertAll(Node **head, int sz)
-{
-  // for (int i = 0; i < sz; i++)
-  // {
-  //   Node *temp = (Node *)malloc(sizeof(Node));
-  //   temp->data = rand() % LIMIT + 1;
-  //   temp->next = temp->prev = NULL;
-  //   if (!(*head))
-  //     (*head) = temp;
-  //   else
-  //   {
-  //     temp->next = *head;
-  //     (*head)->prev = temp;
-  //     (*head) = temp;
-  //   }
-  // }
-}
+// void insertAll(Node **head, int sz)
+// {
+//   // for (int i = 0; i < sz; i++)
+//   // {
+//   //   Node *temp = (Node *)malloc(sizeof(Node));
+//   //   temp->data = rand() % LIMIT + 1;
+//   //   temp->next = temp->prev = NULL;
+//   //   if (!(*head))
+//   //     (*head) = temp;
+//   //   else
+//   //   {
+//   //     temp->next = *head;
+//   //     (*head)->prev = temp;
+//   //     (*head) = temp;
+//   //   }
+//   // }
+// }
 
 // A utility function to print a doubly linked list in
 // both forward and backward directions
-void print(Node *head)
+void print(Node *head, char* out)
 {
+  FILE* fp = fopen(out, "w");
   Node *temp = head;
-  printf("Forward Traversal using next pointer\n");
+  fprintf(fp,"Forward Traversal using next pointer\n");
   while (head)
   {
-    printf("%d ", head->data);
+    fprintf(fp,"%d ", head->data);
     temp = head;
     head = head->next;
   }
-  printf("\nBackward Traversal using prev pointer\n");
+  fprintf(fp,"\nBackward Traversal using prev pointer\n");
   while (temp)
   {
-    printf("%d ", temp->data);
+    fprintf(fp,"%d ", temp->data);
     temp = temp->prev;
   }
+  fclose(fp);
 }
 
 // Utility function to swap two integers
@@ -437,20 +439,20 @@ int createList(char *name, int type, int sz)
   dll->name = name;
   dll->sz = sz;
   dll->curr_sz = 0;
-  dll->list = (Node **)malloc(sz * sizeof(Node *));
+  dll->list = (Node *)malloc(sz * sizeof(Node));
 
   for (int i = 0; i < sz; i++)
   {
     Node *temp = (Node *)malloc(sizeof(Node));
     temp->data = rand() % LIMIT + 1;
     temp->next = temp->prev = NULL;
-    if (!(*dll->list))
-      (*dll->list) = temp;
+    if (!(dll->list))
+      (dll->list) = temp;
     else
     {
-      temp->next = *dll->list;
-      (*dll->list)->prev = temp;
-      (*dll->list) = temp;
+      temp->next = dll->list;
+      (dll->list)->prev = temp;
+      (dll->list) = temp;
     }
   }
   // Add the newly created DLL to the Data variable
