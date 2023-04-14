@@ -1,7 +1,7 @@
-default: lib exec
-lib:
+run:
 	make -f Makefile.library
-exec:
 	make -f Makefile.exec
 clean:
 	rm -rf *.o *.a mergesort
+clean_o:
+	rm -rf *.txt

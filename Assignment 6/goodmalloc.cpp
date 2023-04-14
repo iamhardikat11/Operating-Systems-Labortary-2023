@@ -162,11 +162,42 @@ char *getTypeString(int type)
   return ans;
 }
 
-int assignVal(char* name, int offset, int num, int arr[])
+void assignVal(char* name, int offset, int num, int arr[])
+{
+  DLL* dll = ((DDL *)data_->pageTable[mp[name]/4]);
+  if(((offset + num - dll->curr_sz) > 0))
+  {
+    printf("OPERATION NOT POSSIBLE\n");
+    exit(1);
+  }
+  Node* temp = dll->list;
+  for(int i = 0; i< offset; i++)
+  {
+    ;
+  }
+  // for(int i = 0; i < num; i++)
+  // {
+  //   Node *temp = (Node *)malloc(sizeof(Node));
+  //   temp->data = rand() % LIMIT + 1;
+  //   temp->next = temp->prev = NULL;
+  //   dll->curr_sz++;
+  //   if (!(dll->list))
+  //     (dll->list) = temp;
+  //   else
+  //   {
+  //     temp->next = dll->list;
+  //     (dll->list)->prev = temp;
+  //     (dll->list) = temp;
+  //   }
+  // }
+  // printList(((DDL *)data_->pageTable[mp[name]/4])->list, "output_test.txt");
+  // printList(dll->list, "output.txt");
+}
+void List(char *name, int size)
 {
   DLL* dll = ((DDL *)data_->pageTable[mp[name]/4]);
   // dll->list
-  for(int i = 0; i < num; i++)
+  for(int i = 0; i < size; i++)
   {
     Node *temp = (Node *)malloc(sizeof(Node));
     temp->data = rand() % LIMIT + 1;
@@ -181,11 +212,9 @@ int assignVal(char* name, int offset, int num, int arr[])
       (dll->list) = temp;
     }
   }
-  printList(((DDL *)data_->pageTable[mp[name]/4])->list, "output_test.txt");
-  printList(dll->list, "output.txt");
-  return mp[name];
+  // printList(((DDL *)data_->pageTable[mp[name]/4])->list, "output_test.txt");
+  // printList(dll->list, "output.txt");
 }
-
 void addToVal(int localAddress, int value)
 {
   if (!typeCheck(localAddress, INT))
@@ -240,37 +269,6 @@ void printList(Node *head, char* out)
   fclose(fp);
 }
 
-// Utility function to swap two integers
-void swap(int *A, int *B)
-{
-  int temp = *A;
-  *A = *B;
-  *B = temp;
-}
-
-// Split a doubly linked list (DLL) into 2 DLLs of half sizes
-Node *split(Node *head)
-{
-  Node *fast = head, *slow = head;
-  while (fast->next && fast->next->next)
-  {
-    fast = fast->next->next;
-    slow = slow->next;
-  }
-  Node *temp = slow->next;
-  slow->next = NULL;
-  return temp;
-}
-
-Node *createNode(int data)
-{
-  Node *newNode = (Node *)malloc(sizeof(Node));
-  newNode->data = data;
-  newNode->next = NULL;
-  newNode->prev = NULL;
-  return newNode;
-}
-
 int createList(char *name, int type, int sz)
 {
   printf("Creating List of name: %s and type %s and length %d\n", name, getTypeString(type), sz);
@@ -279,21 +277,6 @@ int createList(char *name, int type, int sz)
   dll->sz = sz;
   dll->curr_sz = 0;
   dll->list = (Node *)malloc(sz * sizeof(Node));
-  for(int i = 0; i < sz; i++)
-  {
-    Node *temp = (Node *)malloc(sizeof(Node));
-    temp->data = rand() % LIMIT + 1;
-    temp->next = temp->prev = NULL;
-    dll->curr_sz++;
-    if (!(dll->list))
-      (dll->list) = temp;
-    else
-    {
-      temp->next = dll->list;
-      (dll->list)->prev = temp;
-      (dll->list) = temp;
-    }
-  }
   // Add the newly created DLL to the Data variable
   Variable *var = CreateVariable(name, type, data_->localAddress, sz);
   data_->variableList[data_->localAddress / 4] = *var;
@@ -332,12 +315,12 @@ int createList(char *name, int type, int sz)
     }
   }
   pthread_mutex_unlock(&data_->lock);
-  
+  dll = ((DDL *)data_->pageTable[mp[name]/4]);
   int temp = data_->localAddress;
   data_->localAddress += 4;
   push(&data_->variableStack, &data_->variableList[temp / 4]);
-  
   mp[name] = temp;
+  List(name, sz);
   return temp;
 }
 

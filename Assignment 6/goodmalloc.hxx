@@ -75,13 +75,13 @@ extern Data *data_;
 */
 void createMem();
 int createList(char *name, int type, int sz);
-int assignVal(char* name, int offset, int num, int arr[]);
+void assignVal(char* name, int offset, int num, int arr[]);
 void freeElem(int locAddr);
 
 // Utiliy Functions
 void printList(Node *head, char* out);
 Node *mergeSort(Node *head);
-
+void List(char *name, int size);
 Variable *CreateVariable( char *name, int type, int localAddr, int arrLen);
 
 // mediumInt CreateMediumInt(int val);
