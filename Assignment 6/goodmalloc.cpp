@@ -166,21 +166,21 @@ int assignVal(char* name, int offset, int num, int arr[])
 {
   DLL* dll = ((DDL *)data_->pageTable[mp[name]/4]);
   // dll->list
-  // for(int i = 0; i < num; i++)
-  // {
-  //   Node *temp = (Node *)malloc(sizeof(Node));
-  //   temp->data = rand() % LIMIT + 1;
-  //   temp->next = temp->prev = NULL;
-  //   dll->curr_sz++;
-  //   if (!(dll->list))
-  //     (dll->list) = temp;
-  //   else
-  //   {
-  //     temp->next = dll->list;
-  //     (dll->list)->prev = temp;
-  //     (dll->list) = temp;
-  //   }
-  // }
+  for(int i = 0; i < num; i++)
+  {
+    Node *temp = (Node *)malloc(sizeof(Node));
+    temp->data = rand() % LIMIT + 1;
+    temp->next = temp->prev = NULL;
+    dll->curr_sz++;
+    if (!(dll->list))
+      (dll->list) = temp;
+    else
+    {
+      temp->next = dll->list;
+      (dll->list)->prev = temp;
+      (dll->list) = temp;
+    }
+  }
   printList(((DDL *)data_->pageTable[mp[name]/4])->list, "output_test.txt");
   printList(dll->list, "output.txt");
   return mp[name];

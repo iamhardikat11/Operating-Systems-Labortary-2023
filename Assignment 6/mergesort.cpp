@@ -58,7 +58,7 @@ int main()
     {
         arr[i] = rand() % 100000 + 1;
     }
-    cout << localAddress << " " << assignVal("My_List", 0, 50000, arr);
+    assignVal("My_List", 0, 50000, arr);
     DDL* head = (DDL *)data_->pageTable[localAddress/4];
     printList(head->list,"output_before.txt");
     head->list = mergeSort(head->list);
