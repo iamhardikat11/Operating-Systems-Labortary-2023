@@ -4,6 +4,7 @@ int main()
 {
     srand(time(0));
     createMem();
+    
     int localAddress = createList("My_List", LL_INT, 50000);
     // mediumInt *physicalAddress = (mediumInt *)data_->pageTable[localAddr / 4];
     DDL* head = (DDL *)data_->pageTable[localAddress/4];
