@@ -7,6 +7,7 @@ int *memory_;
 Data *data_;
 int gc, no_gc;
 map<char*, int> mp;
+
 int isValid(int type, char *name)
 {
   return ((type == INT || type == CHAR || type == LL_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
@@ -171,25 +172,15 @@ void assignVal(char* name, int offset, int num, int arr[])
     exit(1);
   }
   Node* temp = dll->list;
-  for(int i = 0; i< offset; i++)
+  for(int i = 0; i < offset; i++)
   {
-    ;
+    temp = temp->next;
   }
-  // for(int i = 0; i < num; i++)
-  // {
-  //   Node *temp = (Node *)malloc(sizeof(Node));
-  //   temp->data = rand() % LIMIT + 1;
-  //   temp->next = temp->prev = NULL;
-  //   dll->curr_sz++;
-  //   if (!(dll->list))
-  //     (dll->list) = temp;
-  //   else
-  //   {
-  //     temp->next = dll->list;
-  //     (dll->list)->prev = temp;
-  //     (dll->list) = temp;
-  //   }
-  // }
+  for(int i = 0; temp != NULL && i < num; i++)
+  {
+    temp->data = arr[i];
+    temp = temp->next;
+  }
   // printList(((DDL *)data_->pageTable[mp[name]/4])->list, "output_test.txt");
   // printList(dll->list, "output.txt");
 }
