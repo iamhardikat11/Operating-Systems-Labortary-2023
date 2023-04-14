@@ -7,7 +7,7 @@ int *memory_;
 Data *data_;
 int gc, no_gc;
 map<char*, int> mp;
-
+int mem_len = 0;
 int isValid(int type, char *name)
 {
   return ((type == INT || type == CHAR || type == LL_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
@@ -166,7 +166,7 @@ char *getTypeString(int type)
 void assignVal(char* name, int offset, int num, int arr[])
 {
   DLL* dll = ((DDL *)data_->pageTable[mp[name]/4]);
-  if(((offset + num - dll->curr_sz) > 0))
+  if(((offset + num - mem_len > 0)))
   {
     printf("OPERATION NOT POSSIBLE\n");
     exit(1);
@@ -268,6 +268,7 @@ int createList(char *name, int type, int sz)
   dll->sz = sz;
   dll->curr_sz = 0;
   dll->list = (Node *)malloc(sz * sizeof(Node));
+  mem_len = sz;
   // Add the newly created DLL to the Data variable
   Variable *var = CreateVariable(name, type, data_->localAddress, sz);
   data_->variableList[data_->localAddress / 4] = *var;

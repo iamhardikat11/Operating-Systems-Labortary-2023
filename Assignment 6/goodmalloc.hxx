@@ -69,7 +69,6 @@ typedef struct
 // Important Data Structures
 extern int *memory_;
 extern Data *data_;
-
 /*
   Important Functions
 */

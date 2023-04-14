@@ -5,14 +5,17 @@ using namespace std;
 // Utility function to swap two integers
 void swap(int *A, int *B)
 {
+  functionStart();
   int temp = *A;
   *A = *B;
   *B = temp;
+  endScope();
 }
 
 // Split a doubly linked list (DLL) into 2 DLLs of half sizes
 Node *split(Node *head)
 {
+  functionStart();
   Node *fast = head, *slow = head;
   while (fast->next && fast->next->next)
   {
@@ -21,15 +24,18 @@ Node *split(Node *head)
   }
   Node *temp = slow->next;
   slow->next = NULL;
+  endScope();
   return temp;
 }
 
 Node *createNode(int data)
 {
+  functionStart();
   Node *newNode = (Node *)malloc(sizeof(Node));
   newNode->data = data;
   newNode->next = NULL;
   newNode->prev = NULL;
+  endScope();
   return newNode;
 }
 
@@ -37,6 +43,7 @@ Node *createNode(int data)
 Node *merge(Node *first, Node *second)
 {
   // If first linked list is empty
+  // functionStart();
   if (!first)
     return second;
 
@@ -59,6 +66,7 @@ Node *merge(Node *first, Node *second)
     second->prev = NULL;
     return second;
   }
+  // endScope();
 }
 
 // Function to do merge sort
@@ -82,6 +90,11 @@ int main()
     int arr[50000];
     for(int i = 0; i < 50000; i++)
         arr[i] = rand() % 100000 + 1;
+    for(int i = 0; i < 50000; i++)
+    {
+      cout << arr[i] << " "; 
+    }
+    cout << endl;
     assignVal("My_List", 0, 50000, arr);
     DDL* head = (DDL *)data_->pageTable[localAddress/4];
     printList(head->list,"output_before.txt");
