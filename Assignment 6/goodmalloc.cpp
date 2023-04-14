@@ -1,9 +1,12 @@
-#include "goodmalloc.h"
+#include "goodmalloc.hxx"
+#include <iostream>
+#include <map>
+using namespace std;
 
 int *memory_;
 Data *data_;
 int gc, no_gc;
-
+map<char*, int> mp;
 int isValid(int type, char *name)
 {
   return ((type == INT || type == CHAR || type == LL_INT || type == BOOLEAN) && strlen(name) < VAR_NAME_SIZE);
@@ -108,7 +111,10 @@ Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
   a->isTobeCleaned = 0;
   a->arrLen = arrLen;
   a->localAddress = localAddr;
-  a->size = getSizeFromType(type, arrLen);
+  if(type = LL_INT)
+    a->size = arrLen;
+  else 
+    a->size = getSizeFromType(type, arrLen);
   return a;
 }
 
@@ -235,51 +241,32 @@ char *getTypeString(int type)
   else if (type == CHAR)
     ans = "CHAR";
   else
-    ans = "MEDIUM_INT";
+    ans = "LINKED_LIST";
   return ans;
 }
 
-void assignVal(int localAddress, void *data, int type)
+int assignVal(char* name, int offset, int num, int arr[])
 {
-  printf("Assigning %s value to variable %s\n", getTypeString(type), data_->variableList[localAddress].name);
-  if (!typeCheck(localAddress, type))
-  {
-    fprintf(stderr, "ERROR: Type Mismatch\n");
-    exit(1);
-  }
-  if (type == INT)
-  {
-    int value = *(int *)data;
-    pthread_mutex_lock(&data_->lock);
-    int *physicalAddress = data_->pageTable[localAddress / 4];
-    *physicalAddress = value;
-    pthread_mutex_unlock(&data_->lock);
-  }
-  else if (type == CHAR)
-  {
-    char value = *(char *)data;
-    pthread_mutex_lock(&data_->lock);
-    int *physicalAddress = data_->pageTable[localAddress / 4];
-    *physicalAddress = value;
-    pthread_mutex_unlock(&data_->lock);
-  }
-  else if (type == BOOLEAN)
-  {
-    bool value = *(bool *)data;
-    pthread_mutex_lock(&data_->lock);
-    int *physicalAddress = data_->pageTable[localAddress / 4];
-    *physicalAddress = value;
-    pthread_mutex_unlock(&data_->lock);
-  }
-  else
-  {
-    ;
-    // mediumInt value = *(mediumInt *)data;
-    // pthread_mutex_lock(&data_->lock);
-    // int *physicalAddress = data_->pageTable[localAddress / 4];
-    // *physicalAddress = toInt(&value);
-    // pthread_mutex_unlock(&data_->lock);
-  }
+  DLL* dll = ((DDL *)data_->pageTable[mp[name]/4]);
+  // dll->list
+  // for(int i = 0; i < num; i++)
+  // {
+  //   Node *temp = (Node *)malloc(sizeof(Node));
+  //   temp->data = rand() % LIMIT + 1;
+  //   temp->next = temp->prev = NULL;
+  //   dll->curr_sz++;
+  //   if (!(dll->list))
+  //     (dll->list) = temp;
+  //   else
+  //   {
+  //     temp->next = dll->list;
+  //     (dll->list)->prev = temp;
+  //     (dll->list) = temp;
+  //   }
+  // }
+  printList(((DDL *)data_->pageTable[mp[name]/4])->list, "output_test.txt");
+  printList(dll->list, "output.txt");
+  return mp[name];
 }
 
 void addToVal(int localAddress, int value)
@@ -315,73 +302,7 @@ void getVal(int localAddr, int type, void *data)
   data = &(*physicalAddress);
 }
 
-Node *split(Node *head);
-
-// Function to merge two linked lists
-Node *merge(Node *first, Node *second)
-{
-  // If first linked list is empty
-  if (!first)
-    return second;
-
-  // If second linked list is empty
-  if (!second)
-    return first;
-
-  // Pick the smaller value
-  if (first->data < second->data)
-  {
-    first->next = merge(first->next, second);
-    first->next->prev = first;
-    first->prev = NULL;
-    return first;
-  }
-  else
-  {
-    second->next = merge(first, second->next);
-    second->next->prev = second;
-    second->prev = NULL;
-    return second;
-  }
-}
-
-// Function to do merge sort
-Node *mergeSort(Node *head)
-{
-  if (!head || !head->next)
-    return head;
-  Node *second = split(head);
-
-  // Recur for left and right halves
-  head = mergeSort(head);
-  second = mergeSort(second);
-
-  // Merge the two sorted halves
-  return merge(head, second);
-}
-
-// A utility function to insert a new node at the
-// beginning of doubly linked list
-// void insertAll(Node **head, int sz)
-// {
-//   // for (int i = 0; i < sz; i++)
-//   // {
-//   //   Node *temp = (Node *)malloc(sizeof(Node));
-//   //   temp->data = rand() % LIMIT + 1;
-//   //   temp->next = temp->prev = NULL;
-//   //   if (!(*head))
-//   //     (*head) = temp;
-//   //   else
-//   //   {
-//   //     temp->next = *head;
-//   //     (*head)->prev = temp;
-//   //     (*head) = temp;
-//   //   }
-//   // }
-// }
-
-// A utility function to print a doubly linked list in
-// both forward and backward directions
+// A utility function to print a doubly linked list in both forward and backward directions
 void printList(Node *head, char* out)
 {
   FILE* fp = fopen(out, "w");
@@ -441,8 +362,7 @@ int createList(char *name, int type, int sz)
   dll->sz = sz;
   dll->curr_sz = 0;
   dll->list = (Node *)malloc(sz * sizeof(Node));
-
-  for (int i = 0; i < sz; i++)
+  for(int i = 0; i < sz; i++)
   {
     Node *temp = (Node *)malloc(sizeof(Node));
     temp->data = rand() % LIMIT + 1;
@@ -495,11 +415,12 @@ int createList(char *name, int type, int sz)
     }
   }
   pthread_mutex_unlock(&data_->lock);
-  printList(((DDL *)data_->pageTable[data_->localAddress/4])->list, "output_test.txt");
+  
   int temp = data_->localAddress;
   data_->localAddress += 4;
   push(&data_->variableStack, &data_->variableList[temp / 4]);
-  printList(dll->list, "output.txt");
+  
+  mp[name] = temp;
   return temp;
 }
 

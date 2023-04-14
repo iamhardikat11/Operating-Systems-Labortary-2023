@@ -46,13 +46,6 @@ typedef struct _Variable
   int type, size, localAddress, arrLen, isTobeCleaned;
 } Variable;
 
-
-// Medium Int's Implementation
-// typedef struct mediumInt
-// {
-//   unsigned char value[3];
-// } mediumInt;
-
 // Stack's Implementation
 typedef struct _Stack
 {
@@ -82,7 +75,7 @@ extern Data *data_;
 */
 void createMem();
 int createList(char *name, int type, int sz);
-void assignVal(int localAddress, void* value, int type);
+int assignVal(char* name, int offset, int num, int arr[]);
 void freeElem(int locAddr);
 
 // Utiliy Functions
