@@ -1,0 +1,16 @@
+
+  // Calculate the memory address of the offset element to be updated
+  Node *node = dll->list;
+  for (int i = 0; i < offset; i++)
+    node = node->next;
+  int addr = (int)node;
+  // Traverse the list and update each element with the corresponding value from the arr array
+  for (int i = 0; i < num; i++)
+  {
+    int val = arr[i];
+    *(int *)addr = val;
+    addr += sizeof(int);
+    node = node->next;
+  }
+  // Return the memory address of the first element updated
+  return mp[name];

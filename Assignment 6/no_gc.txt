@@ -1,6 +1,0 @@
-demo1: demo1.c libgoodmalloc.a
-	g++ -o demo1 demo1.c libgoodmalloc.a -pthread
-demo2: demo2.c libgoodmalloc.a
-	g++ -o demo2 demo2.c libgoodmalloc.a -pthread
-demo3: demo3.c libgoodmalloc.a
-	g++ -o demo3 demo3.c libgoodmalloc.a -pthread

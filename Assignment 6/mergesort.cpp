@@ -59,12 +59,10 @@ int main()
         arr[i] = rand() % 100000 + 1;
     }
     cout << localAddress << " " << assignVal("My_List", 0, 50000, arr);
-    printList(((DDL *)data_->pageTable[localAddress/4])->list,"output_test2.txt");
-    // mediumInt *physicalAddress = (mediumInt *)data_->pageTable[localAddr / 4];
-    // DDL* head = (DDL *)data_->pageTable[localAddress/4];
-    // printList(head->list, "out_before.txt");
-    // head->list = mergeSort(head->list);
-    // printList(head->list, "out_after.txt");  
+    DDL* head = (DDL *)data_->pageTable[localAddress/4];
+    printList(head->list,"output_before.txt");
+    head->list = mergeSort(head->list);
+    printList(head->list, "output_after.txt");  
     endScope();
     return 0;
 }

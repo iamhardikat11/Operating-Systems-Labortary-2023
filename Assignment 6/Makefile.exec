@@ -1,5 +1,5 @@
 default: mergesort
 mergesort: mergesort.cpp libgoodmalloc.a
-	g++ -o mer mergesort.cpp libgoodmalloc.a -pthread
+	g++ -o mergesort mergesort.cpp libgoodmalloc.a -pthread
 clean:
-	rm -f demo1 demo2 demo3
+	rm -f mergesort
