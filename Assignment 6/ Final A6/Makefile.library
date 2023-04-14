@@ -1,0 +1,8 @@
+libgoodmalloc.a: goodmalloc.o
+	ar -rcs libgoodmalloc.a goodmalloc.o
+
+goodmalloc.o: goodmalloc.h goodmalloc.cpp
+	g++ -c goodmalloc.cpp
+
+clean:
+	rm -f *.o *.a
