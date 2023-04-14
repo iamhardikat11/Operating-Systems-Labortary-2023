@@ -29,75 +29,6 @@ int getSizeFromType(int type, int arrlen)
   }
 }
 
-// int toInt(mediumInt *m)
-// {
-//   int val = 0;
-//   if (!(m->value[0] >> 7 == 0))
-//     val |= (((1 << 8) - 1) << 24);
-//   val |= m->value[2] | (m->value[1] << 8) | (m->value[0] << 16);
-//   return val;
-// }
-
-// void pushList(Node **head_ref, int new_data)
-// {
-//   Node *new_node = (Node *)malloc(sizeof(Node));
-//   new_node->data = new_data;
-//   new_node->next = (*head_ref);
-//   new_node->prev = NULL;
-//   if ((*head_ref) != NULL)
-//     (*head_ref)->prev = new_node;
-//   (*head_ref) = new_node;
-// }
-
-// void insertAfterList(Node *prev_node, int new_data)
-// {
-//   if (prev_node == NULL)
-//   {
-//     printf("the given previous node cannot be NULL");
-//     return;
-//   }
-//   Node *new_node = (Node *)malloc(sizeof(Node));
-//   new_node->data = new_data;
-//   new_node->next = prev_node->next;
-//   prev_node->next = new_node;
-//   new_node->prev = prev_node;
-//   if (new_node->next != NULL)
-//     new_node->next->prev = new_node;
-// }
-
-// void appendList(Node **head_ref, int new_data)
-// {
-//   Node *new_node = (Node *)malloc(sizeof(Node));
-//   Node *last = *head_ref; /* used in step 5*/
-//   new_node->data = new_data;
-//   new_node->next = NULL;
-//   if (*head_ref == NULL)
-//   {
-//     new_node->prev = NULL;
-//     *head_ref = new_node;
-//     return;
-//   }
-//   while (last->next != NULL)
-//     last = last->next;
-//   last->next = new_node;
-//   new_node->prev = last;
-//   return;
-// }
-
-// This function prints contents of linked list starting from the given node
-// void printList(Node *node)
-// {
-//   Node *last;
-//   printf("\nTraversal in forward direction \n");
-//   while (node != NULL)
-//   {
-//     printf("%d ", node->data);
-//     last = node;
-//     node = node->next;
-//   }
-//   printf("\n");
-// }
-
 Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
 {
   if (!isValid(type, name))
@@ -117,20 +48,6 @@ Variable *CreateVariable(char *name, int type, int localAddr, int arrLen)
     a->size = getSizeFromType(type, arrLen);
   return a;
 }
-
-// mediumInt CreateMediumInt(int val)
-// {
-//   if (val >= (1 << 23) || (val < -(1 << 23)))
-//   {
-//     fprintf(stderr, "Overflow in Medium Int\n");
-//     exit(1);
-//   }
-//   mediumInt mi;
-//   mi.value[0] = (val >> 16) & 0xFF;
-//   mi.value[1] = (val >> 8) & 0xFF;
-//   mi.value[2] = val & 0xFF;
-//   return mi;
-// }
 
 Stack *createStack()
 {
